@@ -23,7 +23,7 @@
     --orange-dim:#0f503b;
     --ring:rgba(26,132,97,.45);
     --aside-width:348px;
-    --thumb-size:54px;
+    --thumb-size:150px;
     --red:#e8604c;
     --track:#2a2f2c;
     --mono:"IBM Plex Mono",ui-monospace,monospace;
@@ -65,9 +65,9 @@
   #stagebar button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
   #stagebar label{display:flex;gap:5px;align-items:center;cursor:pointer}
   #stagebar input[type=checkbox]{accent-color:var(--orange);width:14px;height:14px}
-  #thumbs{display:none;flex-direction:column;gap:2px;max-height:min(60vh,720px);overflow-y:auto;overflow-x:hidden;padding:10px 7px;background:var(--film);border-radius:3px;cursor:ns-resize}
+  #thumbs{display:none;flex-direction:column;gap:2px;flex-shrink:0;align-self:stretch;overflow-y:auto;overflow-x:hidden;padding:10px 7px;background:var(--film);border-right:1px solid var(--line)}
   #thumbs .thumb{position:relative;flex-shrink:0;line-height:0}
-  #thumbs canvas{height:var(--thumb-size);width:auto;cursor:pointer;border:2px solid transparent;border-radius:0;display:block}
+  #thumbs canvas{width:var(--thumb-size);height:auto;cursor:pointer;border:2px solid transparent;border-radius:0;display:block}
   #thumbs .thumb.on canvas{border-color:var(--orange)}
   #thumbs .thumb .tdel{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:2px;background:rgba(12,11,8,.78);color:var(--text);font:11px/1 var(--mono);cursor:pointer;opacity:0;transition:opacity .12s;display:flex;align-items:center;justify-content:center}
   #thumbs .thumb:hover .tdel{opacity:1}
@@ -220,6 +220,8 @@
     #asideResize{display:none}
     aside{width:100%;border-left:none;border-top:1px solid var(--line)}
     #stage{min-height:42vh}
+    #thumbs{flex-direction:row;align-self:auto;overflow-x:auto;overflow-y:hidden;border-right:none;border-top:1px solid var(--line)}
+    #thumbs canvas{width:var(--thumb-size);height:auto}
   }
 
   /* ---------- phones (portrait) ----------
@@ -304,6 +306,7 @@
   <input type="file" id="projfile" hidden>
 </header>
 <main>
+  <div id="thumbs"></div>
   <div id="stage">
     <div id="drop">
       <strong>Drop one or more photos here</strong>
@@ -313,7 +316,6 @@
       <input type="file" id="file" accept="image/*" multiple hidden>
     </div>
     <div id="previewArea">
-      <div id="thumbs"></div>
       <div id="filmframe">
         <div class="sprockets"></div>
         <div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
@@ -819,19 +821,7 @@ const viewwrap=$("viewwrap");
 const images=[];
 let cur=-1,showOriginal=false,wipeX=0.5,wipeDragging=false;
 let lastOut=null;
-const THUMB_MIN=54,THUMB_MAX=THUMB_MIN*4;
-let thumbSize=THUMB_MIN;
 const previewZoom={scale:1,x:0,y:0};
-
-$("thumbs").addEventListener("wheel",e=>{
-  if(images.length<2)return;
-  e.preventDefault();
-  const next=Math.max(THUMB_MIN,Math.min(THUMB_MAX,thumbSize-(Math.sign(e.deltaY)*12)));
-  if(next===thumbSize)return;
-  thumbSize=next;
-  document.documentElement.style.setProperty("--thumb-size",thumbSize+"px");
-  requestAnimationFrame(fitPreviewToStage);
-},{passive:false});
 
 function resetPreviewZoom(){
   previewZoom.scale=1;previewZoom.x=0;previewZoom.y=0;
@@ -839,12 +829,12 @@ function resetPreviewZoom(){
 }
 function fitPreviewToStage(){
   if(cur<0)return;
-  const stage=$("stage"),frame=$("filmframe"),previewArea=$("previewArea"),thumbs=$("thumbs"),style=getComputedStyle(stage);
+  const stage=$("stage"),frame=$("filmframe"),previewArea=$("previewArea"),style=getComputedStyle(stage);
   const visible=[...stage.children].filter(el=>getComputedStyle(el).display!=="none");
   const otherHeight=visible.filter(el=>el!==previewArea).reduce((sum,el)=>sum+el.offsetHeight,0);
   const gap=(visible.length-1)*(parseFloat(style.rowGap)||parseFloat(style.gap)||0);
   const frameChrome=frame.offsetHeight-viewwrap.offsetHeight;
-  const thumbsWidth=getComputedStyle(thumbs).display==="none"?0:thumbs.offsetWidth+10;
+  const thumbsWidth=0;
   const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-thumbsWidth-32;
   const height=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-otherHeight-gap-frameChrome;
   const image=images[cur].data,scale=Math.max(0.01,Math.min(width/image.width,height/image.height));
@@ -883,18 +873,21 @@ function fail(msg){
 }
 
 function addImageData(idata,name,srcURL){
-  const th=document.createElement("canvas");
-  const tw=Math.round(idata.width*54/idata.height);
-  th.width=tw;th.height=54;th.title=name;
-  const wrap=document.createElement("div");wrap.className="thumb";
-  const del=document.createElement("button");del.className="tdel";del.textContent="\u00D7";del.title="Remove "+name;
-  wrap.append(th,del);
-  const rec={data:idata,thumb:th,wrap,name,srcURL:srcURL||null};
+const th = document.createElement("canvas");
+  const tw = 150; // Fixed width for all thumbnails
+  const thh = Math.round(idata.height * tw / idata.width);
+  th.width = tw;
+  th.height = thh;
+  th.title = name;
+  const wrap = document.createElement("div"); wrap.className = "thumb";
+  const del = document.createElement("button"); del.className = "tdel"; del.textContent = "\u00D7"; del.title = "Remove " + name;
+  wrap.append(th, del);
+  const rec = { data: idata, thumb: th, wrap, name, srcURL: srcURL || null };
   images.push(rec);
-  th.addEventListener("click",()=>{selectImage(images.indexOf(rec));});
-  del.addEventListener("click",e=>{e.stopPropagation();removeImage(images.indexOf(rec));});
+  th.addEventListener("click", () => { selectImage(images.indexOf(rec)); });
+  del.addEventListener("click", e => { e.stopPropagation(); removeImage(images.indexOf(rec)); });
   $("thumbs").appendChild(wrap);
-  selectImage(images.length-1);
+  selectImage(images.length - 1);
   refreshUIAfterLoad();
 }
 function refreshUIAfterLoad(){
@@ -1090,21 +1083,25 @@ function drawHisto(out){
   hc.globalCompositeOperation="source-over";
 }
 let thumbTimer=null;
-function scheduleThumbs(plut,N){
-  if(images.length<2)return;
+function scheduleThumbs(plut, N) {
+  if (images.length < 2) return;
   clearTimeout(thumbTimer);
-  thumbTimer=setTimeout(()=>{
-    images.forEach(im=>{
-      const tc=im.thumb.getContext("2d");
-      const sc=document.createElement("canvas");sc.width=im.thumb.width;sc.height=54;
-      const scx=sc.getContext("2d");
-      const full=document.createElement("canvas");full.width=im.data.width;full.height=im.data.height;
-      full.getContext("2d").putImageData(im.data,0,0);
-      scx.drawImage(full,0,0,sc.width,sc.height);
-      const small=scx.getImageData(0,0,sc.width,sc.height);
-      tc.putImageData(applyLut(small,plut,N),0,0);
+  thumbTimer = setTimeout(() => {
+    images.forEach(im => {
+      const tc = im.thumb.getContext("2d");
+      const sc = document.createElement("canvas");
+      sc.width = im.thumb.width;
+      sc.height = im.thumb.height; // Changed from hardcoded 54
+      const scx = sc.getContext("2d");
+      const full = document.createElement("canvas");
+      full.width = im.data.width;
+      full.height = im.data.height;
+      full.getContext("2d").putImageData(im.data, 0, 0);
+      scx.drawImage(full, 0, 0, sc.width, sc.height);
+      const small = scx.getImageData(0, 0, sc.width, sc.height);
+      tc.putImageData(applyLut(small, plut, N), 0, 0);
     });
-  },250);
+  }, 250);
 }
 function drawRamp(){
   const rc=$("ramp"),c=rc.getContext("2d"),w=rc.width;
