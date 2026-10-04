@@ -1,0 +1,2894 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LutMaster — visual LUT designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Archivo:wght@400;500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bath:#101312;
+    --panel:#171a19;
+    --panel2:#1f2322;
+    --panel3:#272b29;
+    --line:#30352f;
+    --line-hi:#454c43;
+    --film:#0a0c0a;
+    --text:#edeae0;
+    --dim:#9aa098;
+    --faint:#646b62;
+    --orange:#1a8461;
+    --orange-hi:#24a978;
+    --orange-dim:#0f503b;
+    --ring:rgba(26,132,97,.45);
+    --aside-width:348px;
+    --thumb-size:54px;
+    --red:#e8604c;
+    --track:#2a2f2c;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --body:"Archivo","Segoe UI",system-ui,sans-serif;
+    --display:"Bricolage Grotesque",var(--body);
+    --r:5px;
+    --r-sm:3px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bath);color:var(--text);font:14px/1.5 var(--body);display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--bath))}
+  header h1{font-family:var(--display);font-size:22px;font-weight:800;letter-spacing:.005em;line-height:1;color:var(--orange)}
+  header p{color:var(--dim);font-size:12px}
+  header .spacer{flex:1}
+  header button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.07em;transition:background .12s,border-color .12s,color .12s}
+  header button:hover:not(:disabled){color:var(--text);border-color:var(--line-hi);background:var(--panel3)}
+  header button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  header button:disabled{opacity:.4;cursor:default}
+  main{flex:1;display:flex;min-height:0}
+  #stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:10px;min-width:0}
+  #drop{border:1px dashed var(--line);border-radius:6px;padding:50px 40px;text-align:center;color:var(--dim);cursor:pointer;transition:.2s;max-width:480px}
+  #drop:hover,#drop.over{border-color:var(--orange);color:var(--text)}
+  #drop strong{color:var(--text);display:block;margin-bottom:6px;font-size:15px}
+  #drop .or{margin-top:14px;font-size:12px}
+  #drop .or button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 12px;border-radius:3px;cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+  #droperr{color:var(--red);font-size:12px;margin-top:8px;display:none}
+  #previewArea{display:flex;align-items:center;gap:10px;min-width:0;max-width:100%;max-height:100%}
+  #filmframe{display:none;background:var(--film);border-radius:3px;padding:0 16px;max-width:100%;box-shadow:0 14px 44px rgba(0,0,0,.55)}
+  .sprockets{height:16px;background-image:radial-gradient(3.2px 4.2px at 50% 50%,var(--bath) 97%,transparent 100%);background-size:19px 16px;background-repeat:repeat-x;background-position:center}
+  .rebate{display:flex;justify-content:space-between;gap:12px;font:10px/1 var(--mono);letter-spacing:.16em;color:var(--orange);padding:1px 2px 5px;text-transform:uppercase}
+  #viewwrap{position:relative;max-width:100%;width:fit-content;margin:0 auto;overflow:hidden}
+  canvas#view{display:block;cursor:ew-resize;transform-origin:top left}
+  #wipeline{position:absolute;top:0;bottom:0;width:2px;background:var(--orange-hi);display:none;pointer-events:none}
+  #wipeline::after{content:"◂ original · graded ▸";position:absolute;top:6px;left:6px;font:9px var(--mono);letter-spacing:.08em;color:var(--orange-hi);white-space:nowrap;background:rgba(12,11,8,.75);padding:3px 6px;border-radius:2px}
+  #stagebar{display:none;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:center}
+  #stagebar button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em;transition:background .12s,border-color .12s,color .12s}
+  #stagebar button:hover{color:var(--text);border-color:var(--line-hi);background:var(--panel3)}
+  #stagebar button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  #stagebar label{display:flex;gap:5px;align-items:center;cursor:pointer}
+  #stagebar input[type=checkbox]{accent-color:var(--orange);width:14px;height:14px}
+  #thumbs{display:none;flex-direction:column;gap:2px;max-height:min(60vh,720px);overflow-y:auto;overflow-x:hidden;padding:10px 7px;background:var(--film);border-radius:3px;cursor:ns-resize}
+  #thumbs .thumb{position:relative;flex-shrink:0;line-height:0}
+  #thumbs canvas{height:var(--thumb-size);width:auto;cursor:pointer;border:2px solid transparent;border-radius:0;display:block}
+  #thumbs .thumb.on canvas{border-color:var(--orange)}
+  #thumbs .thumb .tdel{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:2px;background:rgba(12,11,8,.78);color:var(--text);font:11px/1 var(--mono);cursor:pointer;opacity:0;transition:opacity .12s;display:flex;align-items:center;justify-content:center}
+  #thumbs .thumb:hover .tdel{opacity:1}
+  #thumbs .thumb .tdel:hover{background:var(--red);color:var(--film)}
+  #thumbs,aside{scrollbar-width:thin;scrollbar-color:var(--orange) var(--panel)}
+  #thumbs::-webkit-scrollbar{width:8px}
+  aside::-webkit-scrollbar{width:8px}
+  #thumbs::-webkit-scrollbar-track,aside::-webkit-scrollbar-track{background:var(--panel);border-radius:4px}
+  #thumbs::-webkit-scrollbar-thumb,aside::-webkit-scrollbar-thumb{background:#7a4a22;border-radius:4px;border:1px solid var(--panel)}
+  #thumbs::-webkit-scrollbar-thumb:hover,aside::-webkit-scrollbar-thumb:hover{background:var(--orange)}
+  #scopes{display:none;gap:10px;align-items:flex-end}
+  #scopes canvas{border:1px solid var(--line);border-radius:3px;background:#0d0c09}
+  #asideResize{width:8px;flex:0 0 8px;cursor:col-resize;position:relative;touch-action:none}
+  #asideResize::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;background:transparent;transition:background .12s}
+  #asideResize:hover::after,#asideResize.dragging::after{background:var(--orange)}
+  aside{width:var(--aside-width);flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
+  section{padding:16px 20px;border-bottom:1px solid var(--line)}
+  .section-enable{display:inline-flex;align-items:center;margin-right:8px;vertical-align:middle;cursor:pointer}
+  .section-enable input{width:13px;height:13px;accent-color:var(--orange);cursor:pointer}
+  section.section-disabled> :not(h2){opacity:.45}
+  section h2.has-enable::before{display:none}
+  section h2{font:600 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;padding-bottom:2px}
+  section h2::before{content:"";display:inline-block;width:5px;height:5px;background:var(--orange);border-radius:1px;margin-right:8px;vertical-align:middle}
+  .row{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+  .row:last-of-type{margin-bottom:2px}
+  .row label{flex:0 0 92px;font-size:12px;color:var(--dim);letter-spacing:.01em}
+  .row input[type=range]{flex:1 1 0;min-width:0;height:18px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+  .row input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--track)}
+  .row input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--track)}
+  .row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--orange);border:2px solid var(--panel);margin-top:-5px;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:background .12s,transform .12s}
+  .row input[type=range]::-webkit-slider-thumb:hover{background:var(--orange-hi);transform:scale(1.12)}
+  .row input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--orange);border:2px solid var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .row input[type=range]:focus-visible{outline:none}
+  .row input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(--ring)}
+  .row input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px var(--ring)}
+  .row .num{flex:0 0 54px;min-width:54px;text-align:right;font:12px var(--mono);background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:var(--r-sm);padding:4px 6px;-moz-appearance:textfield;transition:border-color .12s,box-shadow .12s}
+  .row .num::-webkit-outer-spin-button,.row .num::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .row .num:focus{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
+  .row input[type=color]{flex:0 0 34px;width:34px;height:24px;border:1px solid var(--line);border-radius:var(--r-sm);background:none;padding:0;cursor:pointer;-webkit-appearance:none;-moz-appearance:none;appearance:none;overflow:hidden;transition:border-color .12s}
+  .row input[type=color]:hover{border-color:var(--line-hi)}
+  .row input[type=color]:focus-visible{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
+  .row input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .row input[type=color]::-webkit-color-swatch{border:none;border-radius:2px}
+  .row input[type=color]::-moz-color-swatch{border:none;border-radius:2px}
+  .presets,.chtabs{display:flex;flex-wrap:wrap;gap:6px}
+  .presets button,.chtabs button,.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);letter-spacing:.03em;transition:background .12s,border-color .12s,color .12s}
+  .presets button:hover,.btn:hover{border-color:var(--line-hi);background:var(--panel3)}
+  .presets button:active,.btn:active{background:var(--panel2)}
+  .presets button:focus-visible,.chtabs button:focus-visible,.btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--orange)}
+  .chtabs{margin-bottom:10px}
+  .chtabs button.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
+  #curves{width:100%;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:crosshair;touch-action:none}
+  .tiny{color:var(--faint);font-size:11px;margin-top:8px;line-height:1.5}
+  #looksDD{position:relative;margin-top:10px}
+  #looksToggle{width:100%;display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:3px;cursor:pointer;font:12px var(--mono)}
+  #looksToggle:hover{border-color:var(--orange)}
+  #looksToggle .caret{color:var(--orange);transition:transform .15s}
+  #looksDD.open #looksToggle{border-color:var(--orange)}
+  #looksDD.open .caret{transform:rotate(180deg)}
+  #looksPanel{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--panel);border:1px solid var(--orange);border-radius:3px;max-height:230px;overflow-y:auto;padding:4px;box-shadow:0 10px 28px rgba(0,0,0,.5)}
+  #looksDD.open #looksPanel{display:flex;flex-direction:column;gap:4px}
+  .look{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:6px 8px}
+  .look:hover{border-color:var(--orange)}
+  .look .lname{flex:1;font:12px var(--mono);color:var(--text);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .look .ltype{font:9px var(--mono);letter-spacing:.1em;color:var(--orange);text-transform:uppercase;flex-shrink:0}
+  .look .ldel{background:none;border:none;color:var(--dim);cursor:pointer;font:13px var(--mono);padding:0 2px;flex-shrink:0}
+  .look .ldel:hover{color:var(--red)}
+  #loadedLuts{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .loaded-lut{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:6px 8px}
+  .loaded-lut .lname{flex:1;font:12px var(--mono);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .loaded-lut .lactive{display:flex;align-items:center;cursor:pointer}
+  .loaded-lut .lactive input,.loaded-lut .lstrength{accent-color:var(--orange);cursor:pointer}
+  .loaded-lut .lstrength{width:54px}
+  .loaded-lut .ldel{background:none;border:none;color:var(--dim);cursor:pointer;font:13px var(--mono);padding:0 2px}
+  .loaded-lut .ldel:hover{color:var(--red)}
+  #looksEmpty{color:var(--dim);font-size:11px;margin-top:8px}
+  .strip{width:100%;border:1px solid var(--line);border-radius:3px;touch-action:none;cursor:ns-resize;margin-bottom:4px}
+  footer{padding:18px 20px;margin-top:auto;background:linear-gradient(0deg,var(--panel),transparent)}
+  #lutname{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:3px;margin-bottom:10px;font:13px var(--mono)}
+  #lutname:focus{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
+  .exprow{display:flex;gap:8px;margin-bottom:10px}
+  .exprow select{flex:0 0 110px;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:3px;font:12px var(--mono)}
+  #export{flex:1;background:var(--orange);border:none;color:var(--film);font:600 13px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:12px;border-radius:var(--r-sm);cursor:pointer;transition:background .12s,box-shadow .12s;box-shadow:0 2px 8px rgba(224,133,55,.18)}
+  #export:hover{background:var(--orange-hi);box-shadow:0 3px 14px rgba(224,133,55,.3)}
+  #export:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  #export:disabled{background:#7a4a22;cursor:not-allowed}
+  .hint{color:var(--dim);font-size:11px;margin-top:8px;text-align:center}
+  .reset{background:none;border:none;color:var(--dim);font:11px var(--mono);cursor:pointer;text-decoration:underline;margin-left:auto;margin-right:18px;text-transform:lowercase;position:relative;z-index:2}
+  .toggle{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:8px}
+  .toggle input{accent-color:var(--orange)}
+  #baseinfo{font:11px var(--mono);color:var(--orange);display:none;margin-top:4px}
+  #baseinfo button{background:none;border:none;color:var(--dim);text-decoration:underline;cursor:pointer;font:11px var(--mono)}
+  aside section h2{cursor:pointer;user-select:none;display:flex;align-items:center}
+  aside section h2::after{content:"\25BE";margin-left:12px;color:var(--dim);transition:transform .15s;flex-shrink:0}
+  aside section h2 .reset{margin-right:0}
+  aside section.closed h2{margin-bottom:0}
+  aside section h2::after{transform:rotate(-90deg)}
+  aside section.closed > *:not(h2){display:none}
+  #abwrap{display:flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  #abwrap button{background:var(--panel2);border:none;color:var(--dim);padding:5px 11px;cursor:pointer;font:11px var(--mono)}
+  #abwrap button+button{border-left:1px solid var(--line)}
+  #abwrap button.on{background:var(--orange);color:var(--film)}
+  #abwrap button:hover:not(.on){color:var(--text)}
+  #view.picking{cursor:crosshair}
+  .pickbtn.on{border-color:var(--orange);color:var(--orange-hi)}
+  #secSwatch{width:22px;height:22px;border-radius:3px;border:1px solid var(--line);flex-shrink:0}
+  .look .lswatch{display:flex;gap:1px;flex-shrink:0}
+  .look .lswatch i{width:9px;height:14px;display:block}
+  .strengthrow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .strengthrow label{flex:0 0 92px;font-size:12px;color:var(--dim)}
+  .strengthrow input[type=range]{flex:1;accent-color:var(--orange)}
+  #exportPack{width:100%;margin-top:8px;background:none;border:1px solid var(--line);color:var(--dim);padding:8px;border-radius:3px;cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em}
+  #exportPack:hover{border-color:var(--orange);color:var(--text)}
+  /* --- colour-balance wheels --- */
+  .cbwheels{display:flex;gap:6px;justify-content:space-between;margin:2px 0 6px}
+  .cbwheel-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+  .cbwheel{width:96px;height:96px;aspect-ratio:1/1;border:1px solid var(--line);border-radius:50%;cursor:crosshair;touch-action:none;background:#0a0a0a;display:block}
+  .cbwheel-label{font:9px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+  /* --- cube analysis (heat-slice + histograms) --- */
+  #cubePanelWrap{margin-top:4px}
+  #cubePanelWrap .panel-title{font:600 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+  #cubePanelWrap .panel-title .refr{background:none;border:1px solid var(--line);color:var(--dim);font:10px var(--mono);padding:2px 6px;border-radius:2px;cursor:pointer;letter-spacing:.05em}
+  #cubePanelWrap .panel-title .refr:hover{border-color:var(--orange);color:var(--text)}
+  #cubeHeat{width:170px;height:170px;border:1px solid var(--line);border-radius:3px;background:#0d0c09;display:block;margin:2px auto 0;image-rendering:pixelated}
+  .cubeHistRow{display:flex;gap:8px;margin-top:8px}
+  .cubeHistRow canvas{flex:1;min-width:0;border:1px solid var(--line);border-radius:3px;background:#0d0c09;height:60px}
+  #cubeStats{font:11px var(--mono);color:var(--dim);margin-top:8px;line-height:1.65}
+  #cubeStats b{color:var(--orange);font-weight:500}
+  .cubemini{display:flex;gap:4px;margin-top:8px}
+  .cubemini div{flex:1;height:18px;border:1px solid var(--line);border-radius:2px;position:relative}
+  .cubemini div::after{content:attr(data-in);position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font:9px var(--mono);color:#000;text-shadow:0 0 2px #fff,0 0 2px #fff;letter-spacing:.04em}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+  /* ---------- header reflow (covers iPad portrait at 768px too) ----------
+     The header is one flex row: logo, strapline, spacer, buttons. Once the
+     window narrows, the strapline gets squeezed into a tall thin column and
+     the right-hand buttons run off the edge. Giving the strapline a full-width
+     basis pushes it onto its own line directly under the logo, and lets the
+     buttons wrap onto a third line instead of overflowing. */
+  @media (max-width:900px){
+    header{flex-wrap:wrap;gap:6px 8px;padding:12px 14px;align-items:center}
+    header h1{flex:0 0 auto}
+    header p{flex:1 1 100%;margin:0;font-size:12px;line-height:1.4}
+    header .spacer{display:none}
+    header button,#supportLink{flex:0 1 auto;margin-left:0;white-space:nowrap}
+  }
+
+  /* ---------- tablet / narrow desktop ---------- */
+  @media (max-width:820px){
+    main{flex-direction:column}
+    #asideResize{display:none}
+    aside{width:100%;border-left:none;border-top:1px solid var(--line)}
+    #stage{min-height:42vh}
+  }
+
+  /* ---------- phones (portrait) ----------
+     The control panel was designed for a 348px desktop column. On a phone it
+     becomes full width but everything inside stays desktop-dense, so the rows
+     are cramped and the tap targets are cursor-sized. These rules widen the
+     touch targets, stack anything that was side by side, and give the panel
+     room to breathe, without changing any behaviour. */
+  @media (max-width:560px){
+    /* header: title on one line, controls wrapping underneath */
+    header{flex-wrap:wrap;gap:8px 10px;padding:12px 14px}
+    header h1{font-size:19px}
+    header p{font-size:11px}
+    header button,#supportLink{padding:9px 10px;font-size:11px;flex:1 1 auto;text-align:center;margin-left:0}
+
+    #stage{padding:10px;gap:8px;min-height:34vh}
+    #filmframe{padding:0 8px}
+    #drop{padding:34px 18px}
+    #stagebar{gap:10px;font-size:12px}
+    #thumbs{padding:6px}
+
+    section{padding:16px 14px}
+    /* stack label above the slider so the slider gets the full width */
+    .row{flex-wrap:wrap;gap:8px;margin-bottom:16px}
+    .row label{flex:1 1 100%;font-size:12px}
+    .row input[type=range]{flex:1 1 auto;height:34px}      /* taller = easier to grab */
+    .row .num{flex:0 0 62px;min-width:62px;padding:8px 6px;font-size:14px}
+    .row input[type=color]{flex:0 0 44px;width:44px;height:34px}
+    /* a bigger thumb is much easier to hit with a fingertip */
+    .row input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px}
+    .row input[type=range]::-moz-range-thumb{width:22px;height:22px}
+    .row input[type=range]::-webkit-slider-runnable-track{height:5px}
+    .row input[type=range]::-moz-range-track{height:5px}
+
+    /* three colour wheels side by side don't fit: stack them */
+    .cbwheels{flex-direction:column;align-items:center;gap:14px}
+    .cbwheel-wrap{flex:none;width:100%}
+    .cbwheel{width:150px;height:150px}
+
+    /* buttons and chips: fewer per row, bigger targets */
+    .presets,.chtabs{gap:8px}
+    .presets button,.chtabs button,.btn{padding:10px 12px;font-size:12px}
+    .btn{flex:1 1 auto;text-align:center}
+    footer{padding:16px 14px}
+    #export{padding:15px;font-size:14px}
+    select,#lutname{padding:10px;font-size:14px}   /* 14px+ stops iOS zooming on focus */
+
+    /* curve editor and strips need height to be usable by touch */
+    #curves,#huecv,#hscv,#lscv,#ramp{min-height:150px}
+    .hint,.tiny{font-size:11px}
+  }
+
+  @media (max-width:560px){
+    html,body{overflow-x:hidden;max-width:100%}
+    /* keep content clear of the notch and home indicator */
+    header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+    footer{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+  }
+
+  /* very small phones */
+  @media (max-width:380px){
+    header h1{font-size:17px}
+    .cbwheel{width:130px;height:130px}
+    .row .num{flex:0 0 56px;min-width:56px}
+  }
+  #supportLink{margin-left:10px;padding:5px 12px;border:1px solid var(--line);border-radius:3px;
+    color:var(--dim);font:11px var(--mono);text-transform:uppercase;letter-spacing:.07em;
+    text-decoration:none;transition:color .12s,border-color .12s}
+  #supportLink:hover{color:var(--orange);border-color:var(--orange)}
+</style>
+</head>
+<body>
+<header>
+  <h1>LutMaster</h1>
+  <p>Create your Style on all Devices</p>
+  <span class="spacer"></span>
+  <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
+  <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>↷ Redo</button>
+  <button id="resetAll" title="Reset every adjustment">⟲ Reset all</button>
+  <button id="saveProj">Save project</button>
+  <button id="loadProj">Load project</button>
+  <input type="file" id="projfile" hidden>
+</header>
+<main>
+  <div id="stage">
+    <div id="drop">
+      <strong>Drop one or more photos here</strong>
+      or click to choose example images. They never leave your device.
+      <div class="or">No photo to hand?<br><button id="chartbtn1" type="button">Use the built-in test chart</button></div>
+      <div id="droperr"></div>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+    </div>
+    <div id="previewArea">
+      <div id="thumbs"></div>
+      <div id="filmframe">
+        <div class="sprockets"></div>
+        <div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
+        <div id="viewwrap">
+          <canvas id="view"></canvas>
+          <div id="wipeline"></div>
+        </div>
+        <div class="sprockets" style="margin-top:6px"></div>
+      </div>
+    </div>
+    <div id="scopes">
+      <canvas id="histo" width="220" height="80" title="RGB histogram of the graded image"></canvas>
+    </div>
+    <div id="stagebar">
+      <span id="comparehint">Hold on the image to compare</span>
+      <label><input type="checkbox" id="wipeOn"> Split compare</label>
+      <label><input type="checkbox" id="clipOn"> Clipping warnings</label>
+      <label><input type="checkbox" id="scopeOn"> Histogram</label>
+      <span id="abwrap" title="A/B grade slots">
+        <button id="slotA" class="on">A</button><button id="slotB">B</button><button id="slotCopy" title="Copy current grade to the other slot">copy →</button>
+      </span>
+      <button id="removephoto">Remove photo</button>
+      <button id="savephoto">Save graded photo</button>
+      <button id="newimg">Add photos</button>
+      <button id="chartbtn2">Test chart</button>
+    </div>
+  </div>
+
+  <div id="asideResize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"></div>
+  <aside>
+    <section>
+      <h2>Loaded LUTs</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="file" id="lutfile" hidden>
+        <input type="checkbox" id="logMode" hidden>
+      </div>
+      <div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input type="checkbox" id="baseEnable" checked> Use base LUT</label>Base LUT: <span id="basename"></span> <button id="baseclear">remove</button></div>
+      <div id="loadedLuts"></div>
+    </section>
+
+    <section>
+      <h2>My LUTs</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="saveLook">Save</button>
+        <button class="btn" id="addLookCube">Add .cube file…</button>
+        <input type="file" id="lookCubeFile" hidden>
+      </div>
+      <div id="looksDD" class="close">
+        <button id="looksToggle" type="button"><span id="looksCount">Saved LUTs (0)</span><span class="caret">▾</span></button>
+        <div id="looksPanel">
+          <div id="looksList" style="display:flex;flex-direction:column;gap:4px"></div>
+          <p id="looksEmpty" style="padding:6px 4px">Nothing saved yet. Save the current grade, or add .cube files to keep them to hand.</p>
+        </div>
+      </div>
+      <p class="tiny">Pick a look from the list to apply it. Looks are stored in this browser.</p>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="tone" checked aria-label="Enable Tone"></label>Tone <button class="reset" id="toneReset">reset</button></h2>
+      <div class="row"><label>Exposure</label><input type="range" id="exposure" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Contrast</label><input type="range" id="contrast" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Highlights</label><input type="range" id="highlights" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Shadows</label><input type="range" id="shadows" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Blacks</label><input type="range" id="blacks" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Gamma</label><input type="range" id="gamma" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Fade blacks</label><input type="range" id="fade" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="colour" checked aria-label="Enable Colour"></label>Colour <button class="reset" id="colReset">reset</button></h2>
+      <div class="row"><label>Temperature</label><input type="range" id="temp" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Tint</label><input type="range" id="tint" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Saturation</label><input type="range" id="sat" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Vibrance</label><input type="range" id="vib" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Protect skin</label><input type="range" id="skin" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Normalisation</label><input type="range" id="colorNorm" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <button class="btn pickbtn" id="wbPick">⌖ White balance picker — tap a neutral in the photo</button>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="curves" checked aria-label="Enable Curves"></label>Curves <button class="reset" id="curveReset">reset channel</button></h2>
+      <div class="chtabs">
+        <button data-ch="m" class="on">RGB</button>
+        <button data-ch="r">Red</button>
+        <button data-ch="g">Green</button>
+        <button data-ch="b">Blue</button>
+      </div>
+      <canvas id="curves" width="300" height="210"></canvas>
+      <p class="tiny">Click to add a point, drag to shape, double-click a point to remove it.</p>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="hueShift" checked aria-label="Enable Hue vs Hue"></label>Hue vs hue <button class="reset" id="hueReset">reset</button></h2>
+      <canvas id="huecv" class="strip" width="300" height="100"></canvas>
+      <p class="tiny">Drag a handle to rotate that hue (±60°).</p>
+    </section>
+
+    <section class="closed">
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="hueSat" checked aria-label="Enable Hue vs Saturation"></label>Hue vs saturation <button class="reset" id="hsReset">reset</button></h2>
+      <canvas id="hscv" class="strip" width="300" height="100"></canvas>
+      <p class="tiny">Drag up to boost, down to mute, that hue's saturation.</p>
+    </section>
+
+    <section class="closed">
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="lumaSat" checked aria-label="Enable Luma vs Saturation"></label>Luma vs saturation <button class="reset" id="lsReset">reset</button></h2>
+      <canvas id="lscv" class="strip" width="300" height="100"></canvas>
+      <p class="tiny">Saturation by brightness — left is shadows, right is highlights.</p>
+    </section>
+
+    <section class="closed">
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="secondary" checked aria-label="Enable Secondary Colour"></label>Secondary colour <button class="reset" id="secReset">reset</button></h2>
+      <div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input type="range" id="secHueC" min="0" max="360" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Range</label><input type="range" id="secRange" min="5" max="120" value="40"><input type="number" class="num" value="40"></div>
+      <div class="row"><label>Softness</label><input type="range" id="secSoft" min="0" max="100" value="50"><input type="number" class="num" value="50"></div>
+      <div class="row"><label>Hue shift</label><input type="range" id="secHue" min="-60" max="60" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Saturation</label><input type="range" id="secSat" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Luminance</label><input type="range" id="secLum" min="-50" max="50" value="0"><input type="number" class="num" value="0"></div>
+      <button class="btn pickbtn" id="secPick">⌖ Pick target colour from photo</button>
+      <p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="colorBalance" checked aria-label="Enable Color Balance"></label>Color balance <button class="reset" id="cbReset">reset</button></h2>
+      <div class="cbwheels">
+        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbSh" width="96" height="96"></canvas><div class="cbwheel-label">Shadows</div></div>
+        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbMd" width="96" height="96"></canvas><div class="cbwheel-label">Midtones</div></div>
+        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbHi" width="96" height="96"></canvas><div class="cbwheel-label">Highlights</div></div>
+      </div>
+      <p class="tiny">Drag inside a wheel to tint that region. Center = no change. Double-click a wheel to reset just that wheel.</p>
+    </section>
+
+    <section>
+      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="splitToning" checked aria-label="Enable Split Toning"></label>Split toning <button class="reset" id="splitReset">reset</button></h2>
+      <div class="row"><label>Shadows</label><input type="color" id="shCol" value="#406080"><input type="range" id="shAmt" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
+      <div class="row"><label>Highlights</label><input type="color" id="hiCol" value="#e0a060"><input type="range" id="hiAmt" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
+    </section>
+
+    <section>
+      <h2>Transfer ramp</h2>
+      <canvas id="ramp" width="290" height="26"></canvas>
+    </section>
+
+    <section>
+      <h2>Cube analysis</h2>
+      <div id="cubePanelWrap">
+        <div class="panel-title">
+          <span id="cubePanelLabel">Output 17³ preview</span>
+          <button class="refr" id="cubePanelSize" title="Cycle preview resolution">17³</button>
+        </div>
+        <canvas id="cubeHeat" width="170" height="170"></canvas>
+        <div class="cubeHistRow">
+          <canvas id="cubeHistL" width="110" height="60" title="Luma distribution"></canvas>
+          <canvas id="cubeHistRgb" width="180" height="60" title="Per-channel output"></canvas>
+        </div>
+        <div id="cubeStats"></div>
+        <div class="cubemini" id="cubeMiniSwatches"></div>
+        <p class="tiny">The heat slice shows the cube at green = mid; histograms show the distribution of all outputs. Updates as you grade.</p>
+      </div>
+    </section>
+
+    <section class="closed">
+      <h2>Extract look from photo</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="exSingle">Estimate from one photo…</button>
+        <input type="file" id="exSingleF" accept="image/*" hidden>
+      </div>
+      <p class="tiny">Single-photo mode analyses tone, white balance, saturation and split toning, then sets the controls to approximate that look — a starting point to refine.</p>
+    </section>
+
+    <section class="closed">
+      <h2>Import Lightroom preset</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="lrImport">Choose .xmp or .lrtemplate…</button>
+        <input type="file" id="lrFile" hidden>
+      </div>
+      <p class="tiny" id="lrReport">Pick any .xmp or .lrtemplate file (the picker shows all files, because iPadOS hides unknown types when filtered). Converts the colour parts of a Lightroom preset into these controls, so you can export it as a LUT. Approximate: Lightroom works on raw data, a LUT works on rendered pixels.</p>
+    </section>
+
+    <footer>
+      <div class="strengthrow"><label>Look strength</label><input type="range" id="strength" min="0" max="100" value="100"><input type="number" class="num" value="100"></div>
+      <input id="lutname" value="my_grade" spellcheck="false">
+      <div class="exprow">
+        <select id="lutsize">
+          <option value="17">17-point</option>
+          <option value="33" selected>33-point (cameras)</option>
+          <option value="65">65-point (editing only)</option>
+        </select>
+        <button id="export" disabled>Export LUT (.cube)</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label for="lumixStyle" title="Lumix bodies read this from the file to pick the base Photo Style. Without it they assume V-Log.">Base Photo Style</label>
+        <select id="lumixStyle">
+          <option value="">None (camera assumes V-Log)</option>
+          <option value="VLOG" selected>V-Log</option>
+          <option value="STD">Standard</option>
+          <option value="VIVD">Vivid</option>
+          <option value="NAT">Natural</option>
+          <option value="LCLASN">L.ClassicNeo</option>
+          <option value="FLAT">Flat</option>
+          <option value="LAND">Landscape</option>
+          <option value="PORT">Portrait</option>
+          <option value="MONO">Monochrome</option>
+          <option value="LMONO">L.Monochrome</option>
+          <option value="LMONOD">L.Monochrome D</option>
+          <option value="LMONOS">L.Monochrome S</option>
+          <option value="LEICAMONO">LEICA Monochrome</option>
+          <option value="CNED2">Cinelike D2</option>
+          <option value="CNEV2">Cinelike V2</option>
+          <option value="709L">Like709</option>
+          <option value="HLG">HLG</option>
+          <option value="LOGC3">ARRI LogC3</option>
+        </select>
+      </div>
+      <button id="exportPack">Export look pack — every saved look as .cube</button>
+      <p class="hint">Standard .cube format · loads as an in-camera real-time LUT and in Resolve, Premiere, FCP, Photoshop</p>
+      <p class="hint" id="lumixHint"></p>
+    </footer>
+  </aside>
+</main>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const clamp=v=>v<0?0:v>1?1:v;
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255);
+
+/* ================= state ================= */
+const sliders=["exposure","contrast","gamma","fade","highlights","shadows","blacks",
+  "temp","tint","sat","vib","skin","colorNorm","shAmt","hiAmt",
+  "secHueC","secRange","secSoft","secHue","secSat","secLum","strength"];
+const DEF={secRange:40,secSoft:50,strength:100};
+const SECTION_DEFAULTS={tone:true,colour:true,curves:true,hueShift:true,hueSat:true,lumaSat:true,secondary:true,colorBalance:true,splitToning:true};
+const state={};
+sliders.forEach(s=>state[s]=DEF[s]||0);
+state.shCol=hex2rgb("#406080");
+state.hiCol=hex2rgb("#e0a060");
+state.logMode=false;
+state.enabled={...SECTION_DEFAULTS};
+
+function syncSectionEnabled(){
+  document.querySelectorAll("[data-enable]").forEach(input=>{
+    const enabled=state.enabled[input.dataset.enable]!==false;
+    input.checked=enabled;
+    input.closest("section").classList.toggle("section-disabled",!enabled);
+  });
+}
+
+const defCurve=()=>[{x:0,y:0},{x:1,y:1}];
+const curves={m:defCurve(),r:defCurve(),g:defCurve(),b:defCurve()};
+let curveCh="m";
+
+const HUEN=8;
+const hueShift=new Array(HUEN).fill(0);
+const hueSat=new Array(HUEN).fill(0);
+const LUMN=8;
+const lumaSat=new Array(LUMN).fill(0);
+
+const cbState={
+  shadows:{x:0,y:0},
+  midtones:{x:0,y:0},
+  highlights:{x:0,y:0}
+};
+
+let baseLUT=null;
+let baseOn=true;
+let normalisationGains=[1,1,1];
+let applyingLookStack=false;
+
+function updateNormalisationGains(src){
+  const amount=state.enabled.colour?state.colorNorm/100:0;
+  if(!amount||!src){normalisationGains=[1,1,1];return;}
+  const data=src.data,step=Math.max(4,Math.floor(data.length/40000)*4);
+  let r=0,g=0,b=0,n=0;
+  for(let i=0;i<data.length;i+=step){r+=data[i];g+=data[i+1];b+=data[i+2];n++;}
+  const neutral=(r+g+b)/(3*n);
+  normalisationGains=[r,g,b].map(channel=>{
+    const gain=Math.max(.25,Math.min(4,neutral/Math.max(channel/n,1)));
+    return 1+(gain-1)*amount;
+  });
+}
+
+/* ================= curve maths ================= */
+function buildCurveLUT(pts){
+  const p=[...pts].sort((a,b)=>a.x-b.x),n=p.length,lut=new Float32Array(256);
+  if(n===1){lut.fill(clamp(p[0].y));return lut;}
+  const dx=[],dy=[],m=[];
+  for(let i=0;i<n-1;i++){dx[i]=Math.max(p[i+1].x-p[i].x,1e-6);dy[i]=p[i+1].y-p[i].y;m[i]=dy[i]/dx[i];}
+  const t=[m[0]];
+  for(let i=1;i<n-1;i++)t[i]=(m[i-1]*m[i]<=0)?0:2*m[i-1]*m[i]/(m[i-1]+m[i]);
+  t[n-1]=m[n-2];
+  for(let k=0;k<256;k++){
+    const x=k/255;
+    if(x<=p[0].x){lut[k]=clamp(p[0].y);continue;}
+    if(x>=p[n-1].x){lut[k]=clamp(p[n-1].y);continue;}
+    let i=0;while(i<n-2&&x>p[i+1].x)i++;
+    const h=dx[i],s=(x-p[i].x)/h,s2=s*s,s3=s2*s;
+    lut[k]=clamp(p[i].y*(2*s3-3*s2+1)+h*t[i]*(s3-2*s2+s)+p[i+1].y*(-2*s3+3*s2)+h*t[i+1]*(s3-s2));
+  }
+  return lut;
+}
+let lutM,lutR,lutG,lutB;
+function rebuildCurves(){lutM=buildCurveLUT(curves.m);lutR=buildCurveLUT(curves.r);lutG=buildCurveLUT(curves.g);lutB=buildCurveLUT(curves.b);}
+rebuildCurves();
+const cAt=(lut,v)=>lut[Math.round(clamp(v)*255)];
+
+/* ================= colour helpers ================= */
+function rgb2hsl(r,g,b){
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;
+  const l=(mx+mn)/2,s=d===0?0:d/(1-Math.abs(2*l-1));
+  if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;if(h<0)h+=360;}
+  return[h,s,l];
+}
+function hsl2rgb(h,s,l){
+  const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;
+  let r=0,g=0,b=0;
+  if(h<60){r=c;g=x}else if(h<120){r=x;g=c}else if(h<180){g=c;b=x}
+  else if(h<240){g=x;b=c}else if(h<300){r=x;b=c}else{r=c;b=x}
+  return[r+m,g+m,b+m];
+}
+const sm=t=>t*t*(3-2*t);
+function periodic8(arr,h){
+  const f=h/360*HUEN,i0=Math.floor(f)%HUEN,i1=(i0+1)%HUEN,t=sm(f-Math.floor(f));
+  return arr[i0]*(1-t)+arr[i1]*t;
+}
+function linear8(arr,v){
+  const f=clamp(v)*(LUMN-1),i0=Math.floor(f),i1=Math.min(i0+1,LUMN-1),t=sm(f-i0);
+  return arr[i0]*(1-t)+arr[i1]*t;
+}
+
+function peakMask(l,center,halfWidth){
+  const t=Math.max(0,1-Math.abs(l-center)/halfWidth);
+  return t*t*(3-2*t);
+}
+function sstep(a,b,t){
+  if(b===a)return t<a?0:1;
+  t=Math.max(0,Math.min(1,(t-a)/(b-a)));
+  return t*t*(3-2*t);
+}
+
+function vlog2rec709(v){
+  const b=0.00873,c=0.241514,d=0.598206;
+  let lin = v>=0.181 ? Math.pow(10,(v-d)/c)-b : (v-0.125)/5.6;
+  if(lin<0)lin=0;
+  lin*=4.0;
+  const tm=lin/(1+lin*0.85);
+  return clamp(Math.pow(tm,1/2.2));
+}
+
+function sampleBase(r,g,b){
+  const N=baseLUT.size,d=baseLUT.data,m=N-1;
+  const rf=clamp(r)*m,gf=clamp(g)*m,bf=clamp(b)*m;
+  const r0=rf|0,g0=gf|0,b0=bf|0;
+  const r1=Math.min(r0+1,m),g1=Math.min(g0+1,m),b1=Math.min(b0+1,m);
+  const fr=rf-r0,fg=gf-g0,fb=bf-b0;
+  const idx=(R,G,B)=>((B*N+G)*N+R)*3;
+  const out=[0,0,0];
+  for(let ch=0;ch<3;ch++){
+    const c000=d[idx(r0,g0,b0)+ch],c100=d[idx(r1,g0,b0)+ch],
+          c010=d[idx(r0,g1,b0)+ch],c110=d[idx(r1,g1,b0)+ch],
+          c001=d[idx(r0,g0,b1)+ch],c101=d[idx(r1,g0,b1)+ch],
+          c011=d[idx(r0,g1,b1)+ch],c111=d[idx(r1,g1,b1)+ch];
+    const c00=c000+(c100-c000)*fr,c10=c010+(c110-c010)*fr,
+          c01=c001+(c101-c001)*fr,c11=c011+(c111-c011)*fr;
+    const c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;
+    out[ch]=clamp(c0+(c1-c0)*fb);
+  }
+  return out;
+}
+
+/* ================= the transfer function ================= */
+function grade(r,g,b){
+  if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+  if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
+  if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
+  r=clamp(r*normalisationGains[0]);g=clamp(g*normalisationGains[1]);b=clamp(b*normalisationGains[2]);
+  const inR=r,inG=g,inB=b;
+  const norm=state.enabled.colour?state.colorNorm/100:0;
+  const t=state.enabled.colour?state.temp/300*(1-norm):0,ti=state.enabled.colour?state.tint/300*(1-norm):0;
+  r+=t;b-=t;g+=ti;r-=ti*0.5;b-=ti*0.5;
+  const ex=Math.pow(2,(state.enabled.tone?state.exposure:0)/100);r*=ex;g*=ex;b*=ex;
+  r=clamp(r);g=clamp(g);b=clamp(b);
+  const gm=Math.pow(2,-(state.enabled.tone?state.gamma:0)/120);
+  r=Math.pow(r,gm);g=Math.pow(g,gm);b=Math.pow(b,gm);
+  const c=(state.enabled.tone?state.contrast:0)/100;
+  const con=v=>clamp(v+c*(v-0.5)*(1-Math.abs(2*v-1))*1.2+c*(v-0.5)*0.4);
+  r=con(r);g=con(g);b=con(b);
+  const f=(state.enabled.tone?state.fade:0)/100*0.18;
+  r=r*(1-f)+f;g=g*(1-f)+f;b=b*(1-f)+f;
+
+  if(state.enabled.tone&&(state.highlights||state.shadows||state.blacks)){
+    const lt=0.2126*r+0.7152*g+0.0722*b;
+    const bkT=Math.max(0,1-lt/0.15);
+    const bkMask=bkT*bkT*(3-2*bkT);
+    const shMask=peakMask(lt,0.3,0.4);
+    const hiMask=peakMask(lt,0.7,0.4);
+    const adj=state.blacks/100*0.5*bkMask
+            +state.shadows/100*0.5*shMask
+            +state.highlights/100*0.5*hiMask;
+    if(adj!==0){
+      const ef=Math.pow(2,adj);
+      r*=ef;g*=ef;b*=ef;
+    }
+  }
+
+  if(state.enabled.curves){r=cAt(lutR,cAt(lutM,r));g=cAt(lutG,cAt(lutM,g));b=cAt(lutB,cAt(lutM,b));}
+  let needHsl=false;
+  for(let i=0;i<HUEN;i++)if((state.enabled.hueShift&&hueShift[i])||(state.enabled.hueSat&&hueSat[i])){needHsl=true;break;}
+  if(needHsl){
+    const[h,s,l]=rgb2hsl(r,g,b);
+    if(s>0.02){
+      let nh=(h+(state.enabled.hueShift?periodic8(hueShift,h)*60*Math.min(1,s*4):0))%360;if(nh<0)nh+=360;
+      let ns=clamp(s*(1+(state.enabled.hueSat?periodic8(hueSat,h)*Math.min(1,s*4):0)));
+      [r,g,b]=hsl2rgb(nh,ns,l);
+    }
+  }
+  if(state.enabled.secondary&&(state.secHue||state.secSat||state.secLum)){
+    const[h,sx,lx]=rgb2hsl(r,g,b);
+    if(sx>0.02){
+      let d=Math.abs(h-state.secHueC)%360;if(d>180)d=360-d;
+      const range=Math.max(state.secRange,1e-3);
+      let w=0;
+      if(d<=range){
+        const core=range*(1-state.secSoft/100);
+        w=d<=core?1:1-sm((d-core)/Math.max(range-core,1e-3));
+      }
+      w*=Math.min(1,sx*4);
+      if(w>0){
+        let nh=(h+state.secHue*w)%360;if(nh<0)nh+=360;
+        const ns=clamp(sx*(1+state.secSat/100*w));
+        [r,g,b]=hsl2rgb(nh,ns,lx);
+        const lf=1+state.secLum/100*0.6*w;
+        r=clamp(r*lf);g=clamp(g*lf);b=clamp(b*lf);
+      }
+    }
+  }
+
+  const cbAny=cbState.shadows.x||cbState.shadows.y
+            ||cbState.midtones.x||cbState.midtones.y
+            ||cbState.highlights.x||cbState.highlights.y;
+  if(state.enabled.colorBalance&&cbAny){
+    const lcb=0.2126*r+0.7152*g+0.0722*b;
+    const shCbMask=1-sstep(0.15,0.5,lcb);
+    const mdCbMask=Math.max(0,1-Math.abs(lcb-0.5)*2);
+    const hiCbMask=sstep(0.5,0.85,lcb);
+    const regions=[
+      {mask:shCbMask,st:cbState.shadows},
+      {mask:mdCbMask,st:cbState.midtones},
+      {mask:hiCbMask,st:cbState.highlights}
+    ];
+    let dR=0,dG=0,dB=0;
+    for(const reg of regions){
+      const dx=reg.st.x,dy=reg.st.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<0.001)continue;
+      const hue=((Math.atan2(dy,dx)*180/Math.PI)+360)%360;
+      const sat=Math.min(1,dist);
+      const[tr,tg,tb]=hsl2rgb(hue,sat,0.5);
+      const intensity=0.4*reg.mask;
+      dR+=(tr-0.5)*intensity;
+      dG+=(tg-0.5)*intensity;
+      dB+=(tb-0.5)*intensity;
+    }
+    r+=dR;g+=dG;b+=dB;
+  }
+
+  let l2=0.2126*r+0.7152*g+0.0722*b;
+  let anyLs=false;for(let i=0;i<LUMN;i++)if(state.enabled.lumaSat&&lumaSat[i]){anyLs=true;break;}
+  let satEff=1+(state.enabled.colour?state.sat:0)/100;
+  if(anyLs)satEff*=1+linear8(lumaSat,l2);
+  if(state.enabled.colour&&state.vib){const cs=Math.max(r,g,b)-Math.min(r,g,b);satEff*=1+(state.vib/100)*(1-cs);}
+  if(satEff<0)satEff=0;
+  r=clamp(l2+(r-l2)*satEff);g=clamp(l2+(g-l2)*satEff);b=clamp(l2+(b-l2)*satEff);
+  l2=0.2126*r+0.7152*g+0.0722*b;
+  const sw=(1-l2)*(1-l2)*(state.enabled.splitToning?state.shAmt:0)/100*0.5,hw=l2*l2*(state.enabled.splitToning?state.hiAmt:0)/100*0.5;
+  r=clamp(r+(state.shCol[0]-0.5)*sw+(state.hiCol[0]-0.5)*hw);
+  g=clamp(g+(state.shCol[1]-0.5)*sw+(state.hiCol[1]-0.5)*hw);
+  b=clamp(b+(state.shCol[2]-0.5)*sw+(state.hiCol[2]-0.5)*hw);
+  if(state.enabled.colour&&state.skin>0){
+    const[hI,sI]=rgb2hsl(inR,inG,inB);
+    let w=0;
+    if(sI>0.05&&sI<0.75){
+      const d=Math.min(Math.abs(hI-25),360-Math.abs(hI-25));
+      if(d<28)w=1-sm(d/28);
+    }
+    if(w>0){
+      const k=w*state.skin/100;
+      const lOut=0.2126*r+0.7152*g+0.0722*b,lIn=0.2126*inR+0.7152*inG+0.0722*inB;
+      const sc=lIn>0.004?lOut/lIn:1;
+      const pr=clamp(inR*sc),pg=clamp(inG*sc),pb=clamp(inB*sc);
+      r=r+(pr-r)*k;g=g+(pg-g)*k;b=b+(pb-b)*k;
+    }
+  }
+  if(state.strength<100){
+    const ks=state.strength/100;
+    r=inR+(r-inR)*ks;g=inG+(g-inG)*ks;b=inB+(b-inB)*ks;
+  }
+  return[r,g,b];
+}
+
+/* ================= images & preview ================= */
+const view=$("view"),ctx=view.getContext("2d");
+const viewwrap=$("viewwrap");
+const images=[];
+let cur=-1,showOriginal=false,wipeX=0.5,wipeDragging=false;
+let lastOut=null;
+const THUMB_MIN=54,THUMB_MAX=THUMB_MIN*4;
+let thumbSize=THUMB_MIN;
+const previewZoom={scale:1,x:0,y:0};
+
+$("thumbs").addEventListener("wheel",e=>{
+  if(images.length<2)return;
+  e.preventDefault();
+  const next=Math.max(THUMB_MIN,Math.min(THUMB_MAX,thumbSize-(Math.sign(e.deltaY)*12)));
+  if(next===thumbSize)return;
+  thumbSize=next;
+  document.documentElement.style.setProperty("--thumb-size",thumbSize+"px");
+  requestAnimationFrame(fitPreviewToStage);
+},{passive:false});
+
+function resetPreviewZoom(){
+  previewZoom.scale=1;previewZoom.x=0;previewZoom.y=0;
+  view.style.transform="";
+}
+function fitPreviewToStage(){
+  if(cur<0)return;
+  const stage=$("stage"),frame=$("filmframe"),previewArea=$("previewArea"),thumbs=$("thumbs"),style=getComputedStyle(stage);
+  const visible=[...stage.children].filter(el=>getComputedStyle(el).display!=="none");
+  const otherHeight=visible.filter(el=>el!==previewArea).reduce((sum,el)=>sum+el.offsetHeight,0);
+  const gap=(visible.length-1)*(parseFloat(style.rowGap)||parseFloat(style.gap)||0);
+  const frameChrome=frame.offsetHeight-viewwrap.offsetHeight;
+  const thumbsWidth=getComputedStyle(thumbs).display==="none"?0:thumbs.offsetWidth+10;
+  const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-thumbsWidth-32;
+  const height=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-otherHeight-gap-frameChrome;
+  const image=images[cur].data,scale=Math.max(0.01,Math.min(width/image.width,height/image.height));
+  view.style.width=Math.floor(image.width*scale)+"px";
+  view.style.height=Math.floor(image.height*scale)+"px";
+  applyPreviewZoom();
+}
+function clampPreviewPan(){
+  const r=viewwrap.getBoundingClientRect();
+  previewZoom.x=Math.min(0,Math.max(r.width-view.offsetWidth*previewZoom.scale,previewZoom.x));
+  previewZoom.y=Math.min(0,Math.max(r.height-view.offsetHeight*previewZoom.scale,previewZoom.y));
+}
+function applyPreviewZoom(){
+  clampPreviewPan();
+  view.style.transform=`translate(${previewZoom.x}px,${previewZoom.y}px) scale(${previewZoom.scale})`;
+  positionWipe();
+}
+function previewPoint(e){
+  const r=viewwrap.getBoundingClientRect();
+  return{
+    x:Math.max(0,Math.min(view.offsetWidth,(e.clientX-r.left-previewZoom.x)/previewZoom.scale)),
+    y:Math.max(0,Math.min(view.offsetHeight,(e.clientY-r.top-previewZoom.y)/previewZoom.scale))
+  };
+}
+
+function fail(msg){
+  const e=$("droperr");e.textContent=msg;e.style.display="block";
+  let t=document.getElementById("toast");
+  if(!t){
+    t=document.createElement("div");t.id="toast";
+    t.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99;background:#2a1714;border:1px solid var(--red);color:var(--text);font:12px var(--mono);padding:10px 16px;border-radius:3px;max-width:80vw;box-shadow:0 8px 24px rgba(0,0,0,.5)";
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.display="block";
+  clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",6000);
+}
+
+function addImageData(idata,name,srcURL){
+  const th=document.createElement("canvas");
+  const tw=Math.round(idata.width*54/idata.height);
+  th.width=tw;th.height=54;th.title=name;
+  const wrap=document.createElement("div");wrap.className="thumb";
+  const del=document.createElement("button");del.className="tdel";del.textContent="\u00D7";del.title="Remove "+name;
+  wrap.append(th,del);
+  const rec={data:idata,thumb:th,wrap,name,srcURL:srcURL||null};
+  images.push(rec);
+  th.addEventListener("click",()=>{selectImage(images.indexOf(rec));});
+  del.addEventListener("click",e=>{e.stopPropagation();removeImage(images.indexOf(rec));});
+  $("thumbs").appendChild(wrap);
+  selectImage(images.length-1);
+  refreshUIAfterLoad();
+}
+function refreshUIAfterLoad(){
+  $("drop").style.display="none";
+  $("filmframe").style.display="block";
+  $("stagebar").style.display="flex";
+  $("thumbs").style.display=images.length>1?"flex":"none";
+  $("scopes").style.display=$("scopeOn").checked?"flex":"none";
+  $("export").disabled=false;
+  requestAnimationFrame(fitPreviewToStage);
+}
+function selectImage(i){
+  cur=i;
+  images.forEach((im,k)=>im.wrap.classList.toggle("on",k===i));
+  resetPreviewZoom();
+  view.width=images[i].data.width;view.height=images[i].data.height;
+  requestAnimationFrame(fitPreviewToStage);
+  render();
+}
+function loadFiles(list){
+  [...list].forEach(file=>{
+    if(!/^image\//.test(file.type||""))return fail("Skipped a non-image file.");
+    const reader=new FileReader();
+    reader.onerror=()=>fail("Couldn't read "+file.name);
+    reader.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>fail("Couldn't decode "+file.name+". Try a JPG or PNG.");
+      img.onload=()=>{
+        try{
+          const maxW=1100,sc=Math.min(1,maxW/img.width);
+          const w=Math.max(1,Math.round(img.width*sc)),h=Math.max(1,Math.round(img.height*sc));
+          const sc2=document.createElement("canvas");sc2.width=w;sc2.height=h;
+          sc2.getContext("2d").drawImage(img,0,0,w,h);
+          addImageData(sc2.getContext("2d").getImageData(0,0,w,h),file.name,reader.result);
+        }catch(err){fail("Browser blocked image pixels: "+err.message);}
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function makeTestChart(){
+  const w=960,h=640,cv=document.createElement("canvas");cv.width=w;cv.height=h;
+  const c=cv.getContext("2d");
+  c.fillStyle="#777";c.fillRect(0,0,w,h);
+  const checker=["#735244","#c29682","#627a9d","#576c43","#8580b1","#67bdaa",
+                 "#d67e2c","#505ba6","#c15a63","#5e3c6c","#9dbc40","#e0a32e",
+                 "#383d96","#469449","#af363c","#e7c71f","#bb5695","#0885a1",
+                 "#f3f3f2","#c8c8c8","#a0a0a0","#7a7a7a","#555555","#343434"];
+  const pw=w/6,ph=(h*0.5)/4;
+  checker.forEach((col,i)=>{
+    const x=(i%6)*pw,y=Math.floor(i/6)*ph;
+    c.fillStyle=col;c.fillRect(x+4,y+4,pw-8,ph-8);
+  });
+  const gy=h*0.5+8;
+  for(let x=0;x<w;x++){const v=Math.round(x/(w-1)*255);c.fillStyle=`rgb(${v},${v},${v})`;c.fillRect(x,gy,1,60);}
+  for(let x=0;x<w;x++){c.fillStyle=`hsl(${x/(w-1)*360} 80% 50%)`;c.fillRect(x,gy+68,1,60);}
+  const skins=["#ffe0cd","#f5cba7","#e0ac69","#c68642","#8d5524","#5a3a22"];
+  const sw2=w/skins.length;
+  skins.forEach((col,i)=>{c.fillStyle=col;c.fillRect(i*sw2+4,gy+136,sw2-8,h-gy-144);});
+  addImageData(c.getImageData(0,0,w,h),"test-chart");
+}
+
+let raf=null;
+function render(){
+  if(raf)return;
+  raf=requestAnimationFrame(()=>{
+    raf=null;
+    updateNormalisationGains(cur>=0?images[cur].data:null);
+    drawRamp();drawCurves();drawStrips();
+    scheduleCubeAnalysis();
+    if(cur<0)return;
+    const src=images[cur].data;
+    const N=25,plut=new Float32Array(N*N*N*3);
+    let i=0;
+    for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+      const o=grade(r/(N-1),g/(N-1),b/(N-1));
+      plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];
+    }
+    const out=applyLut(src,plut,N);
+    lastOut=out;
+    if(showOriginal&&!$("wipeOn").checked){ctx.putImageData(src,0,0);}
+    else{
+      ctx.putImageData(out,0,0);
+      if($("wipeOn").checked){
+        const px=Math.round(wipeX*src.width);
+        if(px>0)ctx.putImageData(src,0,0,0,0,px,src.height);
+        positionWipe();
+      }
+    }
+    // Overlays are isolated: a fault in one must never abort the rest of the
+    // frame (that would silently freeze the histogram and thumbnails too).
+    if($("clipOn").checked){
+      try{drawClipping(out,wipeX,$("wipeOn").checked);}catch(err){console.error("clipping overlay:",err);}
+    }
+    if($("scopeOn").checked){
+      try{drawHisto(out);}catch(err){console.error("histogram:",err);}
+    }
+    try{scheduleThumbs(plut,N);}catch(err){console.error("thumbnails:",err);}
+  });
+}
+function applyLut(src,plut,N){
+  const out=new ImageData(src.width,src.height);
+  const sd=src.data,od=out.data,m=(N-1)/255,NN=N*N;
+  for(let p=0;p<sd.length;p+=4){
+    const rf=sd[p]*m,gf=sd[p+1]*m,bf=sd[p+2]*m;
+    const r0=rf|0,g0=gf|0,b0=bf|0;
+    const r1=r0<N-1?r0+1:r0,g1=g0<N-1?g0+1:g0,b1=b0<N-1?b0+1:b0;
+    const fr=rf-r0,fg=gf-g0,fb=bf-b0;
+    const i000=((b0*N+g0)*N+r0)*3,i100=((b0*N+g0)*N+r1)*3,
+          i010=((b0*N+g1)*N+r0)*3,i110=((b0*N+g1)*N+r1)*3,
+          i001=((b1*N+g0)*N+r0)*3,i101=((b1*N+g0)*N+r1)*3,
+          i011=((b1*N+g1)*N+r0)*3,i111=((b1*N+g1)*N+r1)*3;
+    for(let ch=0;ch<3;ch++){
+      const c00=plut[i000+ch]+(plut[i100+ch]-plut[i000+ch])*fr,
+            c10=plut[i010+ch]+(plut[i110+ch]-plut[i010+ch])*fr,
+            c01=plut[i001+ch]+(plut[i101+ch]-plut[i001+ch])*fr,
+            c11=plut[i011+ch]+(plut[i111+ch]-plut[i011+ch])*fr;
+      const c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;
+      od[p+ch]=255*(c0+(c1-c0)*fb);
+    }
+    od[p+3]=255;
+  }
+  return out;
+}
+
+/* === REPAIRED clipping overlay ===
+   Works on the graded `out` ImageData (the source of truth) instead of
+   canvas pixels, so wipe mode does not interfere. The wipe split is
+   respected: original side of the split stays clean. A halo+core pattern
+   makes the warning more visible than a flat tint. */
+function drawClipping(out,wipeXc,wipeOn){
+  const d=out.data;
+  const W=out.width,H=out.height;
+  const wipePx=wipeOn?Math.round(wipeXc*W):0;
+  const overlay=new Uint8ClampedArray(d.length);
+  // Pack core/halo ARGB tuples once
+  const HI_CORE_R=232,HI_CORE_G=60,HI_CORE_B=76;       // warm red
+  const HI_HALO_R=232,HI_HALO_G=120,HI_HALO_B=120;
+  const LO_CORE_R=60,LO_CORE_G=140,LO_CORE_B=232;       // cool blue
+  const LO_HALO_R=120,LO_HALO_G=170,LO_HALO_B=232;
+  for(let p=0;p<d.length;p+=4){
+    const r=d[p],g=d[p+1],b=d[p+2];
+    const hi=r>=254||g>=254||b>=254;
+    const lo=r<=1&&g<=1&&b<=1;
+    if(!hi&&!lo)continue;
+    // respect the wipe: only overlay on the graded side
+    const x=(p/4)%W;
+    if(wipeOn&&x<wipePx)continue;
+    const cR=hi?HI_CORE_R:LO_CORE_R,cG=hi?HI_CORE_G:LO_CORE_G,cB=hi?HI_CORE_B:LO_CORE_B;
+    const hR=hi?HI_HALO_R:LO_HALO_R,hG=hi?HI_HALO_G:LO_HALO_G,hB=hi?HI_HALO_B:LO_HALO_B;
+    // 1-pixel solid core
+    overlay[p]=cR;overlay[p+1]=cG;overlay[p+2]=cB;overlay[p+3]=255;
+    // 4-neighbour soft halo
+    const y=((p/4)/W)|0;
+    if(x>0)   {const q=p-4;overlay[q]=hR;overlay[q+1]=hG;overlay[q+2]=hB;overlay[q+3]=180;}
+    if(x<W-1) {const q=p+4;overlay[q]=hR;overlay[q+1]=hG;overlay[q+2]=hB;overlay[q+3]=180;}
+    if(y>0)   {const q=p-W*4;overlay[q]=hR;overlay[q+1]=hG;overlay[q+2]=hB;overlay[q+3]=180;}
+    if(y<H-1) {const q=p+W*4;overlay[q]=hR;overlay[q+1]=hG;overlay[q+2]=hB;overlay[q+3]=180;}
+  }
+  // Composite the overlay onto the current canvas without touching the source buffer
+  const cv=ctx.getImageData(0,0,W,H);
+  const cd=cv.data;
+  for(let p=0;p<cd.length;p+=4){
+    const a=overlay[p+3];
+    if(a===0)continue;
+    const af=a/255;
+    cd[p]  =overlay[p]  *af + cd[p]  *(1-af);
+    cd[p+1]=overlay[p+1]*af + cd[p+1]*(1-af);
+    cd[p+2]=overlay[p+2]*af + cd[p+2]*(1-af);
+  }
+  ctx.putImageData(cv,0,0);
+}
+function drawHisto(out){
+  const hcv=$("histo"),hc=hcv.getContext("2d");
+  const bins=[new Float64Array(64),new Float64Array(64),new Float64Array(64)];
+  const d=out.data;
+  for(let p=0;p<d.length;p+=16){
+    bins[0][d[p]>>2]++;bins[1][d[p+1]>>2]++;bins[2][d[p+2]>>2]++;
+  }
+  let mx=1;bins.forEach(b=>{for(const v of b)if(v>mx)mx=v;});
+  hc.fillStyle="#0d0c09";hc.fillRect(0,0,hcv.width,hcv.height);
+  const cols=["rgba(230,80,70,.8)","rgba(110,210,110,.8)","rgba(100,140,240,.8)"];
+  hc.globalCompositeOperation="screen";
+  bins.forEach((b,ci)=>{
+    hc.fillStyle=cols[ci];
+    for(let k=0;k<64;k++){
+      const hgt=Math.pow(b[k]/mx,0.5)*(hcv.height-4);
+      hc.fillRect(k*hcv.width/64,hcv.height-hgt,hcv.width/64-0.5,hgt);
+    }
+  });
+  hc.globalCompositeOperation="source-over";
+}
+let thumbTimer=null;
+function scheduleThumbs(plut,N){
+  if(images.length<2)return;
+  clearTimeout(thumbTimer);
+  thumbTimer=setTimeout(()=>{
+    images.forEach(im=>{
+      const tc=im.thumb.getContext("2d");
+      const sc=document.createElement("canvas");sc.width=im.thumb.width;sc.height=54;
+      const scx=sc.getContext("2d");
+      const full=document.createElement("canvas");full.width=im.data.width;full.height=im.data.height;
+      full.getContext("2d").putImageData(im.data,0,0);
+      scx.drawImage(full,0,0,sc.width,sc.height);
+      const small=scx.getImageData(0,0,sc.width,sc.height);
+      tc.putImageData(applyLut(small,plut,N),0,0);
+    });
+  },250);
+}
+function drawRamp(){
+  const rc=$("ramp"),c=rc.getContext("2d"),w=rc.width;
+  for(let x=0;x<w;x++){
+    const v=x/(w-1),[r,g,b]=grade(v,v,v);
+    c.fillStyle=`rgb(${r*255|0},${g*255|0},${b*255|0})`;
+    c.fillRect(x,0,1,rc.height);
+  }
+}
+function positionWipe(){
+  const wl=$("wipeline"),r=view.getBoundingClientRect(),wr=$("viewwrap").getBoundingClientRect();
+  wl.style.display=$("wipeOn").checked?"block":"none";
+  wl.style.left=(r.left-wr.left+wipeX*r.width)+"px";
+}
+
+/* ================= curves UI ================= */
+const ccv=$("curves"),cc=ccv.getContext("2d");
+const PAD=10;
+let curveView={x0:0,x1:1,y0:0,y1:1};
+const cx2px=x=>PAD+(x-curveView.x0)/(curveView.x1-curveView.x0)*(ccv.width-2*PAD);
+const cy2px=y=>ccv.height-PAD-(y-curveView.y0)/(curveView.y1-curveView.y0)*(ccv.height-2*PAD);
+const px2cx=px=>clamp(curveView.x0+(px-PAD)/(ccv.width-2*PAD)*(curveView.x1-curveView.x0));
+const px2cy=py=>clamp(curveView.y0+(ccv.height-PAD-py)/(ccv.height-2*PAD)*(curveView.y1-curveView.y0));
+function clampCurveRange(lo,hi){
+  let size=hi-lo;
+  if(size>1)size=1;
+  if(size<0.02)size=0.02;
+  if(lo<0){lo=0;hi=lo+size;}
+  if(hi>1){hi=1;lo=hi-size;}
+  return[lo,hi];
+}
+function zoomCurves(e){
+  e.preventDefault();
+  const[px,py]=curvePos(e);
+  const cx=px2cx(px),cy=px2cy(py);
+  const factor=e.deltaY<0?0.85:1/0.85;
+  let x0=cx+(curveView.x0-cx)*factor,x1=cx+(curveView.x1-cx)*factor;
+  let y0=cy+(curveView.y0-cy)*factor,y1=cy+(curveView.y1-cy)*factor;
+  [x0,x1]=clampCurveRange(x0,x1);[y0,y1]=clampCurveRange(y0,y1);
+  curveView={x0,x1,y0,y1};
+  drawCurves();
+}
+const chColour={m:"#e8e2d4",r:"#e06a5a",g:"#7ec07a",b:"#6a90e0"};
+let hoverCurveValues=null;
+function drawCurves(){
+  cc.clearRect(0,0,ccv.width,ccv.height);
+  cc.strokeStyle="#332e25";cc.lineWidth=1;
+  for(let i=1;i<4;i++){
+    cc.beginPath();cc.moveTo(cx2px(i/4),cy2px(0));cc.lineTo(cx2px(i/4),cy2px(1));cc.stroke();
+    cc.beginPath();cc.moveTo(cx2px(0),cy2px(i/4));cc.lineTo(cx2px(1),cy2px(i/4));cc.stroke();
+  }
+  cc.strokeStyle="#4a4336";
+  cc.beginPath();cc.moveTo(cx2px(0),cy2px(0));cc.lineTo(cx2px(1),cy2px(1));cc.stroke();
+  for(const ch of["m","r","g","b"]){
+    if(ch===curveCh)continue;
+    const lut=buildCurveLUT(curves[ch]);
+    cc.globalAlpha=.22;cc.strokeStyle=chColour[ch];cc.lineWidth=1;cc.beginPath();
+    for(let k=0;k<256;k++){const X=cx2px(k/255),Y=cy2px(lut[k]);k?cc.lineTo(X,Y):cc.moveTo(X,Y);}
+    cc.stroke();cc.globalAlpha=1;
+  }
+  const lut=buildCurveLUT(curves[curveCh]);
+  cc.strokeStyle=chColour[curveCh];cc.lineWidth=2;cc.beginPath();
+  for(let k=0;k<256;k++){const X=cx2px(k/255),Y=cy2px(lut[k]);k?cc.lineTo(X,Y):cc.moveTo(X,Y);}
+  cc.stroke();
+  if(hoverCurveValues){
+    cc.save();cc.strokeStyle="#f6a352";cc.lineWidth=1;cc.setLineDash([3,3]);
+    cc.beginPath();cc.moveTo(cx2px(hoverCurveValues[curveCh]),cy2px(0));cc.lineTo(cx2px(hoverCurveValues[curveCh]),cy2px(1));cc.stroke();
+    cc.restore();
+  }
+  for(const p of curves[curveCh]){
+    cc.fillStyle=chColour[curveCh];cc.beginPath();cc.arc(cx2px(p.x),cy2px(p.y),4.5,0,7);cc.fill();
+    cc.strokeStyle="#15130f";cc.lineWidth=1.5;cc.stroke();
+  }
+}
+let dragPt=null;
+const curvePos=e=>{const r=ccv.getBoundingClientRect();return[(e.clientX-r.left)*ccv.width/r.width,(e.clientY-r.top)*ccv.height/r.height];};
+function nearestPoint(px,py){
+  let best=null,bd=144;
+  for(const p of curves[curveCh]){const d=(cx2px(p.x)-px)**2+(cy2px(p.y)-py)**2;if(d<bd){bd=d;best=p;}}
+  return best;
+}
+ccv.addEventListener("pointerdown",e=>{
+  const[px,py]=curvePos(e);
+  let p=nearestPoint(px,py);
+  if(!p){p={x:px2cx(px),y:px2cy(py)};curves[curveCh].push(p);}
+  dragPt=p;ccv.setPointerCapture(e.pointerId);rebuildCurves();render();
+});
+ccv.addEventListener("pointermove",e=>{
+  if(!dragPt)return;
+  const[px,py]=curvePos(e);
+  const pts=curves[curveCh],isEnd=dragPt===pts.reduce((a,b)=>a.x<b.x?a:b)||dragPt===pts.reduce((a,b)=>a.x>b.x?a:b);
+  if(!isEnd)dragPt.x=px2cx(px);
+  dragPt.y=px2cy(py);
+  rebuildCurves();render();
+});
+window.addEventListener("pointerup",()=>{if(dragPt){dragPt=null;pushHistory();}else dragPt=null;});
+ccv.addEventListener("dblclick",e=>{
+  const[px,py]=curvePos(e),p=nearestPoint(px,py),pts=curves[curveCh];
+  if(p&&pts.length>2){curves[curveCh]=pts.filter(q=>q!==p);rebuildCurves();render();pushHistory();}
+});
+ccv.addEventListener("wheel",zoomCurves,{passive:false});
+document.querySelectorAll(".chtabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".chtabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");curveCh=b.dataset.ch;drawCurves();
+}));
+$("curveReset").addEventListener("click",()=>{curves[curveCh]=defCurve();rebuildCurves();render();pushHistory();});
+
+/* ================= generic handle strips ================= */
+function makeStrip(cvId,arr,n,periodic,bgFn){
+  const cv=$(cvId),c=cv.getContext("2d"),HP=8;
+  const hx=i=>HP+(i+0.5)/n*(cv.width-2*HP);
+  const hy=v=>cv.height/2-v*(cv.height/2-HP);
+  function draw(){
+    c.clearRect(0,0,cv.width,cv.height);
+    for(let x=HP;x<cv.width-HP;x++){
+      c.fillStyle=bgFn((x-HP)/(cv.width-2*HP));
+      c.globalAlpha=.35;c.fillRect(x,HP,1,cv.height-2*HP);c.globalAlpha=1;
+    }
+    c.strokeStyle="#4a4336";c.beginPath();c.moveTo(HP,cv.height/2);c.lineTo(cv.width-HP,cv.height/2);c.stroke();
+    c.strokeStyle="#e8e2d4";c.lineWidth=2;c.beginPath();
+    for(let x=0;x<=200;x++){
+      const u=x/200;
+      const v=periodic?periodic8(arr,u*360):linear8(arr,u);
+      const X=HP+u*(cv.width-2*HP),Y=hy(v);
+      x?c.lineTo(X,Y):c.moveTo(X,Y);
+    }
+    c.stroke();
+    for(let i=0;i<n;i++){
+      c.fillStyle=bgFn((i+0.5)/n);
+      c.beginPath();c.arc(hx(i),hy(arr[i]),6,0,7);c.fill();
+      c.strokeStyle="#15130f";c.lineWidth=1.5;c.stroke();
+    }
+  }
+  let di=-1;
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height];};
+  cv.addEventListener("pointerdown",e=>{
+    const[px,py]=pos(e);
+    let best=-1,bd=400;
+    for(let i=0;i<n;i++){const d=(hx(i)-px)**2+(hy(arr[i])-py)**2;if(d<bd){bd=d;best=i;}}
+    if(best<0){best=Math.max(0,Math.min(n-1,Math.round((px-HP)/(cv.width-2*HP)*n-0.5)));}
+    di=best;cv.setPointerCapture(e.pointerId);
+    arr[di]=Math.max(-1,Math.min(1,(cv.height/2-py)/(cv.height/2-HP)));render();
+  });
+  cv.addEventListener("pointermove",e=>{
+    if(di<0)return;
+    const[,py]=pos(e);
+    arr[di]=Math.max(-1,Math.min(1,(cv.height/2-py)/(cv.height/2-HP)));render();
+  });
+  window.addEventListener("pointerup",()=>{if(di>=0){di=-1;pushHistory();}else di=-1;});
+  cv.addEventListener("dblclick",e=>{
+    const[px,py]=pos(e);
+    let best=-1,bd=400;
+    for(let i=0;i<n;i++){const d=(hx(i)-px)**2+(hy(arr[i])-py)**2;if(d<bd){bd=d;best=i;}}
+    if(best>=0){arr[best]=0;render();pushHistory();}
+  });
+  return draw;
+}
+const drawHueHue=makeStrip("huecv",hueShift,HUEN,true,u=>`hsl(${u*360} 60% 38%)`);
+const drawHueSat=makeStrip("hscv",hueSat,HUEN,true,u=>`hsl(${u*360} 60% 38%)`);
+const drawLumaSat=makeStrip("lscv",lumaSat,LUMN,false,u=>{const v=Math.round(u*255);return`rgb(${v},${v},${v})`;});
+function drawStrips(){drawHueHue();drawHueSat();drawLumaSat();}
+$("hueReset").addEventListener("click",()=>{hueShift.fill(0);render();pushHistory();});
+$("hsReset").addEventListener("click",()=>{hueSat.fill(0);render();pushHistory();});
+$("lsReset").addEventListener("click",()=>{lumaSat.fill(0);render();pushHistory();});
+
+/* ================= colour balance wheels ================= */
+function drawColorWheel(canvas,sx,sy){
+  const c=canvas.getContext("2d");
+  const W=canvas.width,H=canvas.height;
+  const cx=W/2,cy=H/2;
+  const r=Math.min(W,H)/2-2;
+  const img=c.createImageData(W,H);
+  for(let py=0;py<H;py++){
+    for(let px=0;px<W;px++){
+      const dx=(px-cx)/r;
+      const dy=(py-cy)/r;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const i=(py*W+px)*4;
+      if(dist<=1){
+        const angle=((Math.atan2(-dy,dx)*180/Math.PI)+360)%360;
+        const sat=dist;
+        const[rr,gg,bb]=hsl2rgb(angle,sat,0.5);
+        img.data[i]=rr*255;
+        img.data[i+1]=gg*255;
+        img.data[i+2]=bb*255;
+        img.data[i+3]=255;
+      }else{
+        img.data[i+3]=0;
+      }
+    }
+  }
+  c.putImageData(img,0,0);
+  c.strokeStyle="#454c43";
+  c.lineWidth=1;
+  c.beginPath();
+  c.arc(cx,cy,r,0,Math.PI*2);
+  c.stroke();
+  c.strokeStyle="rgba(255,255,255,0.22)";
+  c.lineWidth=1;
+  c.beginPath();
+  c.moveTo(cx-5,cy);c.lineTo(cx+5,cy);
+  c.moveTo(cx,cy-5);c.lineTo(cx,cy+5);
+  c.stroke();
+  if(Math.abs(sx)>0.001||Math.abs(sy)>0.001){
+    const ix=cx+sx*r;
+    const iy=cy-sy*r;
+    c.fillStyle="#fff";
+    c.strokeStyle="#000";
+    c.lineWidth=1.5;
+    c.beginPath();
+    c.arc(ix,iy,6,0,Math.PI*2);
+    c.fill();
+    c.stroke();
+  }
+}
+function setupColorWheel(canvasId,region){
+  const canvas=$(canvasId);
+  const radius=Math.min(canvas.width,canvas.height)/2-2;
+  let dragging=false;
+  const updateFromEvent=e=>{
+    const rect=canvas.getBoundingClientRect();
+    const px=(e.clientX-rect.left)/rect.width*canvas.width;
+    const py=(e.clientY-rect.top)/rect.height*canvas.height;
+    const cx=canvas.width/2,cy=canvas.height/2;
+    const dx=(px-cx)/radius;
+    const dy=-(py-cy)/radius;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist>1){
+      cbState[region].x=dx/dist;
+      cbState[region].y=dy/dist;
+    }else{
+      cbState[region].x=dx;
+      cbState[region].y=dy;
+    }
+    drawColorWheel(canvas,cbState[region].x,cbState[region].y);
+    render();
+  };
+  canvas.addEventListener("pointerdown",e=>{
+    dragging=true;
+    canvas.setPointerCapture(e.pointerId);
+    updateFromEvent(e);
+  });
+  canvas.addEventListener("pointermove",e=>{
+    if(dragging)updateFromEvent(e);
+  });
+  const release=e=>{
+    if(dragging){
+      dragging=false;
+      try{canvas.releasePointerCapture(e.pointerId);}catch(_){}
+      pushHistory();
+    }
+  };
+  canvas.addEventListener("pointerup",release);
+  canvas.addEventListener("pointercancel",release);
+  canvas.addEventListener("dblclick",()=>{
+    cbState[region]={x:0,y:0};
+    drawColorWheel(canvas,0,0);
+    render();
+    pushHistory();
+  });
+  drawColorWheel(canvas,cbState[region].x,cbState[region].y);
+}
+setupColorWheel("cbSh","shadows");
+setupColorWheel("cbMd","midtones");
+setupColorWheel("cbHi","highlights");
+$("cbReset").addEventListener("click",e=>{
+  e.stopPropagation();
+  cbState.shadows={x:0,y:0};
+  cbState.midtones={x:0,y:0};
+  cbState.highlights={x:0,y:0};
+  drawColorWheel($("cbSh"),0,0);
+  drawColorWheel($("cbMd"),0,0);
+  drawColorWheel($("cbHi"),0,0);
+  render();
+  pushHistory();
+});
+
+/* ================= general UI ================= */
+sliders.forEach(id=>{
+  const el=$(id);
+  const num=el.parentElement.querySelector(".num");
+  if(num){num.min=el.min;num.max=el.max;num.step=1;}
+  el.addEventListener("input",()=>{
+    state[id]=+el.value;
+    if(num)num.value=el.value;
+    render();
+  });
+  el.addEventListener("change",pushHistory);
+  el.addEventListener("dblclick",()=>{
+    const v=DEF[id]||0;
+    el.value=v;state[id]=v;
+    if(num)num.value=v;
+    render();pushHistory();
+  });
+  if(num){
+    const commit=()=>{
+      let v=parseFloat(num.value);
+      if(isNaN(v))v=state[id];
+      v=Math.max(+el.min,Math.min(+el.max,Math.round(v)));
+      num.value=v;el.value=v;state[id]=v;render();pushHistory();
+    };
+    num.addEventListener("change",commit);
+    num.addEventListener("keydown",e=>{if(e.key==="Enter"){commit();num.blur();}});
+  }
+});
+$("shCol").addEventListener("input",e=>{state.shCol=hex2rgb(e.target.value);render();});
+$("shCol").addEventListener("change",pushHistory);
+$("hiCol").addEventListener("input",e=>{state.hiCol=hex2rgb(e.target.value);render();});
+$("hiCol").addEventListener("change",pushHistory);
+$("logMode").addEventListener("change",e=>{state.logMode=e.target.checked;render();pushHistory();});
+document.querySelectorAll("[data-enable]").forEach(input=>{
+  input.addEventListener("change",()=>{
+    state.enabled[input.dataset.enable]=input.checked;
+    syncSectionEnabled();
+    render();
+    pushHistory();
+  });
+});
+syncSectionEnabled();
+
+const asideResize=$("asideResize");
+const ASIDE_MIN=348,ASIDE_MAX=ASIDE_MIN*3;
+asideResize.addEventListener("pointerdown",e=>{
+  if(matchMedia("(max-width: 820px)").matches)return;
+  const startX=e.clientX,startWidth=document.querySelector("aside").getBoundingClientRect().width;
+  asideResize.classList.add("dragging");
+  asideResize.setPointerCapture(e.pointerId);
+  const resize=move=>{
+    const max=Math.max(ASIDE_MIN,Math.min(ASIDE_MAX,window.innerWidth-280));
+    const width=Math.max(ASIDE_MIN,Math.min(max,startWidth+startX-move.clientX));
+    document.documentElement.style.setProperty("--aside-width",width+"px");
+  };
+  const stop=up=>{
+    asideResize.classList.remove("dragging");
+    asideResize.releasePointerCapture(up.pointerId);
+    asideResize.removeEventListener("pointermove",resize);
+    asideResize.removeEventListener("pointerup",stop);
+    asideResize.removeEventListener("pointercancel",stop);
+  };
+  asideResize.addEventListener("pointermove",resize);
+  asideResize.addEventListener("pointerup",stop);
+  asideResize.addEventListener("pointercancel",stop);
+});
+
+const drop=$("drop"),fileInput=$("file");
+drop.addEventListener("click",e=>{if(e.target.tagName!=="BUTTON")fileInput.click();});
+fileInput.addEventListener("change",e=>{if(e.target.files)loadFiles(e.target.files);fileInput.value="";});
+
+["dragover","dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault();
+  if(ev==="drop")e.stopPropagation();
+  drop.classList.toggle("over",ev==="dragover");
+  if(ev==="drop"&&e.dataTransfer.files.length)loadFiles(e.dataTransfer.files);
+}));
+document.body.addEventListener("dragover",e=>e.preventDefault());
+document.body.addEventListener("drop",e=>{e.preventDefault();if(e.dataTransfer.files.length)loadFiles(e.dataTransfer.files);});
+$("newimg").addEventListener("click",()=>fileInput.click());
+$("chartbtn1").addEventListener("click",makeTestChart);
+$("chartbtn2").addEventListener("click",makeTestChart);
+
+/* ================= eyedroppers ================= */
+let pickMode=null;
+function setPick(mode){
+  pickMode=(pickMode===mode)?null:mode;
+  view.classList.toggle("picking",!!pickMode);
+  $("wbPick").classList.toggle("on",pickMode==="wb");
+  $("secPick").classList.toggle("on",pickMode==="sec");
+}
+$("wbPick").addEventListener("click",()=>setPick("wb"));
+$("secPick").addEventListener("click",()=>setPick("sec"));
+/* Average a small patch rather than one pixel: a single pixel is dominated by
+   sensor noise and JPEG blocking, which throws the white balance off. Standard
+   eyedroppers behave the same way. Also reports whether the sample is usable:
+   clipped or near-black patches carry no reliable colour information. */
+function samplePixel(e,radius){
+  const point=previewPoint(e),src=images[cur].data;
+  const R=(radius===undefined)?2:radius;   // 2 -> 5x5 patch
+  const cx=Math.max(0,Math.min(src.width-1,Math.round(point.x/view.offsetWidth*src.width)));
+  const cy=Math.max(0,Math.min(src.height-1,Math.round(point.y/view.offsetHeight*src.height)));
+  let sr=0,sg=0,sb=0,n=0,clipped=0;
+  for(let y=cy-R;y<=cy+R;y++){
+    if(y<0||y>=src.height)continue;
+    for(let x=cx-R;x<=cx+R;x++){
+      if(x<0||x>=src.width)continue;
+      const i=(y*src.width+x)*4;
+      const r8=src.data[i],g8=src.data[i+1],b8=src.data[i+2];
+      if(r8>=254||g8>=254||b8>=254||(r8<=2&&g8<=2&&b8<=2))clipped++;
+      sr+=r8;sg+=g8;sb+=b8;n++;
+    }
+  }
+  if(!n)return[0,0,0,{n:0,clipped:0,lum:0}];
+  let r=sr/n/255,g=sg/n/255,b=sb/n/255;
+  const info={n,clipped:clipped/n,lum:0.2126*r+0.7152*g+0.0722*b};
+  if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+  if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
+  return[r,g,b,info];
+}
+function setSliderUI(id,v){
+  v=Math.max(+$(id).min,Math.min(+$(id).max,Math.round(v)));
+  state[id]=v;$(id).value=v;
+  const out=$(id).parentElement.querySelector(".num");if(out)out.value=v;
+}
+function handlePick(e){
+  if(!pickMode||cur<0)return false;
+  const[r,g,b,info]=samplePixel(e);
+  if(pickMode==="wb"){
+    // A clipped or near-black patch has no usable colour: correcting from it
+    // produces a confidently wrong result, so refuse rather than mislead.
+    if(info&&info.clipped>0.5){
+      fail("That area is clipped (pure white or black) \u2014 it carries no colour information. Pick a mid-tone neutral, like a grey card, road or white wall with detail.");
+      return true;
+    }
+    if(info&&info.lum<0.06){
+      fail("That area is nearly black \u2014 too noisy for a reliable white balance. Pick a brighter neutral.");
+      return true;
+    }
+    const t=(b-r)/2;
+    const r2=r+t,b2=b-t;
+    const ti=((r2+b2)/2-g)/1.5;
+    const tempV=t*300,tintV=ti*300;
+    setSliderUI("temp",tempV);
+    setSliderUI("tint",tintV);
+    // The sliders stop at +-100; a very strong cast can't be fully removed.
+    if(Math.abs(tempV)>100||Math.abs(tintV)>100)
+      fail("Strong colour cast \u2014 corrected as far as the sliders allow. Fine-tune by hand if it still looks off.");
+  }else{
+    const[h]=rgb2hsl(r,g,b);
+    setSliderUI("secHueC",h);
+    updateSecSwatch();
+    document.querySelectorAll("aside section").forEach(sec=>{
+      if(sec.querySelector("#secHueC"))sec.classList.remove("closed");
+    });
+  }
+  setPick(null);render();pushHistory();
+  return true;
+}
+view.addEventListener("pointerdown",e=>{
+  if(handlePick(e))return;
+  if($("wipeOn").checked){
+    wipeDragging=true;view.setPointerCapture(e.pointerId);
+    const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
+  }else{showOriginal=true;render();}
+});
+view.addEventListener("pointermove",e=>{
+  if(!wipeDragging)return;
+  const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
+});
+view.addEventListener("pointermove",e=>{
+  if(cur<0)return;
+  const point=previewPoint(e),src=images[cur].data;
+  const cx=Math.round(point.x/view.offsetWidth*(src.width-1)),cy=Math.round(point.y/view.offsetHeight*(src.height-1));
+  let r=0,g=0,b=0,n=0;
+  for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++){
+    if(x<0||x>=src.width||y<0||y>=src.height)continue;
+    const i=(y*src.width+x)*4;r+=src.data[i];g+=src.data[i+1];b+=src.data[i+2];n++;
+  }
+  hoverCurveValues={r:r/n/255,g:g/n/255,b:b/n/255};
+  hoverCurveValues.m=.2126*hoverCurveValues.r+.7152*hoverCurveValues.g+.0722*hoverCurveValues.b;
+  drawCurves();
+});
+view.addEventListener("pointerleave",()=>{
+  if(!hoverCurveValues)return;
+  hoverCurveValues=null;drawCurves();
+});
+viewwrap.addEventListener("wheel",e=>{
+  if(cur<0)return;
+  e.preventDefault();
+  const r=viewwrap.getBoundingClientRect();
+  const px=Math.max(0,Math.min(r.width,e.clientX-r.left));
+  const py=Math.max(0,Math.min(r.height,e.clientY-r.top));
+  const oldScale=previewZoom.scale;
+  const nextScale=Math.max(1,Math.min(20,oldScale*Math.pow(1.1,-e.deltaY/100)));
+  if(nextScale===oldScale)return;
+  previewZoom.x=px-(px-previewZoom.x)*nextScale/oldScale;
+  previewZoom.y=py-(py-previewZoom.y)*nextScale/oldScale;
+  previewZoom.scale=nextScale;
+  applyPreviewZoom();
+},{passive:false});
+window.addEventListener("pointerup",()=>{
+  wipeDragging=false;
+  if(showOriginal){showOriginal=false;render();}
+});
+$("wipeOn").addEventListener("change",()=>{
+  $("comparehint").textContent=$("wipeOn").checked?"Drag on the image to move the split":"Hold on the image to compare";
+  if(!$("wipeOn").checked)$("wipeline").style.display="none";
+  render();
+});
+/* REPAIRED: cancel any pending RAF on toggle so the new checkbox state
+   is always read on the very next render() call. */
+$("clipOn").addEventListener("change",()=>{
+  if(raf){cancelAnimationFrame(raf);raf=null;}
+  render();
+});
+$("scopeOn").addEventListener("change",()=>{
+  $("scopes").style.display=$("scopeOn").checked&&cur>=0?"flex":"none";requestAnimationFrame(fitPreviewToStage);render();
+});
+new ResizeObserver(()=>fitPreviewToStage()).observe($("stage"));
+window.addEventListener("resize",fitPreviewToStage);
+
+/* ================= base LUT import ================= */
+$("lutfile").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const lines=reader.result.split(/\r?\n/);
+      let size=0;const vals=[];
+      for(const ln of lines){
+        const s=ln.trim();
+        if(!s||s[0]==="#")continue;
+        if(/^LUT_3D_SIZE/i.test(s)){size=parseInt(s.split(/\s+/)[1]);continue;}
+        if(/^(TITLE|DOMAIN_|LUT_1D)/i.test(s))continue;
+        const parts=s.split(/\s+/);
+        if(parts.length>=3&&!isNaN(+parts[0])){vals.push(+parts[0],+parts[1],+parts[2]);}
+      }
+      if(!size||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
+      baseLUT={size,data:Float32Array.from(vals),name:file.name};
+      $("basename").textContent=file.name+" ("+size+"\u00B3)";
+      $("baseinfo").style.display="block";
+      render();pushHistory();
+    }catch(err){fail("Couldn't import LUT: "+err.message);}
+  };
+  reader.readAsText(file);
+  e.target.value="";
+});
+$("baseclear").addEventListener("click",()=>{baseLUT=null;$("baseinfo").style.display="none";render();pushHistory();});
+$("baseEnable").addEventListener("change",e=>{baseOn=e.target.checked;render();pushHistory();});
+
+/* ================= film presets ================= */
+const presets={
+  neutral:{},
+  portra400:{temp:10,tint:3,contrast:-6,sat:-10,vib:8,fade:8,shAmt:12,shCol:"#4a5468",hiAmt:18,hiCol:"#ecc89a",
+    curves:{m:[{x:0,y:0.03},{x:0.25,y:0.24},{x:0.8,y:0.84},{x:1,y:0.97}]},
+    hue:[0,0.06,0,-0.10,0,0,0,0.04]},
+  ektar100:{temp:6,contrast:18,sat:24,vib:10,
+    curves:{m:[{x:0,y:0},{x:0.2,y:0.16},{x:0.85,y:0.9},{x:1,y:1}],r:[{x:0,y:0},{x:0.5,y:0.53},{x:1,y:1}]},
+    hue:[0.04,0.05,0,0,0,-0.05,0,0]},
+  gold200:{temp:24,tint:4,contrast:8,sat:10,fade:5,shAmt:10,shCol:"#5c4e3a",hiAmt:26,hiCol:"#f0c478",
+    curves:{b:[{x:0,y:0.02},{x:0.5,y:0.46},{x:1,y:0.95}]},
+    hue:[0,0.05,-0.12,-0.16,0,0,0,0]},
+  kodachrome64:{temp:4,contrast:26,sat:-4,vib:14,gamma:-6,shAmt:16,shCol:"#2e4450",hiAmt:10,hiCol:"#e8c8a0",
+    curves:{m:[{x:0,y:0},{x:0.18,y:0.12},{x:0.5,y:0.5},{x:0.88,y:0.92},{x:1,y:1}],r:[{x:0,y:0},{x:0.45,y:0.5},{x:1,y:1}]},
+    hue:[0.05,0.04,0,-0.06,0,0,0,-0.06]},
+  velvia50:{temp:-4,contrast:30,sat:34,vib:8,gamma:-4,
+    curves:{m:[{x:0,y:0},{x:0.15,y:0.09},{x:0.85,y:0.93},{x:1,y:1}]},
+    hue:[0.03,0,0.06,0.08,0,-0.04,0,0.06]},
+  provia100f:{temp:-6,contrast:12,sat:6,vib:4,
+    curves:{m:[{x:0,y:0},{x:0.22,y:0.19},{x:0.82,y:0.86},{x:1,y:1}]},
+    hue:[0,0,0,0,0,-0.03,0,0]},
+  pro400h:{temp:-4,tint:-6,contrast:-12,sat:-12,vib:10,fade:14,shAmt:24,shCol:"#4e7268",hiAmt:12,hiCol:"#eadfd0",
+    curves:{m:[{x:0,y:0.05},{x:0.5,y:0.52},{x:1,y:0.96}]},
+    hue:[0,0.04,0,0.10,0.06,0,0,0]},
+  superia400:{temp:-3,tint:-10,contrast:14,sat:14,shAmt:18,shCol:"#2f5a58",hiAmt:8,hiCol:"#e6e0c8",
+    curves:{m:[{x:0,y:0},{x:0.2,y:0.15},{x:1,y:1}]},
+    hue:[0.03,0,0.08,0.06,0.05,0,0,0]},
+  cinestill800t:{temp:-22,tint:2,contrast:6,sat:4,fade:16,shAmt:28,shCol:"#2a4a60",hiAmt:30,hiCol:"#f0907a",
+    curves:{m:[{x:0,y:0.05},{x:0.5,y:0.5},{x:0.9,y:0.93},{x:1,y:0.98}]},
+    hue:[0.05,0,0,0,0.04,-0.05,0,0]},
+  trix400:{sat:-100,contrast:24,gamma:2,
+    curves:{m:[{x:0,y:0},{x:0.2,y:0.13},{x:0.78,y:0.86},{x:1,y:1}]}},
+  hp5:{sat:-100,contrast:8,fade:6,
+    curves:{m:[{x:0,y:0.02},{x:0.3,y:0.3},{x:0.85,y:0.88},{x:1,y:0.97}]}}
+};
+function applyPreset(p){
+  sliders.forEach(s=>{
+    state[s]=(p[s]!==undefined)?p[s]:(DEF[s]||0);$(s).value=state[s];
+    const out=$(s).parentElement.querySelector(".num");if(out)out.value=state[s];
+  });
+  state.shCol=hex2rgb(p.shCol||"#406080");$("shCol").value=p.shCol||"#406080";
+  state.hiCol=hex2rgb(p.hiCol||"#e0a060");$("hiCol").value=p.hiCol||"#e0a060";
+  ["m","r","g","b"].forEach(ch=>{
+    curves[ch]=(p.curves&&p.curves[ch])?p.curves[ch].map(q=>({x:q.x,y:q.y})):defCurve();
+  });
+  hueShift.fill(0);if(p.hue)p.hue.forEach((v,i)=>hueShift[i]=v);
+  hueSat.fill(0);if(p.hueSat)p.hueSat.forEach((v,i)=>hueSat[i]=v);
+  lumaSat.fill(0);if(p.lumaSat)p.lumaSat.forEach((v,i)=>lumaSat[i]=v);
+  cbState.shadows={x:0,y:0};
+  cbState.midtones={x:0,y:0};
+  cbState.highlights={x:0,y:0};
+  drawColorWheel($("cbSh"),0,0);
+  drawColorWheel($("cbMd"),0,0);
+  drawColorWheel($("cbHi"),0,0);
+  rebuildCurves();render();
+}
+document.querySelectorAll(".presets button").forEach(btn=>btn.addEventListener("click",()=>{applyPreset(presets[btn.dataset.p]);pushHistory();}));
+
+/* ================= extract look from photo ================= */
+function exDecode(file,cb){
+  if(!file||!/^image\//.test(file.type||""))return fail("That doesn't look like an image file.");
+  const rd=new FileReader();
+  rd.onerror=()=>fail("Couldn't read "+file.name);
+  rd.onload=()=>{
+    const im=new Image();
+    im.onerror=()=>fail("Couldn't decode "+file.name);
+    im.onload=()=>{
+      const sc=Math.min(1,320/Math.max(im.width,im.height));
+      const w=Math.max(1,Math.round(im.width*sc)),h=Math.max(1,Math.round(im.height*sc));
+      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      cv.getContext("2d").drawImage(im,0,0,w,h);
+      try{cb(cv.getContext("2d").getImageData(0,0,w,h));}catch(e){fail("Browser blocked image pixels: "+e.message);}
+    };
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+const exHex=(r,g,b)=>"#"+[r,g,b].map(v=>Math.round(clamp(v)*255).toString(16).padStart(2,"0")).join("");
+$("exSingle").addEventListener("click",()=>$("exSingleF").click());
+$("exSingleF").addEventListener("change",e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  exDecode(f,d=>{
+    const n=d.data.length/4;
+
+    /* LOOK EXTRACTION by colour deviation conditioned on luminance.
+
+       Earlier versions matched each channel's histogram (against either an
+       imagined "average" photo or the loaded one). That transfers the
+       reference's SCENE COMPOSITION, not its grading: a warm, ground-heavy
+       reference mapped onto a bright, sky-heavy target sends the blue channel
+       through a violent warm-to-blue swing in the upper mids, which is what
+       produced the blue/magenta washed results.
+
+       Instead we measure, at each luminance level, how far each channel sits
+       from neutral grey. That deviation is a property of the GRADE rather
+       than of what happens to be in the frame, it is inherently small in
+       magnitude (so nothing washes out), and it cannot flip sign the way
+       crossing histograms can. The resulting curves are identity plus that
+       measured offset, which is exactly a shadow/midtone/highlight tint. */
+
+    const NB=14;
+    let chroma=0;
+    const lumHist=new Float64Array(256);
+    /* Collect the per-pixel colour offsets per luminance bin so we can take a
+       TRIMMED MEDIAN later. A mean is dragged around by a few extreme pixels;
+       a trimmed median ignores them, which matters when one saturated object
+       sits inside a single luminance band.
+
+       Each pixel is also WEIGHTED BY HOW NEUTRAL IT IS. A strongly coloured
+       object (a red running track, a yellow vest) is subject matter, not
+       grading, and weighting every pixel equally lets those objects drag the
+       measured cast toward their own hue. On a near-neutral pixel any colour
+       present must BE the cast, so those pixels carry the real information.
+       This is the same reasoning behind classic illuminant estimation. */
+    const binsR=[],binsG=[],binsB=[],binsL=[],binW=new Float64Array(NB);
+    for(let i=0;i<NB;i++){binsR.push([]);binsG.push([]);binsB.push([]);binsL.push([]);}
+    const stride=(n>200000)?8:4;   // subsample very large references for speed
+    for(let p=0;p<d.data.length;p+=4*(stride/4)){
+      const r=d.data[p]/255,g=d.data[p+1]/255,b=d.data[p+2]/255;
+      const l=0.2126*r+0.7152*g+0.0722*b;
+      lumHist[Math.min(255,Math.round(l*255))]++;
+      const cr=Math.max(r,g,b)-Math.min(r,g,b);
+      chroma+=cr;
+      // neutral weighting: full weight at zero chroma, falling away as the
+      // pixel gets more colourful. 0.18 chroma is already a vivid object.
+      const w=1/(1+Math.pow(cr/0.18,2));
+      if(w<0.05)continue;                      // vivid subject: no cast info
+      const i=Math.min(NB-1,Math.floor(l*NB));
+      binsR[i].push(r-l);binsG[i].push(g-l);binsB[i].push(b-l);binsL[i].push(l);
+      binW[i]+=w;
+    }
+    // trimmed median of each bin's offsets (drop the outer 20% each side)
+    const trimmed=arr=>{
+      if(!arr.length)return 0;
+      const a=arr.slice().sort((x,y)=>x-y);
+      const lo=Math.floor(a.length*0.2),hi=Math.ceil(a.length*0.8);
+      let sum=0,c=0;
+      for(let k=lo;k<hi;k++){sum+=a[k];c++;}
+      return c?sum/c:a[Math.floor(a.length/2)];
+    };
+    const cnt=new Float64Array(NB),sL=new Float64Array(NB),
+          offR=new Float64Array(NB),offG=new Float64Array(NB),offB=new Float64Array(NB);
+    for(let i=0;i<NB;i++){
+      cnt[i]=binW[i];
+      if(!binsL[i].length)continue;
+      sL[i]=trimmed(binsL[i]);
+      offR[i]=trimmed(binsR[i]);offG[i]=trimmed(binsG[i]);offB[i]=trimmed(binsB[i]);
+    }
+
+    /* Fit a SMOOTH model to the measured offsets rather than trusting each bin.
+       offset(L) = a + b*(L-0.5): "a" is the overall cast, "b" is the tilt from
+       shadows to highlights, i.e. split toning. Two parameters per channel is
+       far more stable than fourteen independent bins, and it separates the
+       grade from content bleed: in a frame with warm ground and a neutral
+       bright sky, the raw bins swing from warm to cool around the sky's
+       luminance, which is the scene, not the look. A straight line through
+       them keeps the coherent cast and discards the swing.
+       Each bin's weight is capped so one large area (a big sky) can't dominate. */
+    const minCount=Math.max(8,n/stride*0.004);
+    const wCap=n/stride*0.12;
+
+    /* Fit offset(x) = a + b*x + c*x^2, where x = L - 0.5.
+       "a" is the overall cast, "b" the shadow-to-highlight tilt (split toning)
+       and "c" lets the MIDTONES sit off that straight line, which is how a lot
+       of real film looks actually behave: cool shadows and cool highlights with
+       warm mids, say, is impossible to describe with a straight line.
+       Three parameters per channel is still far fewer than the fourteen bins,
+       so it stays stable, and we fall back to a line (then to a constant) when
+       there aren't enough populated bins to support the extra term. */
+    const fit=offCh=>{
+      let S0=0,S1=0,S2=0,S3=0,S4=0,T0=0,T1=0,T2=0,used=0;
+      for(let i=0;i<NB;i++){
+        if(cnt[i]<minCount)continue;
+        const w=Math.min(cnt[i],wCap), x=sL[i]-0.5, y=offCh[i];
+        const x2=x*x;
+        S0+=w;S1+=w*x;S2+=w*x2;S3+=w*x2*x;S4+=w*x2*x2;
+        T0+=w*y;T1+=w*x*y;T2+=w*x2*y;
+        used++;
+      }
+      if(S0<=0)return{a:0,b:0,c:0};
+
+      // weighted linear solution (also the fallback)
+      const lden=S0*S2-S1*S1;
+      let lb=Math.abs(lden)>1e-12?(S0*T1-S1*T0)/lden:0;
+      let la=(T0-lb*S1)/S0;
+
+      let a=la,b=lb,c=0;
+      if(used>=5){
+        // solve the 3x3 normal equations by Cramer's rule
+        const det=S0*(S2*S4-S3*S3)-S1*(S1*S4-S3*S2)+S2*(S1*S3-S2*S2);
+        if(Math.abs(det)>1e-14){
+          const da=T0*(S2*S4-S3*S3)-S1*(T1*S4-S3*T2)+S2*(T1*S3-S2*T2);
+          const db=S0*(T1*S4-S3*T2)-T0*(S1*S4-S3*S2)+S2*(S1*T2-T1*S2);
+          const dc=S0*(S2*T2-T1*S3)-S1*(S1*T2-T1*S2)+T0*(S1*S3-S2*S2);
+          const qa=da/det,qb=db/det,qc=dc/det;
+          // only accept the curved fit if the extra term is a sane magnitude;
+          // a wild quadratic means the bins were noisy, so keep the line
+          if(Math.abs(qc)<=0.9&&Math.abs(qa)<=0.2&&Math.abs(qb)<=0.6){a=qa;b=qb;c=qc;}
+        }
+      }
+      // keep the look plausible
+      a=Math.max(-0.10,Math.min(0.10,a));
+      b=Math.max(-0.20,Math.min(0.20,b));
+      c=Math.max(-0.35,Math.min(0.35,c));
+      return{a,b,c};
+    };
+    const build=offCh=>{
+      const{a,b,c}=fit(offCh);
+      /* The overall cast "a" is the most reliable part of the model. The tilt
+         and curvature describe how it varies, but in a real photograph they
+         also pick up content bleed (a bright neutral sky in a warm frame will
+         tilt the highlights cool). Allow the cast to weaken or strengthen with
+         luminance, but not to INVERT far past neutral: a warm look should not
+         end up cool at one end because of what happened to be in the frame.
+         The tolerance scales with the cast, so a genuinely neutral reference
+         is unaffected. */
+      const tol=Math.max(0.012,Math.abs(a)*0.35);
+      const pts=[];
+      // more sample points now the model can curve
+      for(const x of [0,0.15,0.3,0.5,0.7,0.85,1]){
+        const t=x-0.5;
+        let off=a+b*t+c*t*t;
+        if(a>0.002)off=Math.max(off,-tol);
+        else if(a<-0.002)off=Math.min(off,tol);
+        pts.push({x,y:Math.max(0,Math.min(1,x+off))});
+      }
+      // keep it monotonic so the curve can't band or invert
+      for(let i=1;i<pts.length;i++)if(pts[i].y<pts[i-1].y)pts[i].y=pts[i-1].y;
+      return pts;
+    };
+
+    applyGradeData({app:"LutMaster",state:{},curves:{},name:$("lutname").value});
+    curves.r=build(offR);curves.g=build(offG);curves.b=build(offB);
+
+    /* Tone: only the black lift is safely inferable from a single photo. A
+       reference whose darkest pixels sit well above black is a faded/matte
+       look; anything more ambitious (contrast, overall brightness) depends on
+       the scene rather than the grade, so we leave it alone. */
+    let acc=0,bp=0;
+    for(let i=0;i<256;i++){acc+=lumHist[i];if(acc>=n*0.005){bp=i/255;break;}}
+    if(bp>0.05)curves.m=[{x:0,y:Math.min(0.18,bp*0.6)},{x:1,y:1}];
+
+    /* Saturation: only act on clear desaturation, which is usually a grading
+       choice. High chroma is more often just a colourful subject, so we don't
+       crank saturation up on that evidence. */
+    const meanChroma=chroma/(n/stride);
+    if(meanChroma<0.12)setS("sat",Math.max(-45,(meanChroma/0.12-1)*60));
+
+    rebuildCurves();render();pushHistory();
+    fail("Look extracted \u2014 the reference's colour cast and black level are now on the curves. Review and refine; a single photo can only suggest a look.");
+  });
+});
+
+
+/* ================= Lightroom preset import =================
+   Reads .xmp (Camera Raw / Lightroom Classic) and .lrtemplate (legacy Lua)
+   presets and maps their COLOUR settings onto our controls, so the result can
+   be exported as a .cube.
+
+   Honest limits, reported to the user after each import:
+   a LUT is a fixed per-pixel colour mapping, so anything spatial or local
+   simply cannot be represented — Clarity, Texture, Dehaze, sharpening, noise
+   reduction, vignette, grain, lens corrections and all masked/local edits are
+   ignored. Lightroom also applies its maths to linear raw data inside its own
+   pipeline, whereas this LUT applies to already-rendered RGB, so even the
+   mapped settings are close approximations rather than exact matches. */
+
+function lrParse(text){
+  const v={};
+  // --- .lrtemplate (Lua table): key = value, and s = { ... } blocks ---
+  if(/^\s*s\s*=\s*\{/m.test(text)||/lrtemplate/i.test(text)){
+    const re=/(\w+)\s*=\s*(-?[\d.]+|"[^"]*"|true|false)/g;let m;
+    while((m=re.exec(text))){
+      let val=m[2];
+      if(val==="true")val=1;else if(val==="false")val=0;
+      else if(val[0]==='"')val=val.slice(1,-1);
+      else val=parseFloat(val);
+      if(v[m[1]]===undefined)v[m[1]]=val;
+    }
+  }
+  // --- .xmp: crs: attributes, either as attributes or child elements ---
+  const attr=/crs:(\w+)\s*=\s*"([^"]*)"/g;let a;
+  while((a=attr.exec(text))){
+    const num=parseFloat(a[2]);
+    v[a[1]]=Number.isNaN(num)?a[2]:num;
+  }
+  const el=/<crs:(\w+)>([^<]*)<\/crs:\1>/g;let e;
+  while((e=el.exec(text))){
+    const num=parseFloat(e[2]);
+    if(v[e[1]]===undefined)v[e[1]]=Number.isNaN(num)?e[2]:num;
+  }
+  /* --- embedded profile (Look) ---
+     Many presets don't set Treatment or ConvertToGrayscale at all; the black
+     and white conversion is carried by the camera profile instead, e.g.
+     <crs:Look><rdf:Description crs:Name="Adobe Monochrome" ...>. We pull that
+     name out separately because the generic attribute sweep above would
+     otherwise mix it up with the preset's own crs:Name. */
+  const lookBlk=/<crs:Look>[\s\S]*?<\/crs:Look>/i.exec(text);
+  if(lookBlk){
+    const nm=/crs:Name\s*=\s*"([^"]*)"/i.exec(lookBlk[0]);
+    if(nm)v._lookName=nm[1].replace(/&amp;/g,"&");
+  }
+  // some presets name the profile in crs:CameraProfile instead of a Look block
+  if(!v._lookName&&typeof v.CameraProfile==="string")
+    v._lookName=v.CameraProfile.replace(/&amp;/g,"&");
+
+  // --- tone curves: <crs:ToneCurvePV2012> <rdf:Seq> <rdf:li>x, y</rdf:li> ---
+  const curveNames=["ToneCurvePV2012","ToneCurvePV2012Red","ToneCurvePV2012Green","ToneCurvePV2012Blue","ToneCurve"];
+  for(const nm of curveNames){
+    const blk=new RegExp("<crs:"+nm+"[\\s\\S]*?<\\/crs:"+nm+">","i").exec(text);
+    if(blk){
+      const pts=[...blk[0].matchAll(/<rdf:li>\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*<\/rdf:li>/g)]
+        .map(p=>({x:parseFloat(p[1])/255,y:parseFloat(p[2])/255}));
+      if(pts.length>=2)v["_curve_"+nm]=pts;
+    }
+    // lrtemplate stores curves as flat lists: toneCurvePV2012 = { 0, 0, 255, 255 }
+    const lua=new RegExp(nm+"\\s*=\\s*\\{([^}]*)\\}","i").exec(text);
+    if(lua&&!v["_curve_"+nm]){
+      const nums=lua[1].split(/[,\s]+/).map(parseFloat).filter(n=>!Number.isNaN(n));
+      const pts=[];
+      for(let i=0;i+1<nums.length;i+=2)pts.push({x:nums[i]/255,y:nums[i+1]/255});
+      if(pts.length>=2)v["_curve_"+nm]=pts;
+    }
+  }
+  return v;
+}
+
+/* Lightroom's 8 HSL bands sit at uneven hues; our 8 handles are evenly spaced
+   at 45 degrees. Resample the bands onto our handle positions by interpolating
+   between the two nearest Lightroom bands (wrapping around the hue circle). */
+const LR_BANDS=[
+  ["Red",0],["Orange",30],["Yellow",60],["Green",120],
+  ["Aqua",180],["Blue",240],["Purple",270],["Magenta",300]];
+function lrResampleHSL(v,prefix,scale){
+  const src=LR_BANDS.map(([name,hue])=>({hue,val:(typeof v[prefix+name]==="number"?v[prefix+name]:0)}));
+  if(src.every(p=>p.val===0))return null;
+  const out=new Array(HUEN).fill(0);
+  for(let i=0;i<HUEN;i++){
+    const h=i*(360/HUEN);
+    // nearest band below and above, wrapping
+    let lo=src[src.length-1],hi=src[0];
+    for(let k=0;k<src.length;k++){
+      if(src[k].hue<=h)lo=src[k];
+      if(src[k].hue>h){hi=src[k];break;}
+    }
+    let span=(hi.hue-lo.hue+360)%360;if(span===0)span=360;
+    let t=((h-lo.hue+360)%360)/span;
+    out[i]=(lo.val*(1-t)+hi.val*t)*scale;
+  }
+  return out;
+}
+
+function lrApply(v){
+  const skipped=[];
+  let bwVia=null;
+  const note=(cond,label)=>{if(cond)skipped.push(label);};
+
+  // start from a clean slate so leftovers don't blend in
+  applyGradeData({app:"LutMaster",state:{},curves:{},name:$("lutname").value});
+
+  // ---- tone (Lightroom ranges match ours at -100..100; exposure is in stops) ----
+  if(typeof v.Exposure2012==="number")setS("exposure",v.Exposure2012*100);
+  else if(typeof v.Exposure==="number")setS("exposure",v.Exposure*100);
+  const map={Contrast2012:"contrast",Highlights2012:"highlights",Shadows2012:"shadows",
+             Blacks2012:"blacks",Temperature:null,Tint:"tint",Vibrance:"vib",Saturation:"sat"};
+  for(const[k,id]of Object.entries(map))
+    if(id&&typeof v[k]==="number")setS(id,v[k]);
+  // Whites has no direct control; fold it gently into highlights
+  if(typeof v.Whites2012==="number"&&v.Whites2012)
+    setS("highlights",(state.highlights||0)+v.Whites2012*0.5);
+
+  /* ---- black & white ----
+     Lightroom flags a monochrome preset either with Treatment (current) or
+     ConvertToGrayscale (legacy). Note Treatment arrives XML-escaped as
+     "Black &amp; White", so match loosely rather than comparing strings.
+     Without this the preset imported as a colour image, which is the whole
+     point of a B&W preset. Split toning still applies afterwards in our
+     pipeline, so sepia and selenium style tints survive correctly. */
+  const treat=String(v.Treatment==null?"":v.Treatment).replace(/&amp;/g,"&").toLowerCase();
+  const lookName=String(v._lookName||"").toLowerCase();
+  const monoLook=/monochrome|\bmono\b|\bb&w\b|\bb\/w\b|\bbw\b|black\s*(?:&|and|\+)?\s*white|\bgr[ea]yscale\b/.test(lookName);
+  const bw=/black/.test(treat)||monoLook||
+           v.ConvertToGrayscale===1||v.ConvertToGrayscale===true||
+           String(v.ConvertToGrayscale).toLowerCase()==="true";
+  if(bw){
+    setS("sat",-100);
+    setS("vib",-100);
+    if(monoLook)bwVia=v._lookName;
+    // colour work is meaningless once desaturated; clear it so the controls
+    // reflect what is actually happening
+    for(let i=0;i<HUEN;i++){hueShift[i]=0;hueSat[i]=0;}
+    if(typeof v.GrayMixerRed==="number"||typeof v.GrayMixerBlue==="number"||
+       typeof v.GrayMixerYellow==="number"||typeof v.GrayMixerGreen==="number"||
+       typeof v.GrayMixerOrange==="number"||typeof v.GrayMixerAqua==="number"||
+       typeof v.GrayMixerPurple==="number"||typeof v.GrayMixerMagenta==="number")
+      skipped.push("B&W channel mixer (each colour's contribution to grey)");
+  }
+
+  // ---- white balance ----
+  // "As Shot"/absolute Kelvin can't be honoured (we have no raw white point),
+  // but a preset's relative shift is usable when it's a small signed number.
+  if(typeof v.Temperature==="number"){
+    if(Math.abs(v.Temperature)<=150)setS("temp",v.Temperature);
+    else note(true,"absolute Kelvin white balance");
+  }
+
+  // ---- tone curves (0..255 point lists -> our 0..1) ----
+  const cmap={ToneCurvePV2012:"m",ToneCurvePV2012Red:"r",ToneCurvePV2012Green:"g",ToneCurvePV2012Blue:"b"};
+  let gotCurve=false;
+  for(const[nm,ch]of Object.entries(cmap)){
+    const pts=v["_curve_"+nm];
+    if(pts&&pts.length>=2){curves[ch]=pts.map(p=>({x:clamp(p.x),y:clamp(p.y)}));gotCurve=true;}
+  }
+  if(!gotCurve&&v._curve_ToneCurve)curves.m=v._curve_ToneCurve.map(p=>({x:clamp(p.x),y:clamp(p.y)}));
+
+  // ---- HSL -> our hue strips ----
+  const hh=bw?null:lrResampleHSL(v,"HueAdjustment",1/100);   // ±100 -> ±1 (=±60 deg)
+  const hs=bw?null:lrResampleHSL(v,"SaturationAdjustment",1/100);
+  const hl=bw?null:lrResampleHSL(v,"LuminanceAdjustment",1/100);
+  if(hh)hh.forEach((x,i)=>hueShift[i]=Math.max(-1,Math.min(1,x)));
+  if(hs)hs.forEach((x,i)=>hueSat[i]=Math.max(-1,Math.min(1,x)));
+  note(!!hl,"HSL luminance (no equivalent control)");
+
+  // ---- split toning / colour grading ----
+  const st=(hueK,satK,colId,amtId)=>{
+    const hue=v[hueK],sat=v[satK];
+    if(typeof hue==="number"&&typeof sat==="number"&&sat>0){
+      const[r,g,b]=hsl2rgb(((hue%360)+360)%360,Math.min(1,sat/100),0.5);
+      const hex="#"+[r,g,b].map(x=>Math.round(clamp(x)*255).toString(16).padStart(2,"0")).join("");
+      $(colId).value=hex;state[colId]=hex2rgb(hex);
+      setS(amtId,Math.min(100,sat));
+    }
+  };
+  st("SplitToningShadowHue","SplitToningShadowSaturation","shCol","shAmt");
+  st("SplitToningHighlightHue","SplitToningHighlightSaturation","hiCol","hiAmt");
+  st("ColorGradeShadowHue","ColorGradeShadowSat","shCol","shAmt");
+  st("ColorGradeHighlightHue","ColorGradeHighlightSat","hiCol","hiAmt");
+  // midtone wheel -> our colour-balance midtones
+  if(typeof v.ColorGradeMidtoneHue==="number"&&v.ColorGradeMidtoneSat>0){
+    const ang=(v.ColorGradeMidtoneHue%360)*Math.PI/180,r=Math.min(1,v.ColorGradeMidtoneSat/100);
+    cbState.midtones.x=Math.cos(ang)*r;cbState.midtones.y=Math.sin(ang)*r;
+  }
+
+  // ---- things a LUT physically cannot carry ----
+  note(v.Clarity2012||v.Clarity,"Clarity");
+  note(v.Texture,"Texture");
+  note(v.Dehaze,"Dehaze");
+  note(v.Sharpness,"sharpening");
+  note(v.LuminanceSmoothing||v.ColorNoiseReduction,"noise reduction");
+  note(v.PostCropVignetteAmount||v.VignetteAmount,"vignette");
+  note(v.GrainAmount,"grain");
+  note(v.LensProfileEnable,"lens corrections");
+  if(v._lookName&&!monoLook&&!/adobe color|camera standard|^$/i.test(v._lookName))
+    note(true,"the \""+v._lookName+"\" camera profile");
+  note(/MaskGroupBasedCorrections|CircularGradientBasedCorrections|PaintBasedCorrections/.test(v._raw||""),"local/masked adjustments");
+
+  rebuildCurves();render();pushHistory();
+  if(bwVia)skipped.unshift("__BW__"+bwVia);
+  return skipped;
+}
+
+$("lrImport").addEventListener("click",()=>$("lrFile").click());
+$("lrFile").addEventListener("change",e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  // The picker can no longer filter by extension (iPadOS hides unknown types
+  // when it does), so sanity-check the choice here instead.
+  if(f.size>4*1024*1024){fail("That file is too large to be a Lightroom preset \u2014 presets are only a few kilobytes.");return;}
+  const rd=new FileReader();
+  rd.onerror=()=>fail("Couldn't read "+f.name);
+  rd.onload=()=>{
+    try{
+      const text=rd.result;
+      const v=lrParse(text);
+      v._raw=text;
+      if(!Object.keys(v).length){fail("No Lightroom settings found in \""+f.name+"\". Choose a .xmp or .lrtemplate preset file \u2014 note a .xmp sidecar exported next to a photo carries that photo's settings, which also works.");return;}
+      let skipped=lrApply(v);
+      // the B&W notice rides in on the front of the list; split it back out
+      let bwNote="";
+      skipped=skipped.filter(x=>{
+        if(typeof x==="string"&&x.startsWith("__BW__")){
+          bwNote=" Converted to <b>black &amp; white</b> (via the \u201C"+
+            x.slice(6).replace(/[<>&]/g,"")+"\u201D profile).";
+          return false;
+        }
+        return true;
+      });
+      const nm=(f.name||"preset").replace(/\.(xmp|lrtemplate)$/i,"");
+      $("lutname").value=nm.slice(0,40);
+      $("lrReport").innerHTML="Imported <b>"+nm.replace(/[<>&]/g,"")+"</b>."+bwNote+" "+
+        (skipped.length?"Not converted (a LUT can't store these): "+skipped.join(", ")+".":"All colour settings converted.")+
+        " Review the controls and refine before exporting.";
+      fail("Lightroom preset imported \u2014 approximate conversion, review before exporting.");
+    }catch(err){fail("Couldn't convert that preset: "+err.message);}
+  };
+  rd.readAsText(f);
+});
+
+/* ================= shared grade serialise / apply ================= */
+function buildGradeData(){
+  return {
+    app:"LutMaster",version:2,name:$("lutname").value,
+    state:{...state,shCol:undefined,hiCol:undefined},
+    shCol:$("shCol").value,hiCol:$("hiCol").value,
+    logMode:state.logMode,curves:JSON.parse(JSON.stringify(curves)),
+    hueShift:[...hueShift],hueSat:[...hueSat],lumaSat:[...lumaSat],
+    cbState:{
+      shadows:{x:cbState.shadows.x,y:cbState.shadows.y},
+      midtones:{x:cbState.midtones.x,y:cbState.midtones.y},
+      highlights:{x:cbState.highlights.x,y:cbState.highlights.y}
+    },
+    baseOn:baseOn,
+    baseLUT:baseLUT?{size:baseLUT.size,data:Array.from(baseLUT.data),name:baseLUT.name}:null
+  };
+}
+function applyDataSilent(p){
+  sliders.forEach(s2=>{state[s2]=(p.state&&p.state[s2]!==undefined)?p.state[s2]:(DEF[s2]||0);});
+  state.shCol=hex2rgb(p.shCol||"#406080");
+  state.hiCol=hex2rgb(p.hiCol||"#e0a060");
+  state.logMode=!!p.logMode;
+  state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
+  hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
+  hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
+  lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
+  if(p.cbState){
+    if(p.cbState.shadows)   cbState.shadows   ={x:p.cbState.shadows.x||0,   y:p.cbState.shadows.y||0};
+    if(p.cbState.midtones)  cbState.midtones  ={x:p.cbState.midtones.x||0,  y:p.cbState.midtones.y||0};
+    if(p.cbState.highlights)cbState.highlights={x:p.cbState.highlights.x||0,y:p.cbState.highlights.y||0};
+  }else{
+    cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
+  }
+  rebuildCurves();
+  syncSectionEnabled();
+}
+function applyGradeData(p){
+  if(p.app!=="LutMaster")throw new Error("not a LutMaster grade");
+  sliders.forEach(s2=>{
+    state[s2]=(p.state&&p.state[s2]!==undefined)?p.state[s2]:(DEF[s2]||0);$(s2).value=state[s2];
+    const out=$(s2).parentElement.querySelector(".num");if(out)out.value=state[s2];
+  });
+  $("shCol").value=p.shCol||"#406080";state.shCol=hex2rgb($("shCol").value);
+  $("hiCol").value=p.hiCol||"#e0a060";state.hiCol=hex2rgb($("hiCol").value);
+  state.logMode=!!p.logMode;$("logMode").checked=state.logMode;
+  state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
+  hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
+  hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
+  lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
+  if(p.cbState){
+    cbState.shadows   =p.cbState.shadows   ?{x:p.cbState.shadows.x   ||0,y:p.cbState.shadows.y   ||0}:{x:0,y:0};
+    cbState.midtones  =p.cbState.midtones  ?{x:p.cbState.midtones.x  ||0,y:p.cbState.midtones.y  ||0}:{x:0,y:0};
+    cbState.highlights=p.cbState.highlights?{x:p.cbState.highlights.x||0,y:p.cbState.highlights.y||0}:{x:0,y:0};
+  }else{
+    cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
+  }
+  syncSectionEnabled();
+  drawColorWheel($("cbSh"),cbState.shadows.x,cbState.shadows.y);
+  drawColorWheel($("cbMd"),cbState.midtones.x,cbState.midtones.y);
+  drawColorWheel($("cbHi"),cbState.highlights.x,cbState.highlights.y);
+  if(p.baseLUT){
+    baseLUT={size:p.baseLUT.size,data:Float32Array.from(p.baseLUT.data),name:p.baseLUT.name};
+    baseOn=(p.baseOn!==false);
+    $("baseEnable").checked=baseOn;
+    $("basename").textContent=p.baseLUT.name+" ("+p.baseLUT.size+"\u00B3)";
+    $("baseinfo").style.display="block";
+  }else if(p.baseLUT===null&&Object.prototype.hasOwnProperty.call(p,"baseLUT")){
+    baseLUT=null;$("baseinfo").style.display="none";
+  }
+  if(p.name){$("lutname").value=p.name;if(typeof updateRebate==="function")updateRebate();}
+  rebuildCurves();render();
+}
+
+/* ================= undo / redo ================= */
+let history=[],hpos=-1,restoring=false;
+function snapshot(){
+  const g=buildGradeData();
+  // Keep the heavy base-LUT samples OUT of the serialised snapshot: a 65-point
+  // cube is ~800k numbers (~7 MB of JSON) and would otherwise be duplicated into
+  // all 60 history entries. We store the live object by reference instead and
+  // only record its identity in the string, so undo/redo stays instant.
+  delete g.baseLUT;
+  g.baseOn=baseOn;
+  g.baseRef=baseLUT?baseLUT.name+"|"+baseLUT.size:null;
+  return {s:JSON.stringify(g),base:baseLUT};
+}
+function restoreSnap(entry){
+  const g=JSON.parse(entry.s);
+  restoring=true;
+  if(entry.base){
+    baseLUT=entry.base;
+    baseOn=g.baseOn!==false;$("baseEnable").checked=baseOn;
+    $("basename").textContent=baseLUT.name+" ("+baseLUT.size+"\u00B3)";
+    $("baseinfo").style.display="block";
+  }else{baseLUT=null;$("baseinfo").style.display="none";}
+  applyGradeData(g);
+  if(typeof updateSecSwatch==="function")updateSecSwatch();
+  restoring=false;
+}
+function pushHistory(){
+  if(restoring)return;
+  const snap=snapshot();
+  if(hpos>=0&&history[hpos].s===snap.s&&history[hpos].base===snap.base)return;
+  history=history.slice(0,hpos+1);
+  history.push(snap);
+  if(history.length>60)history.shift();
+  hpos=history.length-1;
+  updateUndoButtons();
+}
+function updateUndoButtons(){
+  $("undoBtn").disabled=hpos<=0;
+  $("redoBtn").disabled=hpos>=history.length-1;
+}
+function undo(){if(hpos>0){hpos--;restoreSnap(history[hpos]);updateUndoButtons();}}
+function redo(){if(hpos<history.length-1){hpos++;restoreSnap(history[hpos]);updateUndoButtons();}}
+$("undoBtn").addEventListener("click",undo);
+$("redoBtn").addEventListener("click",redo);
+document.addEventListener("keydown",e=>{
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==="z"){
+    if(document.activeElement&&/INPUT|TEXTAREA/.test(document.activeElement.tagName)&&document.activeElement.type!=="range")return;
+    e.preventDefault();e.shiftKey?redo():undo();
+  }else if((e.ctrlKey||e.metaKey)&&k==="y"){e.preventDefault();redo();}
+});
+
+/* storage: IndexedDB primary (large quota, wrapper-friendly), localStorage fallback */
+const store=(()=>{
+  let dbp=null;
+  function db(){
+    if(dbp)return dbp;
+    dbp=new Promise((res,rej)=>{
+      try{const r=indexedDB.open("lutmaster",1);
+        r.onupgradeneeded=()=>r.result.createObjectStore("kv");
+        r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+      }catch(e){rej(e)}
+    });return dbp;
+  }
+  return{
+    async get(k){try{const d=await db();return await new Promise((res,rej)=>{const t=d.transaction("kv").objectStore("kv").get(k);t.onsuccess=()=>res(t.result??null);t.onerror=()=>rej(t.error);});}catch(e){try{return localStorage.getItem(k)}catch(_){return null}}},
+    async set(k,v){try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=res;t.onerror=()=>rej(t.error);});return true;}catch(e){try{localStorage.setItem(k,v);return true}catch(_){return false}}}
+  };
+})();
+
+
+
+/* ================= my looks (saved presets) ================= */
+let looks=[];
+let loadedLuts=[];
+async function looksLoad(){
+  try{
+    let raw=await store.get("lutmaster.looks");
+    if(raw==null){try{raw=localStorage.getItem("lutmaster.looks");}catch(e){}if(raw!=null)store.set("lutmaster.looks",raw);}
+    looks=raw?(JSON.parse(raw)||[]):[];
+    looks=looks.filter(lk=>!(lk.type==="cube"&&lk.volatile));
+    looks.forEach(lk=>{if(lk.type==="cube"&&lk.packed){lk.data=lk.packed.split(" ").map(Number);delete lk.packed;}});
+    looks=looks.filter(lk=>lk.type!=="cube"||(lk.data&&lk.data.length>=lk.size**3*3));
+    looks.forEach(lk=>{lk.active=!!lk.active;lk.strength=Math.max(0,Math.min(100,Number.isFinite(+lk.strength)?+lk.strength:100));});
+  }catch(e){looks=[];}
+}
+function looksSerialisable(stripCubes){
+  return looks.map(lk=>{
+    if(lk.type!=="cube"){const{compiled,...saved}=lk;return saved;}
+    if(stripCubes)return{type:"cube",name:lk.name,size:lk.size,volatile:true};
+    return{type:"cube",name:lk.name,size:lk.size,packed:lk.data.map(v=>(+v).toFixed(4)).join(" ")};
+  });
+}
+function looksPersist(){
+  store.set("lutmaster.looks",JSON.stringify(looksSerialisable(false))).then(ok=>{
+    if(!ok)fail("Couldn't store looks on this device \u2014 they'll last for this session only.");
+  });
+}
+function looksRender(){
+  const list=$("looksList");list.innerHTML="";
+  $("looksEmpty").style.display=looks.length?"none":"block";
+  $("looksCount").textContent="Saved LUTs ("+looks.length+")";
+  looks.forEach((lk,idx)=>{
+    const row=document.createElement("div");row.className="look";
+    const swd=document.createElement("span");swd.className="lswatch";
+    let cols;try{cols=computeLookSwatch(lk);}catch(e){cols=new Array(6).fill("#3a3a3a");}
+    cols.forEach(col=>{const i2=document.createElement("i");i2.style.background=col;swd.appendChild(i2);});
+    const nm=document.createElement("span");nm.className="lname";nm.textContent=lk.name;nm.title="Load "+lk.name;
+    const ty=document.createElement("span");ty.className="ltype";ty.textContent=lk.type==="cube"?"cube "+lk.size+"\u00B3":"grade";
+    nm.addEventListener("click",()=>{loadLook(lk);$("looksDD").classList.remove("open");});
+    const del=document.createElement("button");del.type="button";del.className="ldel";del.textContent="\u00D7";del.title="Delete "+lk.name+" permanently";
+    del.addEventListener("click",e=>{e.stopPropagation();const i=looks.indexOf(lk);if(i<0)return;looks.splice(i,1);looksPersist();looksRender();});
+    row.append(swd,nm,ty,del);list.appendChild(row);
+  });
+}
+const SWATCH_IN=[[0.27,0.27,0.27],[0.65,0.65,0.65],[0.88,0.67,0.41],[0.69,0.21,0.24],[0.27,0.58,0.29],[0.31,0.36,0.65]];
+function sampleLutArr(data,N,r,g,b){
+  const m=N-1,rf=clamp(r)*m,gf=clamp(g)*m,bf=clamp(b)*m;
+  const r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(r0+1,m),g1=Math.min(g0+1,m),b1=Math.min(b0+1,m);
+  const fr=rf-r0,fg=gf-g0,fb=bf-b0,idx=(R,G,B)=>((B*N+G)*N+R)*3,out=[0,0,0];
+  for(let ch=0;ch<3;ch++){
+    const c00=data[idx(r0,g0,b0)+ch]+(data[idx(r1,g0,b0)+ch]-data[idx(r0,g0,b0)+ch])*fr,
+          c10=data[idx(r0,g1,b0)+ch]+(data[idx(r1,g1,b0)+ch]-data[idx(r0,g1,b0)+ch])*fr,
+          c01=data[idx(r0,g0,b1)+ch]+(data[idx(r1,g0,b1)+ch]-data[idx(r0,g0,b1)+ch])*fr,
+          c11=data[idx(r0,g1,b1)+ch]+(data[idx(r1,g1,b1)+ch]-data[idx(r0,g1,b1)+ch])*fr;
+    const c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;
+    out[ch]=clamp(c0+(c1-c0)*fb);
+  }
+  return out;
+}
+function compileGradeLook(lk){
+  if(lk.compiled)return lk.compiled;
+  const snap=buildGradeData(),savedBase=baseLUT,savedBaseOn=baseOn,savedGains=normalisationGains;
+  const N=25,data=new Float32Array(N*N*N*3);
+  let i=0;
+  applyingLookStack=true;
+  baseLUT=null;baseOn=false;normalisationGains=[1,1,1];
+  applyDataSilent(lk.data);
+  state.logMode=false;
+  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+    const o=grade(r/(N-1),g/(N-1),b/(N-1));
+    data[i++]=o[0];data[i++]=o[1];data[i++]=o[2];
+  }
+  applyDataSilent(snap);baseLUT=savedBase;baseOn=savedBaseOn;normalisationGains=savedGains;
+  applyingLookStack=false;
+  lk.compiled={size:N,data};
+  return lk.compiled;
+}
+function applyActiveLooks(r,g,b){
+  for(const lk of loadedLuts){
+    if(!lk.active||lk.strength<=0)continue;
+    const lut=lk.type==="cube"?{size:lk.size,data:lk.data}:compileGradeLook(lk);
+    const o=sampleLutArr(lut.data,lut.size,r,g,b),amount=lk.strength/100;
+    r=r+(o[0]-r)*amount;g=g+(o[1]-g)*amount;b=b+(o[2]-b)*amount;
+  }
+  return[r,g,b];
+}
+function loadedLutsRender(){
+  const list=$("loadedLuts");list.innerHTML="";
+  loadedLuts.forEach((lk,idx)=>{
+    const row=document.createElement("div");row.className="loaded-lut";
+    const active=document.createElement("label");active.className="lactive";active.title="Enable in LUT stack";
+    const check=document.createElement("input");check.type="checkbox";check.checked=lk.active;active.appendChild(check);
+    const name=document.createElement("span");name.className="lname";name.textContent=lk.name;
+    const strength=document.createElement("input");strength.className="lstrength";strength.type="range";strength.min="0";strength.max="100";strength.value=lk.strength;strength.title=lk.strength+"% strength";
+    const del=document.createElement("button");del.className="ldel";del.textContent="\u00D7";del.title="Remove loaded LUT";
+    check.addEventListener("change",()=>{lk.active=check.checked;render();});
+    strength.addEventListener("input",()=>{lk.strength=+strength.value;strength.title=lk.strength+"% strength";render();});
+    del.addEventListener("click",()=>{loadedLuts.splice(idx,1);loadedLutsRender();render();});
+    row.append(active,name,strength,del);list.appendChild(row);
+  });
+}
+function loadLook(lk){
+  if(loadedLuts.some(loaded=>loaded.source===lk))return;
+  loadedLuts.push({source:lk,type:lk.type,name:lk.name,size:lk.size,data:lk.data,active:true,strength:100});
+  loadedLutsRender();
+  render();
+}
+function computeLookSwatch(lk){
+  if(lk.type==="cube"){
+    const d=Float32Array.from(lk.data);
+    return SWATCH_IN.map(p=>{const o=sampleLutArr(d,lk.size,p[0],p[1],p[2]);
+      return`rgb(${o[0]*255|0},${o[1]*255|0},${o[2]*255|0})`;});
+  }
+  const snap=buildGradeData(),snapBase=baseLUT,wasApplying=applyingLookStack;
+  applyingLookStack=true;
+  baseLUT=null;
+  applyDataSilent(lk.data);state.logMode=false;
+  const cols=SWATCH_IN.map(p=>{const o=grade(p[0],p[1],p[2]);
+    return`rgb(${o[0]*255|0},${o[1]*255|0},${o[2]*255|0})`;});
+  applyDataSilent(snap);state.logMode=snap.logMode;baseLUT=snapBase;applyingLookStack=wasApplying;
+  return cols;
+}
+function applyLook(lk){
+  if(lk.type==="grade"){applyGradeData(lk.data);pushHistory();}
+  else{
+    applyGradeData({app:"LutMaster",state:{},curves:{},name:lk.name.replace(/\.cube$/i,"")});
+    baseLUT={size:lk.size,data:Float32Array.from(lk.data),name:lk.name};
+    baseOn=true;$("baseEnable").checked=true;
+    $("basename").textContent=lk.name+" ("+lk.size+"\u00B3)";
+    $("baseinfo").style.display="block";
+    render();pushHistory();
+  }
+}
+$("saveLook").addEventListener("click",()=>{
+  let name=($("lutname").value||"my_grade").trim();
+  const existing=looks.findIndex(l=>l.name===name&&l.type==="grade");
+  const entry={type:"grade",name,data:buildGradeData(),active:false,strength:100};
+  if(existing>=0)looks[existing]=entry;else looks.push(entry);
+  looksPersist();looksRender();
+  $("looksDD").classList.add("open");
+});
+function parseCubeText(text){
+  const lines=text.split(/\r?\n/);let size=0;const vals=[];
+  for(const ln of lines){
+    const t=ln.trim();
+    if(!t||t[0]==="#")continue;
+    if(/^LUT_3D_SIZE/i.test(t)){size=parseInt(t.split(/\s+/)[1]);continue;}
+    if(/^(TITLE|DOMAIN_|LUT_1D)/i.test(t))continue;
+    const parts=t.split(/\s+/);
+    if(parts.length>=3&&!isNaN(+parts[0]))vals.push(+parts[0],+parts[1],+parts[2]);
+  }
+  if(!size||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
+  return{size,vals};
+}
+$("addLookCube").addEventListener("click",()=>$("lookCubeFile").click());
+$("lookCubeFile").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const{size,vals}=parseCubeText(reader.result);
+      looks.push({type:"cube",name:file.name,size,data:vals.map(v=>+v.toFixed(6)),active:false,strength:100});
+      looksPersist();looksRender();
+    }catch(err){fail("Couldn't add LUT: "+err.message);}
+  };
+  reader.readAsText(file);
+  e.target.value="";
+});
+$("looksToggle").addEventListener("click",e=>{
+  e.stopPropagation();
+  $("looksDD").classList.toggle("open");
+});
+document.addEventListener("click",e=>{
+  if(!$("looksDD").contains(e.target))$("looksDD").classList.remove("open");
+});
+function updateSecSwatch(){$("secSwatch").style.background=`hsl(${state.secHueC} 70% 45%)`;}
+$("secHueC").addEventListener("input",updateSecSwatch);
+$("secReset").addEventListener("click",e=>{
+  e.stopPropagation();
+  ["secHueC","secHue","secSat","secLum"].forEach(id=>setSliderUI(id,0));
+  setSliderUI("secRange",40);setSliderUI("secSoft",50);
+  updateSecSwatch();render();pushHistory();
+});
+updateSecSwatch();
+
+/* per-section + master resets */
+function setS(id,v){const el=$(id);if(!el)return;v=Math.max(+el.min,Math.min(+el.max,v));state[id]=v;el.value=v;const n=el.parentElement.querySelector(".num");if(n)n.value=v;}
+function resetGroup(ids,render2=true){ids.forEach(id=>setS(id,DEF[id]||0));if(render2)render();}
+$("toneReset").addEventListener("click",e=>{
+  e.stopPropagation();
+  resetGroup(["exposure","contrast","highlights","shadows","blacks","gamma","fade"]);
+  pushHistory();
+});
+$("colReset").addEventListener("click",e=>{e.stopPropagation();resetGroup(["temp","tint","sat","vib","skin","colorNorm"]);pushHistory();});
+$("splitReset").addEventListener("click",e=>{e.stopPropagation();setS("shAmt",0);setS("hiAmt",0);state.shCol=hex2rgb("#406080");$("shCol").value="#406080";state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";render();pushHistory();});
+$("resetAll").addEventListener("click",()=>{
+  sliders.forEach(id=>setS(id,DEF[id]||0));
+  state.shCol=hex2rgb("#406080");$("shCol").value="#406080";
+  state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";
+  state.logMode=false;$("logMode").checked=false;
+  state.enabled={...SECTION_DEFAULTS};syncSectionEnabled();
+  ["m","r","g","b"].forEach(ch=>curves[ch]=defCurve());
+  hueShift.fill(0);hueSat.fill(0);lumaSat.fill(0);
+  cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
+  drawColorWheel($("cbSh"),0,0);drawColorWheel($("cbMd"),0,0);drawColorWheel($("cbHi"),0,0);
+  baseLUT=null;baseOn=true;$("baseEnable").checked=true;$("baseinfo").style.display="none";
+  if(typeof updateSecSwatch==="function")updateSecSwatch();
+  rebuildCurves();render();pushHistory();
+});
+
+/* collapsible sections */
+document.querySelectorAll("aside section h2").forEach(h=>{
+  h.addEventListener("click",e=>{
+    if(e.target.closest(".reset,.section-enable"))return;
+    h.parentElement.classList.toggle("closed");
+  });
+});
+
+looksLoad().then(looksRender);
+
+/* ================= project save / load ================= */
+async function tauriSave(name,data,isBinary){
+  const T=window.__TAURI__;if(!T||!T.dialog||!T.fs)return false;
+  try{const path=await T.dialog.save({defaultPath:name});if(path===null)return true;
+    if(isBinary)await T.fs.writeFile(path,data);else await T.fs.writeTextFile(path,data);return true;
+  }catch(e){return false;}
+}
+function download(name,text,type){
+  tauriSave(name,text,false).then(handled=>{
+    if(handled)return;
+    const blob=new Blob([text],{type});
+    try{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+    catch(err){const reader=new FileReader();reader.onload=()=>{const a=document.createElement("a");a.href=reader.result;a.download=name;a.click();};reader.readAsDataURL(blob);}
+  });
+}
+$("saveProj").addEventListener("click",()=>{
+  download(($("lutname").value||"project")+".lutmaster.json",JSON.stringify(buildGradeData(),null,1),"application/json");
+});
+$("loadProj").addEventListener("click",()=>$("projfile").click());
+$("projfile").addEventListener("change",e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{applyGradeData(JSON.parse(reader.result));pushHistory();}
+    catch(err){fail("Couldn't load project: "+err.message);}
+  };
+  reader.readAsText(file);
+  e.target.value="";
+});
+
+/* ================= remove photo ================= */
+function removeImage(idx){
+  if(idx<0||idx>=images.length)return;
+  images[idx].wrap.remove();
+  images.splice(idx,1);
+  if(images.length===0){
+    cur=-1;lastOut=null;
+    $("filmframe").style.display="none";
+    $("stagebar").style.display="none";
+    $("thumbs").style.display="none";
+    $("scopes").style.display="none";
+    $("drop").style.display="block";
+    $("export").disabled=true;
+    return;
+  }
+  $("thumbs").style.display=images.length>1?"flex":"none";
+  selectImage(Math.min(cur>idx?cur-1:cur,images.length-1));
+}
+$("removephoto").addEventListener("click",()=>{if(cur>=0)removeImage(cur);});
+
+/* ================= A/B grade slots ================= */
+const slots={A:null,B:null};let activeSlot="A";
+function switchSlot(which){
+  if(which===activeSlot)return;
+  slots[activeSlot]=buildGradeData();
+  activeSlot=which;
+  $("slotA").classList.toggle("on",which==="A");
+  $("slotB").classList.toggle("on",which==="B");
+  if(slots[which])applyGradeData(slots[which]);
+  else slots[which]=buildGradeData();
+}
+$("slotA").addEventListener("click",()=>switchSlot("A"));
+$("slotB").addEventListener("click",()=>switchSlot("B"));
+$("slotCopy").addEventListener("click",()=>{
+  slots[activeSlot==="A"?"B":"A"]=buildGradeData();
+  $("slotCopy").textContent="copied";
+  setTimeout(()=>$("slotCopy").textContent="copy \u2192",900);
+});
+
+/* ================= save graded photo ================= */
+function saveBlob(name,blob){
+  blob.arrayBuffer().then(buf=>tauriSave(name,new Uint8Array(buf),true)).then(handled=>{
+    if(handled)return;
+    try{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);}
+    catch(err){const reader=new FileReader();reader.onload=()=>{const a=document.createElement("a");a.href=reader.result;a.download=name;a.click();};reader.readAsDataURL(blob);}
+  }).catch(()=>{});
+}
+function gradedFilename(imgName){
+  const base=(imgName||"photo").replace(/\.[^.]+$/,"");
+  const lut=($("lutname").value||"graded").replace(/[^\w-]+/g,"_");
+  return base+"_"+lut+".jpg";
+}
+function exportGradedFrom(idata,imgName,btn){
+  const N=33,plut=new Float32Array(N*N*N*3);
+  let i=0;
+  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+    const o=grade(r/(N-1),g/(N-1),b/(N-1));
+    plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];
+  }
+  const out=applyLut(idata,plut,N);
+  const cv=document.createElement("canvas");cv.width=idata.width;cv.height=idata.height;
+  cv.getContext("2d").putImageData(out,0,0);
+  cv.toBlob(blob=>{
+    if(blob)saveBlob(gradedFilename(imgName),blob);
+    else fail("Couldn't encode the graded photo.");
+    btn.disabled=false;btn.textContent="Save graded photo";
+  },"image/jpeg",0.93);
+}
+$("savephoto").addEventListener("click",()=>{
+  if(cur<0)return;
+  const im=images[cur],btn=$("savephoto");
+  btn.disabled=true;btn.textContent="Saving\u2026";
+  if(im.srcURL){
+    const img=new Image();
+    img.onerror=()=>{exportGradedFrom(im.data,im.name,btn);};
+    img.onload=()=>{
+      try{
+        const cap=8192,sc=Math.min(1,cap/Math.max(img.width,img.height));
+        const w=Math.round(img.width*sc),h=Math.round(img.height*sc);
+        const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        exportGradedFrom(cv.getContext("2d").getImageData(0,0,w,h),im.name,btn);
+      }catch(err){exportGradedFrom(im.data,im.name,btn);}
+    };
+    img.src=im.srcURL;
+  }else{
+    exportGradedFrom(im.data,im.name,btn);
+  }
+});
+
+/* ================= LUT export ================= */
+$("export").addEventListener("click",()=>{
+  const N=+$("lutsize").value;
+  const safeTitle=($("lutname").value||"my_grade").replace(/["\r\n]/g,"");
+  /* Lumix "base Photo Style": per Panasonic's LUT Library documentation, a
+     .cube may carry a Photo Style tag placed directly under the TITLE line,
+     as the identifier tag #LUMIXPHOTOSTYLE, one half-width space, then the
+     style code. Real Time LUT reads it to decide which Photo Style the LUT
+     was built on; if it is missing or malformed the camera assumes V-Log.
+     Harmless to every other application, which ignores # comment lines. */
+  const psTag=$("lumixStyle").value;
+  const psLine=psTag?`#LUMIXPHOTOSTYLE ${psTag}\n`:"";
+  const head=`# Created with LutMaster\nTITLE "${safeTitle}"\n${psLine}LUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
+  const lines=[];
+  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+    const o=grade(r/(N-1),g/(N-1),b/(N-1));
+    lines.push(o[0].toFixed(6)+" "+o[1].toFixed(6)+" "+o[2].toFixed(6));
+  }
+  const name=($("lutname").value||"my_grade").replace(/[^\w-]+/g,"_")+".cube";
+  download(name,head+lines.join("\n")+"\n","text/plain");
+});
+
+/* Live Lumix compatibility check. Panasonic's LUT Library documentation states
+   .cube files are supported from 2-point up to 33-point (so 65 will simply be
+   refused by the camera), and that on a FAT32 card (SD/SDHC) the file name is
+   limited to 8 characters excluding the extension. Both failures are silent on
+   the camera: the file just doesn't appear, which is maddening to diagnose. */
+function updateLumixHint(){
+  const el=$("lumixHint");if(!el)return;
+  const base=($("lutname").value||"my_grade").replace(/[^\w-]+/g,"_");
+  const size=+$("lutsize").value;
+  const msgs=[];
+  if(size>33)msgs.push("<b>65-point won't load on Lumix cameras</b> \u2014 they accept up to 33-point. Use 33 for in-camera Real Time LUT.");
+  if(base.length>8)msgs.push("Name is "+base.length+" characters; Lumix cards formatted FAT32 (SD/SDHC) allow <b>8</b>. Shorten it, or use an SDXC/CFexpress card.");
+  if(msgs.length){el.innerHTML="\u26A0 "+msgs.join(" ");el.style.display="block";el.style.color="var(--red)";}
+  else{el.innerHTML="Ready for Lumix Real Time LUT \u2014 33-point, "+base.length+"-character name.";el.style.display=size===33&&base.length<=8?"block":"none";el.style.color="var(--dim)";}
+}
+
+function updateRebate(){
+  updateLumixHint();
+  $("rebatename").textContent=($("lutname").value||"my_grade").toUpperCase().replace(/[^\w-]+/g,"_")+" \u25B8 "+$("lutsize").value;
+}
+$("lutname").addEventListener("input",updateRebate);
+$("lutsize").addEventListener("change",updateRebate);
+updateRebate();
+/* ================= export look pack ================= */
+function cubeTextFromGrade(name,N){
+  const head=`TITLE "${name}"\nLUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
+  const lines=[];
+  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+    const o=grade(r/(N-1),g/(N-1),b/(N-1));
+    lines.push(o[0].toFixed(6)+" "+o[1].toFixed(6)+" "+o[2].toFixed(6));
+  }
+  return head+lines.join("\n")+"\n";
+}
+$("exportPack").addEventListener("click",()=>{
+  if(!looks.length){fail("No saved LUTs to export yet — save a LUT first.");return;}
+  const N=+$("lutsize").value;
+  const snap=buildGradeData(),snapBase=baseLUT;
+  const files=[];
+  looks.forEach(lk=>{
+    const fname=lk.name.replace(/\.cube$/i,"").replace(/[^\w-]+/g,"_")+".cube";
+    if(lk.type==="cube"){
+      const head=`TITLE "${lk.name}"\nLUT_3D_SIZE ${lk.size}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
+      const lines=[];
+      for(let i=0;i<lk.data.length;i+=3)lines.push(lk.data[i].toFixed(6)+" "+lk.data[i+1].toFixed(6)+" "+lk.data[i+2].toFixed(6));
+      files.push({name:fname,text:head+lines.join("\n")+"\n"});
+    }else{
+      baseLUT=null;applyDataSilent(lk.data);
+      files.push({name:fname,text:cubeTextFromGrade(lk.name,N)});
+    }
+  });
+  applyDataSilent(snap);state.logMode=snap.logMode;baseLUT=snapBase;
+  files.forEach((f,i)=>setTimeout(()=>download(f.name,f.text,"text/plain"),i*450));
+  $("exportPack").textContent="Exporting "+files.length+" file"+(files.length>1?"s":"")+"\u2026";
+  setTimeout(()=>$("exportPack").textContent="Export look pack \u2014 every saved look as .cube",files.length*450+800);
+});
+
+/* ================= cube analysis (current grade) ================= */
+const chL=$("cubeHistL"),chLctx=chL.getContext("2d");
+const chRgb=$("cubeHistRgb"),chRgbctx=chRgb.getContext("2d");
+const chHeat=$("cubeHeat"),chHeatCtx=chHeat.getContext("2d");
+const chStats=$("cubeStats");
+const chMini=$("cubeMiniSwatches");
+const chLabel=$("cubePanelLabel");
+const chSizeBtn=$("cubePanelSize");
+
+const ANALYSIS_SIZES=[17,33,65];
+let analysisSize=17;
+let analysisPending=false;
+let analysisRunning=false;
+
+function buildAnalysisCube(N,dst){
+  let p=0;
+  for(let b=0;b<N;b++){
+    const B=b/(N-1);
+    for(let g=0;g<N;g++){
+      const G=g/(N-1);
+      for(let r=0;r<N;r++){
+        const R=r/(N-1);
+        const wasLog=state.logMode;
+        state.logMode=false;
+        const o=grade(R,G,B);
+        state.logMode=wasLog;
+        dst[p++]=o[0];
+        dst[p++]=o[1];
+        dst[p++]=o[2];
+      }
+    }
+  }
+}
+
+function drawAnalysisHeat(lut){
+  const N=lut.size,W=chHeat.width,H=chHeat.height;
+  const cell=Math.max(1,Math.floor(W/N));
+  const W2=cell*N,H2=cell*N;
+  const img=chHeatCtx.createImageData(W2,H2);
+  const gFix=N>>1;
+  for(let b=0;b<N;b++){
+    for(let r=0;r<N;r++){
+      const idx=((b*N+gFix)*N+r)*3;
+      const R=Math.round(lut.data[idx]*255),
+            G=Math.round(lut.data[idx+1]*255),
+            B=Math.round(lut.data[idx+2]*255);
+      for(let py=0;py<cell;py++){
+        for(let px=0;px<cell;px++){
+          const p=((b*cell+py)*W2+(r*cell+px))*4;
+          img.data[p]=R;img.data[p+1]=G;img.data[p+2]=B;img.data[p+3]=255;
+        }
+      }
+    }
+  }
+  chHeatCtx.clearRect(0,0,chHeat.width,chHeat.height);
+  chHeatCtx.putImageData(img,0,0);
+  chHeatCtx.strokeStyle="rgba(0,0,0,0.4)";chHeatCtx.lineWidth=0.5;
+  for(let i=0;i<=N;i+=Math.max(1,Math.floor(N/8))){
+    chHeatCtx.beginPath();
+    chHeatCtx.moveTo(i*cell+0.5,0);chHeatCtx.lineTo(i*cell+0.5,H2);
+    chHeatCtx.moveTo(0,i*cell+0.5);chHeatCtx.lineTo(W2,i*cell+0.5);
+    chHeatCtx.stroke();
+  }
+  chHeatCtx.strokeStyle="rgba(255,255,255,0.2)";chHeatCtx.lineWidth=1;
+  chHeatCtx.strokeRect(0.5,0.5,W2-1,H2-1);
+}
+
+function drawAnalysisHistograms(lut){
+  const N=lut.size,binsL=new Float64Array(48),binsR=new Float64Array(48),binsG=new Float64Array(48),binsB=new Float64Array(48);
+  let sumR=0,sumG=0,sumB=0,sumL=0,minL=1,maxL=0,minR=1,maxR=0,minG=1,maxG=0,minB=1,maxB=0;
+  for(let i=0;i<lut.data.length;i+=3){
+    const R=lut.data[i],G=lut.data[i+1],B=lut.data[i+2];
+    const L=0.2126*R+0.7152*G+0.0722*B;
+    binsL[Math.min(47,(L*47)|0)]++;
+    binsR[Math.min(47,(R*47)|0)]++;
+    binsG[Math.min(47,(G*47)|0)]++;
+    binsB[Math.min(47,(B*47)|0)]++;
+    sumR+=R;sumG+=G;sumB+=B;sumL+=L;
+    if(L<minL)minL=L;if(L>maxL)maxL=L;
+    if(R<minR)minR=R;if(R>maxR)maxR=R;
+    if(G<minG)minG=G;if(G>maxG)maxG=G;
+    if(B<minB)minB=B;if(B>maxB)maxB=B;
+  }
+  const total=lut.data.length/3;
+
+  chLctx.fillStyle="#0d0c09";chLctx.fillRect(0,0,chL.width,chL.height);
+  let mx=1;for(const v of binsL)if(v>mx)mx=v;
+  chLctx.fillStyle="rgba(232,226,212,0.85)";
+  for(let k=0;k<48;k++){
+    const hgt=Math.pow(binsL[k]/mx,0.5)*(chL.height-4);
+    chLctx.fillRect(k*chL.width/48,chL.height-hgt,chL.width/48-0.5,hgt);
+  }
+  chLctx.strokeStyle="rgba(255,255,255,0.18)";chLctx.lineWidth=1;
+  chLctx.beginPath();chLctx.moveTo(0,chL.height-0.5);chLctx.lineTo(chL.width,chL.height-0.5);chLctx.stroke();
+
+  chRgbctx.fillStyle="#0d0c09";chRgbctx.fillRect(0,0,chRgb.width,chRgb.height);
+  mx=1;
+  binsR.forEach(v=>{if(v>mx)mx=v;});
+  binsG.forEach(v=>{if(v>mx)mx=v;});
+  binsB.forEach(v=>{if(v>mx)mx=v;});
+  chRgbctx.globalCompositeOperation="screen";
+  const colsRgb=["rgba(230,80,70,0.85)","rgba(110,210,110,0.85)","rgba(100,140,240,0.85)"];
+  [binsR,binsG,binsB].forEach((bins,ci)=>{
+    chRgbctx.fillStyle=colsRgb[ci];
+    for(let k=0;k<48;k++){
+      const hgt=Math.pow(bins[k]/mx,0.5)*(chRgb.height-4);
+      chRgbctx.fillRect(k*chRgb.width/48,chRgb.height-hgt,chRgb.width/48-0.5,hgt);
+    }
+  });
+  chRgbctx.globalCompositeOperation="source-over";
+
+  const satCount=countSaturated(lut);
+  const avgR=sumR/total,avgG=sumG/total,avgB=sumB/total;
+  chStats.innerHTML=
+    `<b>${N}³</b> &middot; ${total.toLocaleString()} samples<br>`+
+    `Luma  min <b>${(minL*100).toFixed(1)}%</b>  avg <b>${(sumL/total*100).toFixed(1)}%</b>  max <b>${(maxL*100).toFixed(1)}%</b><br>`+
+    `R     min <b>${(minR*100).toFixed(1)}%</b>  avg <b>${(avgR*100).toFixed(1)}%</b>  max <b>${(maxR*100).toFixed(1)}%</b><br>`+
+    `G     min <b>${(minG*100).toFixed(1)}%</b>  avg <b>${(avgG*100).toFixed(1)}%</b>  max <b>${(maxG*100).toFixed(1)}%</b><br>`+
+    `B     min <b>${(minB*100).toFixed(1)}%</b>  avg <b>${(avgB*100).toFixed(1)}%</b>  max <b>${(maxB*100).toFixed(1)}%</b><br>`+
+    `Saturated &ge;99%  <b>${satCount}</b> sample${satCount===1?"":"s"}`;
+
+  drawAnalysisMiniSwatches(lut);
+}
+
+function countSaturated(lut){
+  let c=0;
+  for(let i=0;i<lut.data.length;i+=3){
+    if(lut.data[i]>=0.99&&lut.data[i+1]>=0.99&&lut.data[i+2]>=0.99)c++;
+  }
+  return c;
+}
+
+function drawAnalysisMiniSwatches(lut){
+  const N=lut.size,d=lut.data;
+  const sample=(r,g,b)=>{
+    const m=N-1,rf=clamp(r)*m,gf=clamp(g)*m,bf=clamp(b)*m;
+    const r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(r0+1,m),g1=Math.min(g0+1,m),b1=Math.min(b0+1,m);
+    const fr=rf-r0,fg=gf-g0,fb=bf-b0,idx=(R,G,B)=>((B*N+G)*N+R)*3;
+    const out=[];
+    for(let ch=0;ch<3;ch++){
+      const c00=d[idx(r0,g0,b0)+ch]+(d[idx(r1,g0,b0)+ch]-d[idx(r0,g0,b0)+ch])*fr,
+            c10=d[idx(r0,g1,b0)+ch]+(d[idx(r1,g1,b0)+ch]-d[idx(r0,g1,b0)+ch])*fr,
+            c01=d[idx(r0,g0,b1)+ch]+(d[idx(r1,g0,b1)+ch]-d[idx(r0,g0,b1)+ch])*fr,
+            c11=d[idx(r0,g1,b1)+ch]+(d[idx(r1,g1,b1)+ch]-d[idx(r0,g1,b1)+ch])*fr;
+      const c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;
+      out[ch]=c0+(c1-c0)*fb;
+    }
+    return out;
+  };
+  chMini.innerHTML="";
+  const labels=["#444","#aaa","#dfaa69","#b03639","#46944a","#505ba6"];
+  SWATCH_IN.forEach((p,i)=>{
+    const o=sample(p[0],p[1],p[2]);
+    const sw=document.createElement("div");
+    sw.setAttribute("data-in",labels[i]);
+    sw.style.background=`rgb(${Math.round(clamp(o[0])*255)},${Math.round(clamp(o[1])*255)},${Math.round(clamp(o[2])*255)})`;
+    chMini.appendChild(sw);
+  });
+}
+
+function renderCubeAnalysis(){
+  if(analysisRunning)return;
+  analysisRunning=true;
+  const N=analysisSize;
+  chLabel.textContent="Output "+N+"³ preview";
+  chSizeBtn.textContent=N+"³";
+  setTimeout(()=>{
+    const data=new Float32Array(N*N*N*3);
+    buildAnalysisCube(N,data);
+    const lut={size:N,data,name:"current grade"};
+    drawAnalysisHeat(lut);
+    drawAnalysisHistograms(lut);
+    analysisRunning=false;
+  },0);
+}
+
+function scheduleCubeAnalysis(){
+  if(analysisPending)return;
+  analysisPending=true;
+  requestAnimationFrame(()=>{
+    analysisPending=false;
+    renderCubeAnalysis();
+  });
+}
+
+chSizeBtn.addEventListener("click",()=>{
+  const idx=ANALYSIS_SIZES.indexOf(analysisSize);
+  analysisSize=ANALYSIS_SIZES[(idx+1)%ANALYSIS_SIZES.length];
+  renderCubeAnalysis();
+});
+
+renderCubeAnalysis();
+
+render();
+pushHistory();
+</script>
+</body>
+</html>
