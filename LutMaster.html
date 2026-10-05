@@ -144,6 +144,13 @@
   .loaded-lut .ldel{background:none;border:none;color:var(--dim);cursor:pointer;font:13px var(--mono);padding:0 2px}
   .loaded-lut .ldel:hover{color:var(--red)}
   #looksEmpty{color:var(--dim);font-size:11px;margin-top:8px}
+  #nameModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+  #nameModal.show{display:flex}
+  #nameModal .box{width:min(360px,90vw);background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
+  #nameModal h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
+  #nameModal input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 10px;border-radius:3px;font:13px var(--mono);margin-bottom:14px}
+  #nameModal input:focus{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
+  #nameModal .acts{display:flex;gap:8px;justify-content:flex-end}
   .strip{width:100%;border:1px solid var(--line);border-radius:3px;touch-action:none;cursor:ns-resize;margin-bottom:4px}
   footer{padding:18px 20px;margin-top:auto;background:linear-gradient(0deg,var(--panel),transparent)}
   #lutname{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:3px;margin-bottom:10px;font:13px var(--mono)}
@@ -154,6 +161,9 @@
   #export:hover{background:var(--orange-hi);box-shadow:0 3px 14px rgba(224,133,55,.3)}
   #export:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
   #export:disabled{background:#7a4a22;cursor:not-allowed}
+  #exportJpg{display:block;width:100%;flex:none;margin-bottom:10px;padding:11px;font:600 13px var(--mono);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+  #exportJpg:hover:not(:disabled){color:var(--text);border-color:var(--orange);background:var(--panel3)}
+  #exportJpg:disabled{opacity:.45;cursor:not-allowed}
   .hint{color:var(--dim);font-size:11px;margin-top:8px;text-align:center}
   .reset{background:none;border:none;color:var(--dim);font:11px var(--mono);cursor:pointer;text-decoration:underline;margin-left:auto;margin-right:18px;text-transform:lowercase;position:relative;z-index:2}
   .toggle{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:8px}
@@ -505,6 +515,7 @@
         </select>
         <button id="export" disabled>Export LUT (.cube)</button>
       </div>
+      <button id="exportJpg" class="btn" disabled>Export JPG</button>
       <div class="row" style="margin-top:8px">
         <label for="lumixStyle" title="Lumix bodies read this from the file to pick the base Photo Style. Without it they assume V-Log.">Base Photo Style</label>
         <select id="lumixStyle">
@@ -535,6 +546,13 @@
     </footer>
   </aside>
 </main>
+<div id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
+  <div class="box">
+    <h3 id="nameModalTitle">Save LUT as</h3>
+    <input id="nameModalInput" type="text" spellcheck="false" autocomplete="off" aria-label="LUT name">
+    <div class="acts"><button class="btn" id="nameModalCancel" type="button">Cancel</button><button class="btn" id="nameModalOk" type="button">Save</button></div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -897,6 +915,7 @@ function refreshUIAfterLoad(){
   $("thumbs").style.display=images.length>1?"flex":"none";
   $("scopes").style.display=$("scopeOn").checked?"flex":"none";
   $("export").disabled=false;
+  $("exportJpg").disabled=false;
   requestAnimationFrame(fitPreviewToStage);
 }
 function selectImage(i){
@@ -2406,11 +2425,35 @@ function applyLook(lk){
     render();pushHistory();
   }
 }
-$("saveLook").addEventListener("click",()=>{
-  let name=($("lutname").value||"my_grade").trim();
-  const existing=looks.findIndex(l=>l.name===name&&l.type==="grade");
-  const entry={type:"grade",name,data:buildGradeData(),active:false,strength:100};
-  if(existing>=0)looks[existing]=entry;else looks.push(entry);
+$("nameModal").addEventListener("click",e=>e.stopPropagation()); // clicks in the popup must not reach the dropdown-closing document handler
+function askLookName(def){
+  return new Promise(resolve=>{
+    const modal=$("nameModal"),inp=$("nameModalInput"),ok=$("nameModalOk"),cancel=$("nameModalCancel");
+    inp.value=def;modal.classList.add("show");
+    setTimeout(()=>{inp.focus();inp.select();},0);
+    function done(v){
+      modal.classList.remove("show");
+      ok.removeEventListener("click",onOk);cancel.removeEventListener("click",onCancel);
+      modal.removeEventListener("mousedown",onBackdrop);inp.removeEventListener("keydown",onKey);
+      resolve(v);
+    }
+    function onOk(){done(inp.value.trim()||null);}
+    function onCancel(){done(null);}
+    function onBackdrop(e){if(e.target===modal)done(null);}
+    function onKey(e){if(e.key==="Enter"){e.preventDefault();onOk();}else if(e.key==="Escape"){e.preventDefault();onCancel();}}
+    ok.addEventListener("click",onOk);cancel.addEventListener("click",onCancel);
+    modal.addEventListener("mousedown",onBackdrop);inp.addEventListener("keydown",onKey);
+  });
+}
+$("saveLook").addEventListener("click",async e=>{
+  e.stopPropagation(); // else the document-level click handler closes the list again at once
+  const name=await askLookName(($("lutname").value||"my_grade").trim());
+  if(!name)return; // cancelled or empty
+  if(looks.some(l=>l.name.trim().toLowerCase()===name.toLowerCase())){
+    fail("Not saved \u2014 a LUT named \u201C"+name+"\u201D already exists.");
+    return;
+  }
+  looks.push({type:"grade",name,data:buildGradeData(),active:false,strength:100});
   looksPersist();looksRender();
   $("looksDD").classList.add("open");
 });
@@ -2436,6 +2479,7 @@ $("lookCubeFile").addEventListener("change",e=>{
       const{size,vals}=parseCubeText(reader.result);
       looks.push({type:"cube",name:file.name,size,data:vals.map(v=>+v.toFixed(6)),active:false,strength:100});
       looksPersist();looksRender();
+      $("looksDD").classList.add("open");
     }catch(err){fail("Couldn't add LUT: "+err.message);}
   };
   reader.readAsText(file);
@@ -2886,6 +2930,30 @@ renderCubeAnalysis();
 
 render();
 pushHistory();
+
+$("exportJpg").addEventListener("click", () => {
+  if (!lastOut) return; // Abbruch, falls noch kein Bild gerendert wurde
+  
+  // Temporäres Canvas in Originalgröße des Bildes erstellen
+  const canvas = document.createElement("canvas");
+  canvas.width = lastOut.width;
+  canvas.height = lastOut.height;
+  const ctx = canvas.getContext("2d");
+  
+  // Das fertig bearbeitete Bild zeichnen
+  ctx.putImageData(lastOut, 0, 0);
+  
+  // Dateinamen aus dem bereits existierenden LUT-Namensfeld generieren
+  const inputName = $("lutname").value || "graded_image";
+  const fileName = inputName + ".jpg";
+  
+  // Download über einen temporären Link anstoßen
+  const link = document.createElement("a");
+  link.download = fileName;
+  link.href = canvas.toDataURL("image/jpeg", 0.95); // 0.95 entspricht 95% Bildqualität
+  link.click();
+});
+
 </script>
 </body>
 </html>
