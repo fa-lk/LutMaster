@@ -161,9 +161,6 @@
   #export:hover{background:var(--orange-hi);box-shadow:0 3px 14px rgba(224,133,55,.3)}
   #export:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
   #export:disabled{background:#7a4a22;cursor:not-allowed}
-  #exportJpg{display:block;width:100%;flex:none;margin-bottom:10px;padding:11px;font:600 13px var(--mono);text-transform:uppercase;letter-spacing:.06em;text-align:center}
-  #exportJpg:hover:not(:disabled){color:var(--text);border-color:var(--orange);background:var(--panel3)}
-  #exportJpg:disabled{opacity:.45;cursor:not-allowed}
   .hint{color:var(--dim);font-size:11px;margin-top:8px;text-align:center}
   .reset{background:none;border:none;color:var(--dim);font:11px var(--mono);cursor:pointer;text-decoration:underline;margin-left:auto;margin-right:18px;text-transform:lowercase;position:relative;z-index:2}
   .toggle{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--dim);cursor:pointer;margin-bottom:8px}
@@ -515,7 +512,6 @@
         </select>
         <button id="export" disabled>Export LUT (.cube)</button>
       </div>
-      <button id="exportJpg" class="btn" disabled>Export JPG</button>
       <div class="row" style="margin-top:8px">
         <label for="lumixStyle" title="Lumix bodies read this from the file to pick the base Photo Style. Without it they assume V-Log.">Base Photo Style</label>
         <select id="lumixStyle">
@@ -844,6 +840,7 @@ const previewZoom={scale:1,x:0,y:0};
 function resetPreviewZoom(){
   previewZoom.scale=1;previewZoom.x=0;previewZoom.y=0;
   view.style.transform="";
+  viewwrap.style.width="";viewwrap.style.height="";
 }
 function fitPreviewToStage(){
   if(cur<0)return;
@@ -858,7 +855,18 @@ function fitPreviewToStage(){
   const image=images[cur].data,scale=Math.max(0.01,Math.min(width/image.width,height/image.height));
   view.style.width=Math.floor(image.width*scale)+"px";
   view.style.height=Math.floor(image.height*scale)+"px";
+  previewAvail.w=Math.max(0,Math.floor(width));previewAvail.h=Math.max(0,Math.floor(height));
   applyPreviewZoom();
+}
+/* While zoomed in, the visible window is no longer limited to the fitted image
+   rectangle: it grows with the zoom until it fills all the space the stage offers
+   (between thumbs and sidebar, above the controls). */
+const previewAvail={w:0,h:0};
+function updatePreviewWindow(){
+  if(previewZoom.scale<=1||!previewAvail.w||!previewAvail.h){viewwrap.style.width="";viewwrap.style.height="";return;}
+  const fw=view.offsetWidth,fh=view.offsetHeight;
+  viewwrap.style.width=Math.max(fw,Math.min(previewAvail.w,Math.round(fw*previewZoom.scale)))+"px";
+  viewwrap.style.height=Math.max(fh,Math.min(previewAvail.h,Math.round(fh*previewZoom.scale)))+"px";
 }
 function clampPreviewPan(){
   const r=viewwrap.getBoundingClientRect();
@@ -866,6 +874,7 @@ function clampPreviewPan(){
   previewZoom.y=Math.min(0,Math.max(r.height-view.offsetHeight*previewZoom.scale,previewZoom.y));
 }
 function applyPreviewZoom(){
+  updatePreviewWindow();
   clampPreviewPan();
   view.style.transform=`translate(${previewZoom.x}px,${previewZoom.y}px) scale(${previewZoom.scale})`;
   positionWipe();
@@ -915,7 +924,6 @@ function refreshUIAfterLoad(){
   $("thumbs").style.display=images.length>1?"flex":"none";
   $("scopes").style.display=$("scopeOn").checked?"flex":"none";
   $("export").disabled=false;
-  $("exportJpg").disabled=false;
   requestAnimationFrame(fitPreviewToStage);
 }
 function selectImage(i){
@@ -1594,9 +1602,13 @@ viewwrap.addEventListener("wheel",e=>{
   const oldScale=previewZoom.scale;
   const nextScale=Math.max(1,Math.min(20,oldScale*Math.pow(1.1,-e.deltaY/100)));
   if(nextScale===oldScale)return;
-  previewZoom.x=px-(px-previewZoom.x)*nextScale/oldScale;
-  previewZoom.y=py-(py-previewZoom.y)*nextScale/oldScale;
+  // image point under the cursor (in unscaled canvas px)
+  const cx=(px-previewZoom.x)/oldScale,cy=(py-previewZoom.y)/oldScale;
   previewZoom.scale=nextScale;
+  updatePreviewWindow();                       // the window may have grown/shrunk around its centre
+  const r2=viewwrap.getBoundingClientRect();   // so re-anchor against its new position
+  previewZoom.x=e.clientX-r2.left-cx*nextScale;
+  previewZoom.y=e.clientY-r2.top-cy*nextScale;
   applyPreviewZoom();
 },{passive:false});
 window.addEventListener("pointerup",()=>{
@@ -2931,28 +2943,7 @@ renderCubeAnalysis();
 render();
 pushHistory();
 
-$("exportJpg").addEventListener("click", () => {
-  if (!lastOut) return; // Abbruch, falls noch kein Bild gerendert wurde
-  
-  // Temporäres Canvas in Originalgröße des Bildes erstellen
-  const canvas = document.createElement("canvas");
-  canvas.width = lastOut.width;
-  canvas.height = lastOut.height;
-  const ctx = canvas.getContext("2d");
-  
-  // Das fertig bearbeitete Bild zeichnen
-  ctx.putImageData(lastOut, 0, 0);
-  
-  // Dateinamen aus dem bereits existierenden LUT-Namensfeld generieren
-  const inputName = $("lutname").value || "graded_image";
-  const fileName = inputName + ".jpg";
-  
-  // Download über einen temporären Link anstoßen
-  const link = document.createElement("a");
-  link.download = fileName;
-  link.href = canvas.toDataURL("image/jpeg", 0.95); // 0.95 entspricht 95% Bildqualität
-  link.click();
-});
+
 
 </script>
 </body>
