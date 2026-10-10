@@ -136,8 +136,13 @@
   .look .ldel{background:none;border:none;color:var(--dim);cursor:pointer;font:13px var(--mono);padding:0 2px;flex-shrink:0}
   .look .ldel:hover{color:var(--red)}
   #loadedLuts{display:flex;flex-direction:column;gap:4px;margin-top:8px}
-  .loaded-lut{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:6px 8px}
-  .loaded-lut .lname{flex:1;font:12px var(--mono);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .loaded-lut{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:6px 8px;position:relative}
+  .loaded-lut.dragging{opacity:.45}
+  .loaded-lut.drag-over-top{box-shadow:inset 0 2px var(--orange-hi)}
+  .loaded-lut.drag-over-bottom{box-shadow:inset 0 -2px var(--orange-hi)}
+  .loaded-lut .luthandle{flex:0 0 12px;color:var(--faint);cursor:grab;user-select:none;text-align:center;font:14px/1 var(--mono);touch-action:none}
+  .loaded-lut .luthandle:active{cursor:grabbing}
+  .loaded-lut .lname{flex:1;min-width:0;font:12px var(--mono);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .loaded-lut .lactive{display:flex;align-items:center;cursor:pointer}
   .loaded-lut .lactive input,.loaded-lut .lstrength{accent-color:var(--orange);cursor:pointer}
   .loaded-lut .lstrength{width:54px}
@@ -2162,7 +2167,11 @@ $("lrFile").addEventListener("change",e=>{
 function buildGradeData(){
   return {
     app:"LutMaster",version:2,name:$("lutname").value,
-    state:{...state,shCol:undefined,hiCol:undefined},
+    // Clone nested state so A/B slots and history entries retain independent
+    // section-enable checkbox states instead of sharing the mutable object.
+    state:{...state,enabled:{...state.enabled},shCol:undefined,hiCol:undefined},
+    // Capture the loaded LUT stack order, enable checkboxes and strength values.
+    loadedLuts:loadedLuts.map(lk=>({id:lk.slotId,name:lk.name,type:lk.type,active:!!lk.active,strength:+lk.strength})),
     shCol:$("shCol").value,hiCol:$("hiCol").value,
     logMode:state.logMode,curves:JSON.parse(JSON.stringify(curves)),
     hueShift:[...hueShift],hueSat:[...hueSat],lumaSat:[...lumaSat],
@@ -2195,6 +2204,26 @@ function applyDataSilent(p){
   rebuildCurves();
   syncSectionEnabled();
 }
+function restoreLoadedLutSettings(savedList){
+  // LUT data itself remains loaded globally. Restore only the selected stack
+  // order and per-LUT controls, matching by runtime ID first and by type/name
+  // for project files or presets created by older versions.
+  if(!Array.isArray(savedList))return;
+  const used=new Set(),ordered=[];
+  for(const saved of savedList){
+    let lk=saved.id!=null?loadedLuts.find(item=>item.slotId===saved.id&&!used.has(item)):null;
+    if(!lk)lk=loadedLuts.find(item=>!used.has(item)&&item.type===saved.type&&item.name===saved.name);
+    if(!lk)continue;
+    lk.active=saved.active!==false;
+    const strength=Number(saved.strength);
+    lk.strength=Math.max(0,Math.min(100,Number.isFinite(strength)?strength:100));
+    used.add(lk);ordered.push(lk);
+  }
+  // LUTs added after this snapshot remain available at the end of the stack.
+  const remaining=loadedLuts.filter(lk=>!used.has(lk));
+  loadedLuts.splice(0,loadedLuts.length,...ordered,...remaining);
+  loadedLutsRender();
+}
 function applyGradeData(p){
   if(p.app!=="LutMaster")throw new Error("not a LutMaster grade");
   sliders.forEach(s2=>{
@@ -2205,6 +2234,7 @@ function applyGradeData(p){
   $("hiCol").value=p.hiCol||"#e0a060";state.hiCol=hex2rgb($("hiCol").value);
   state.logMode=!!p.logMode;$("logMode").checked=state.logMode;
   state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
+  restoreLoadedLutSettings(p.loadedLuts);
   ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
@@ -2308,6 +2338,8 @@ const store=(()=>{
 /* ================= my looks (saved presets) ================= */
 let looks=[];
 let loadedLuts=[];
+let loadedLutSerial=1;
+let draggedLoadedLut=null;
 async function looksLoad(){
   try{
     let raw=await store.get("lutmaster.looks");
@@ -2365,19 +2397,27 @@ function sampleLutArr(data,N,r,g,b){
 }
 function compileGradeLook(lk){
   if(lk.compiled)return lk.compiled;
-  const snap=buildGradeData(),savedBase=baseLUT,savedBaseOn=baseOn,savedGains=normalisationGains;
+  const snap=buildGradeData(),savedBase=baseLUT,savedBaseOn=baseOn,
+        savedGains=normalisationGains,savedApplyingLookStack=applyingLookStack;
   const N=25,data=new Float32Array(N*N*N*3);
   let i=0;
-  applyingLookStack=true;
-  baseLUT=null;baseOn=false;normalisationGains=[1,1,1];
-  applyDataSilent(lk.data);
-  state.logMode=false;
-  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
-    const o=grade(r/(N-1),g/(N-1),b/(N-1));
-    data[i++]=o[0];data[i++]=o[1];data[i++]=o[2];
+  try{
+    // Compile a saved grade as a standalone LUT. Do not recursively apply the
+    // currently loaded LUT stack while baking this individual look.
+    applyingLookStack=true;
+    baseLUT=null;baseOn=false;normalisationGains=[1,1,1];
+    applyDataSilent(lk.data);
+    state.logMode=false;
+    for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+      const o=grade(r/(N-1),g/(N-1),b/(N-1));
+      data[i++]=o[0];data[i++]=o[1];data[i++]=o[2];
+    }
+  }finally{
+    // Always return the editor to its exact pre-compile state, even if LUT
+    // compilation fails. In particular, preserve the caller's stack flag.
+    applyDataSilent(snap);baseLUT=savedBase;baseOn=savedBaseOn;
+    normalisationGains=savedGains;applyingLookStack=savedApplyingLookStack;
   }
-  applyDataSilent(snap);baseLUT=savedBase;baseOn=savedBaseOn;normalisationGains=savedGains;
-  applyingLookStack=false;
   lk.compiled={size:N,data};
   return lk.compiled;
 }
@@ -2392,24 +2432,73 @@ function applyActiveLooks(r,g,b){
 }
 function loadedLutsRender(){
   const list=$("loadedLuts");list.innerHTML="";
-  loadedLuts.forEach((lk,idx)=>{
+  loadedLuts.forEach(lk=>{
     const row=document.createElement("div");row.className="loaded-lut";
+    row.dataset.lutName=lk.name||"";
+
+    // Drag handle keeps sliders, checkboxes and remove buttons usable without
+    // accidentally starting a drag. Stack order here is processing order.
+    const handle=document.createElement("span");
+    handle.className="luthandle";handle.textContent="⋮";handle.title="Drag to reorder LUTs";
+    handle.setAttribute("role","button");handle.setAttribute("aria-label","Drag to reorder "+(lk.name||"LUT"));
+    handle.draggable=true;
+
     const active=document.createElement("label");active.className="lactive";active.title="Enable in LUT stack";
     const check=document.createElement("input");check.type="checkbox";check.checked=lk.active;active.appendChild(check);
-    const name=document.createElement("span");name.className="lname";name.textContent=lk.name;
+    const name=document.createElement("span");name.className="lname";name.textContent=lk.name;name.title=lk.name;
     const strength=document.createElement("input");strength.className="lstrength";strength.type="range";strength.min="0";strength.max="100";strength.value=lk.strength;strength.title=lk.strength+"% strength";
-    const del=document.createElement("button");del.className="ldel";del.textContent="\u00D7";del.title="Remove loaded LUT";
-    check.addEventListener("change",()=>{lk.active=check.checked;render();});
+    const del=document.createElement("button");del.type="button";del.className="ldel";del.textContent="\u00D7";del.title="Remove loaded LUT";
+    check.addEventListener("change",()=>{lk.active=check.checked;render();pushHistory();});
     strength.addEventListener("input",()=>{lk.strength=+strength.value;strength.title=lk.strength+"% strength";render();});
-    del.addEventListener("click",()=>{loadedLuts.splice(idx,1);loadedLutsRender();render();});
-    row.append(active,name,strength,del);list.appendChild(row);
+    strength.addEventListener("change",pushHistory);
+    del.addEventListener("click",()=>{const i=loadedLuts.indexOf(lk);if(i<0)return;loadedLuts.splice(i,1);loadedLutsRender();render();pushHistory();});
+
+    handle.addEventListener("dragstart",e=>{
+      draggedLoadedLut=lk;
+      row.classList.add("dragging");
+      if(e.dataTransfer){e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",lk.name||"LUT");}
+    });
+    handle.addEventListener("dragend",()=>{
+      draggedLoadedLut=null;
+      list.querySelectorAll(".loaded-lut").forEach(el=>el.classList.remove("dragging","drag-over-top","drag-over-bottom"));
+    });
+    row.addEventListener("dragover",e=>{
+      if(!draggedLoadedLut||draggedLoadedLut===lk)return;
+      e.preventDefault();
+      if(e.dataTransfer)e.dataTransfer.dropEffect="move";
+      const rect=row.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+      list.querySelectorAll(".loaded-lut").forEach(el=>el.classList.remove("drag-over-top","drag-over-bottom"));
+      row.classList.add(after?"drag-over-bottom":"drag-over-top");
+    });
+    row.addEventListener("drop",e=>{
+      if(!draggedLoadedLut||draggedLoadedLut===lk)return;
+      e.preventDefault();
+      const from=loadedLuts.indexOf(draggedLoadedLut),target=loadedLuts.indexOf(lk);
+      if(from<0||target<0)return;
+      const rect=row.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+      const [moved]=loadedLuts.splice(from,1);
+      let insertAt=target+(after?1:0);
+      if(from<insertAt)insertAt--;
+      insertAt=Math.max(0,Math.min(loadedLuts.length,insertAt));
+      loadedLuts.splice(insertAt,0,moved);
+      draggedLoadedLut=null;
+      loadedLutsRender();
+      render();
+      pushHistory();
+    });
+    row.addEventListener("dragleave",e=>{
+      if(e.relatedTarget&&row.contains(e.relatedTarget))return;
+      row.classList.remove("drag-over-top","drag-over-bottom");
+    });
+    row.append(handle,active,name,strength,del);list.appendChild(row);
   });
 }
 function loadLook(lk){
   if(loadedLuts.some(loaded=>loaded.source===lk))return;
-  loadedLuts.push({source:lk,type:lk.type,name:lk.name,size:lk.size,data:lk.data,active:true,strength:100});
+  loadedLuts.push({slotId:"loaded-lut-"+(loadedLutSerial++),source:lk,type:lk.type,name:lk.name,size:lk.size,data:lk.data,active:true,strength:100});
   loadedLutsRender();
   render();
+  pushHistory();
 }
 function computeLookSwatch(lk){
   if(lk.type==="cube"){
@@ -2670,23 +2759,44 @@ $("savephoto").addEventListener("click",()=>{
 });
 
 /* ================= LUT export ================= */
+function buildCurrentGradeCubeValues(N){
+  const lines=[];
+  const previousApplyingLookStack=applyingLookStack;
+  try{
+    // Export the exact final transform used by the preview/photo renderer.
+    // Force the loaded-LUT stack on for export: grade() then bakes in the
+    // enabled base LUT, active loaded LUTs and their strengths, plus every
+    // enabled adjustment section and the master Look strength.
+    applyingLookStack=false;
+    for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
+      const o=grade(r/(N-1),g/(N-1),b/(N-1));
+      lines.push(o[0].toFixed(6)+" "+o[1].toFixed(6)+" "+o[2].toFixed(6));
+    }
+    return lines;
+  }finally{
+    applyingLookStack=previousApplyingLookStack;
+  }
+}
+function currentGradeCubeMetadata(){
+  const rows=[];
+  if(state.logMode)rows.push("Input transform: V-Log to Rec.709 baked into LUT values");
+  if(baseLUT&&baseOn)rows.push("Base LUT baked in: "+String(baseLUT.name||"unnamed").replace(/[\r\n]/g," "));
+  const active=loadedLuts.filter(lk=>lk.active&&lk.strength>0);
+  if(active.length)rows.push("Active loaded LUTs baked in (order, strength): "+active.map(lk=>
+    String(lk.name||"unnamed").replace(/[\r\n]/g," ")+" ("+lk.strength+"%)"
+  ).join(" -> "));
+  rows.push("Current enabled adjustment settings baked into LUT values");
+  return rows.map(row=>"# "+row+"\n").join("");
+}
 $("export").addEventListener("click",()=>{
   const N=+$("lutsize").value;
   const safeTitle=($("lutname").value||"my_grade").replace(/["\r\n]/g,"");
-  /* Lumix "base Photo Style": per Panasonic's LUT Library documentation, a
-     .cube may carry a Photo Style tag placed directly under the TITLE line,
-     as the identifier tag #LUMIXPHOTOSTYLE, one half-width space, then the
-     style code. Real Time LUT reads it to decide which Photo Style the LUT
-     was built on; if it is missing or malformed the camera assumes V-Log.
-     Harmless to every other application, which ignores # comment lines. */
+  /* Lumix "base Photo Style" metadata is retained; all visual adjustments
+     are baked into the 3D samples below, not merely described in comments. */
   const psTag=$("lumixStyle").value;
   const psLine=psTag?`#LUMIXPHOTOSTYLE ${psTag}\n`:"";
-  const head=`# Created with LutMaster\nTITLE "${safeTitle}"\n${psLine}LUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
-  const lines=[];
-  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
-    const o=grade(r/(N-1),g/(N-1),b/(N-1));
-    lines.push(o[0].toFixed(6)+" "+o[1].toFixed(6)+" "+o[2].toFixed(6));
-  }
+  const head=`# Created with LutMaster\n${currentGradeCubeMetadata()}TITLE "${safeTitle}"\n${psLine}LUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
+  const lines=buildCurrentGradeCubeValues(N);
   const name=($("lutname").value||"my_grade").replace(/[^\w-]+/g,"_")+".cube";
   download(name,head+lines.join("\n")+"\n","text/plain");
 });
