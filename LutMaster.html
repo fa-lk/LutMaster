@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="en-GB">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>LutMaster — visual LUT designer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Archivo:wght@400;500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&amp;family=Archivo:wght@400;500&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <style>
   :root{
     --bath:#101312;
@@ -127,14 +128,22 @@
   .row input[type=color]::-webkit-color-swatch-wrapper{padding:0}
   .row input[type=color]::-webkit-color-swatch{border:none;border-radius:2px}
   .row input[type=color]::-moz-color-swatch{border:none;border-radius:2px}
-  .presets,.chtabs{display:flex;flex-wrap:wrap;gap:6px}
-  .presets button,.chtabs button,.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);letter-spacing:.03em;transition:background .12s,border-color .12s,color .12s}
-  .presets button:hover,.btn:hover{border-color:var(--line-hi);background:var(--panel3)}
-  .presets button:active,.btn:active{background:var(--panel2)}
-  .presets button:focus-visible,.chtabs button:focus-visible,.btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--orange)}
+  .chtabs{display:flex;flex-wrap:wrap;gap:6px}
+  .chtabs button,.btn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);letter-spacing:.03em;transition:background .12s,border-color .12s,color .12s}
+  .btn:hover{border-color:var(--line-hi);background:var(--panel3)}
+  .btn:active{background:var(--panel2)}
+  .btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+  .chtabs button:focus-visible,.btn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--orange)}
   .chtabs{margin-bottom:10px}
   .chtabs button.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
   .curve-tools{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .auto-correction-groups{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+  .auto-correction-group{display:grid;gap:6px;grid-template-columns:repeat(auto-fit,minmax(min(100%,var(--auto-btn-min,90px)),1fr))}
+  .auto-correction-group.short{--auto-btn-min:70px}
+  .auto-correction-group.medium{--auto-btn-min:92px}
+  .auto-correction-group.long{--auto-btn-min:126px}
+  .auto-correction-groups .btn{width:100%;min-width:0;min-height:34px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
+  .auto-correction-groups .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3);box-shadow:inset 0 0 0 1px var(--orange)}
   .curve-tools span{font:10px var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
   .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
   #curves{width:100%;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:crosshair;touch-action:none}
@@ -181,7 +190,16 @@
   #nameModal h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
   #nameModal input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 10px;border-radius:3px;font:13px var(--mono);margin-bottom:14px}
   #nameModal input:focus{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
-  #nameModal .acts{display:flex;gap:8px;justify-content:flex-end}
+  #nameModal .acts,#fmtModal .acts{display:flex;gap:8px;justify-content:flex-end}
+  #fmtModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+  #fmtModal.show{display:flex}
+  #fmtModal .box{width:min(360px,90vw);background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
+  #fmtModal h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
+  #fmtModal label{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:pointer;font:12px var(--mono)}
+  #fmtModal label:has(input:checked){border-color:var(--orange);color:var(--orange-hi)}
+  #fmtModal label small{margin-left:auto;color:var(--dim)}
+  #fmtModal input{accent-color:var(--orange)}
+  #fmtModal .acts{margin-top:14px}
   .strip{width:100%;border:1px solid var(--line);border-radius:3px;touch-action:none;cursor:ns-resize;margin-bottom:4px}
   footer{padding:18px 20px;margin-top:auto;background:linear-gradient(0deg,var(--panel),transparent)}
   #lutname{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:3px;margin-bottom:10px;font:13px var(--mono)}
@@ -300,8 +318,8 @@
     .cbwheel{width:150px;height:150px}
 
     /* buttons and chips: fewer per row, bigger targets */
-    .presets,.chtabs{gap:8px}
-    .presets button,.chtabs button,.btn{padding:10px 12px;font-size:12px}
+    .chtabs{gap:8px}
+    .chtabs button,.btn{padding:10px 12px;font-size:12px}
     .btn{flex:1 1 auto;text-align:center}
     footer{padding:16px 14px}
     #export{padding:15px;font-size:14px}
@@ -333,292 +351,302 @@
 </head>
 <body>
 <header>
-  <h1>LutMaster</h1>
-  <p>Create your Style on all Devices</p>
-  <span class="spacer"></span>
-  <button id="helpBtn" type="button" title="Quick help" aria-label="Quick help" aria-haspopup="dialog" aria-controls="helpModal">?</button>
-  <button id="undoBtn" title="Undo (Ctrl/Cmd+Z)" disabled>↶ Undo</button>
-  <button id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)" disabled>↷ Redo</button>
-  <button id="resetAll" title="Reset every adjustment">⟲ Reset all</button>
-  <button id="saveProj">Save project</button>
-  <button id="loadProj">Load project</button>
-  <input type="file" id="projfile" hidden>
+<h1>LutMaster</h1>
+<p>Create your Style on all Devices</p>
+<span class="spacer"></span>
+<button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" id="helpBtn" title="Quick help" type="button">?</button>
+<button disabled="" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↶ Undo</button>
+<button disabled="" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↷ Redo</button>
+<button id="resetAll" title="Reset every adjustment">⟲ Reset all</button>
+<button id="saveProj" title="Save the current project and its settings to a file">Save project</button>
+<button id="loadProj" title="Load a previously saved project">Load project</button>
+<input hidden="" id="projfile" type="file"/>
 </header>
 <main>
-  <div id="thumbs"></div>
-  <div id="stage">
-    <div id="drop">
-      <strong>Drop one or more photos here</strong>
+<div id="thumbs"></div>
+<div id="stage">
+<div id="drop" title="Drop image files here or click to choose photos">
+<strong>Drop one or more photos here</strong>
       or click to choose example images. They never leave your device.
-      <div class="or">No photo to hand?<br><button id="chartbtn1" type="button">Use the built-in test chart</button></div>
-      <div id="droperr"></div>
-      <input type="file" id="file" accept="image/*" multiple hidden>
-    </div>
-    <div id="previewArea">
-      <div id="filmframe">
-        <div class="sprockets"></div>
-        <div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
-        <div id="viewwrap">
-          <canvas id="view"></canvas>
-          <div id="wipeline"></div>
-        </div>
-        <div class="sprockets" style="margin-top:6px"></div>
-      </div>
-    </div>
-    <div id="scopes">
-      <canvas id="histo" width="220" height="80" title="RGB histogram of the graded image"></canvas>
-    </div>
-    <div id="stagebar">
-      <span id="comparehint">Hold on the image to compare</span>
-      <label><input type="checkbox" id="wipeOn"> Split compare</label>
-      <label><input type="checkbox" id="clipOn"> Clipping warnings</label>
-      <label><input type="checkbox" id="scopeOn"> Histogram</label>
-      <span id="abwrap" title="A/B grade slots">
-        <button id="slotA" class="on">A</button><button id="slotB">B</button><button id="slotCopy" title="Copy current grade to the other slot">copy →</button>
-      </span>
-      <button id="removephoto">Remove photo</button>
-      <button id="savephoto">Save photo</button>
-      <button id="saveallphotos" title="Grade and save every loaded photo">Save all photos</button>
-      <button id="newimg">Add photos</button>
-      <button id="chartbtn2">Test chart</button>
-    </div>
+      <div class="or">No photo to hand?<br/><button id="chartbtn1" title="Load the built-in test chart as a sample image" type="button">Use the built-in test chart</button></div>
+<div id="droperr"></div>
+<input accept="image/*" hidden="" id="file" multiple="" type="file"/>
+</div>
+<div id="previewArea">
+<div id="filmframe">
+<div class="sprockets"></div>
+<div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
+<div id="viewwrap">
+<canvas id="view" title="Image preview; hold to compare with the original and drag to inspect the wipe"></canvas>
+<div id="wipeline"></div>
+</div>
+<div class="sprockets" style="margin-top:6px"></div>
+</div>
+</div>
+<div id="scopes">
+<canvas height="80" id="histo" title="RGB histogram of the graded image" width="220"></canvas>
+</div>
+<div id="stagebar">
+<span id="pixinfo" style="font:11px var(--mono);color:var(--dim);min-width:170px" title="Pixel under the cursor: original → graded"></span>
+<span id="comparehint">Hold on the image to compare</span>
+<label><input id="wipeOn" title="Split compare" type="checkbox"/> Split compare</label>
+<label><input id="clipOn" title="Clipping warnings" type="checkbox"/> Clipping warnings</label>
+<label><input id="scopeOn" title="Histogram" type="checkbox"/> Histogram</label>
+<span id="abwrap" title="A/B grade slots">
+<button class="on" id="slotA" title="Switch to grade slot A">A</button><button id="slotB" title="Switch to grade slot B">B</button><button id="slotCopy" title="Copy current grade to the other slot">copy →</button>
+</span>
+<button id="removephoto" title="Remove the currently selected photo">Remove photo</button>
+<button id="savephoto" title="Export the currently selected graded photo">Save photo</button>
+<button id="saveallphotos" title="Grade and save every loaded photo">Save all photos</button>
+<button id="newimg" title="Add more photos to the workspace">Add photos</button>
+<button id="chartbtn2" title="Load the built-in test chart">Test chart</button>
+</div>
+</div>
+<div aria-label="Resize sidebar" aria-orientation="vertical" id="asideResize" role="separator"></div>
+<aside>
+<section>
+<h2>Loaded LUTs</h2>
+<input hidden="" id="lutfile" type="file"/>
+<div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input checked="" id="baseEnable" title="Use base LUT" type="checkbox"/> Use base LUT</label>Base LUT: <span id="basename"></span> <button id="baseclear" title="Remove the base LUT">remove</button></div>
+<div id="loadedLuts"></div>
+</section>
+<section>
+<h2>My LUTs</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" id="saveLook" title="Save the current grade as a reusable look">Save</button>
+<button class="btn" id="addLookCube" title="Import one or more .cube LUT files">Add .cube file…</button>
+<input accept=".cube" hidden="" id="lookCubeFile" multiple="" type="file"/>
+</div>
+<div class="close" id="looksDD">
+<button id="looksToggle" title="Show or hide your saved looks" type="button"><span id="looksCount">Saved LUTs (0)</span><span class="caret">▾</span></button>
+<div id="looksPanel">
+<div id="looksList" style="display:flex;flex-direction:column;gap:4px"></div>
+<p id="looksEmpty" style="padding:6px 4px">Nothing saved yet. Save the current grade, or add .cube files to keep them to hand.</p>
+</div>
+</div>
+<p class="tiny">Pick a look from the list to apply it. Looks are stored in this browser.</p>
+</section>
+<section>
+<h2>Automated Corrections</h2>
+<div class="auto-correction-groups">
+  <div class="auto-correction-group short" aria-label="Short-label corrections">
+    <button aria-pressed="false" class="btn" disabled="" id="logMode" title="Toggle V-Log input conversion to Rec.709 before applying the grade">Vlog</button>
+    <button class="btn" disabled="" id="autoCol" title="Vibrance from the image's average colourfulness, with skin protection">Colour</button>
+    <button class="btn" disabled="" id="optDynamic" title="Set black and white points directly in the master RGB curve">Dynamic</button>
+    <button class="btn" disabled="" id="autoRec" title="Pull back blown highlights, lift crushed shadows, set black point">Recover</button>
+    <button class="btn" disabled="" id="optFilm" title="Apply a gentle faded film-style adjustment to the master RGB curve">Filmish</button>
+    <button class="btn" disabled="" id="autoWBbtn" title="Grey-world white balance">White bal.</button>
   </div>
+  <div class="auto-correction-group medium" aria-label="Medium-label corrections">
+    <button class="btn" disabled="" id="autoExp" title="Exposure so the median tone sits at a natural mid-grey">Exposure</button>
+    <button class="btn" disabled="" id="optContrast" title="Add a restrained midtone contrast adjustment to the master RGB curve">Contrast</button>
+    <button class="btn" disabled="" id="autoSkin" aria-pressed="false" title="Detect likely skin-colour pixels and gently correct their hue towards a natural tone">Skin tone</button>
+  </div>
+  <div class="auto-correction-group long" aria-label="Long-label corrections">
+    <button class="btn" disabled="" id="autoShadow" aria-pressed="false" title="Lift recoverable shadow detail while keeping the black point anchored">Shadow detail</button>
+    <button class="btn" disabled="" id="autoLumaSat" aria-pressed="false" title="Balance saturation across shadows, midtones and highlights">Luma saturation</button>
+    <button class="btn" disabled="" id="autoHighlight" aria-pressed="false" title="Compress bright tones with a smooth shoulder while retaining highlight detail">Highlight roll-off</button>
+  </div>
+</div>
+<p class="tiny curve-optimization-note">Analysed from the currently selected photo. These are editable starting points, not a substitute for checking exposure, skin tones and clipping.</p>
+</section>
+<section>
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Tone" checked="" data-enable="tone" title="Enable or disable Tone" type="checkbox"/></label>Tone <button class="reset" id="toneReset" title="Reset all tone adjustments">reset</button></h2>
+<div class="row"><label>Exposure</label><input id="exposure" max="100" min="-100" title="Adjust exposure value" type="range" value="0"/><input class="num" title="Adjust exposure value" type="number" value="0"/></div>
+<div class="row"><label>Contrast</label><input id="contrast" max="100" min="-100" title="Adjust contrast value" type="range" value="0"/><input class="num" title="Adjust contrast value" type="number" value="0"/></div>
+<div class="row"><label>Highlights</label><input id="highlights" max="100" min="-100" title="Adjust highlights value" type="range" value="0"/><input class="num" title="Adjust highlights value" type="number" value="0"/></div>
+<div class="row"><label>Shadows</label><input id="shadows" max="100" min="-100" title="Adjust shadows value" type="range" value="0"/><input class="num" title="Adjust shadows value" type="number" value="0"/></div>
+<div class="row"><label>Blacks</label><input id="blacks" max="100" min="-100" title="Adjust blacks value" type="range" value="0"/><input class="num" title="Adjust blacks value" type="number" value="0"/></div>
+<div class="row"><label>Gamma</label><input id="gamma" max="100" min="-100" title="Adjust gamma value" type="range" value="0"/><input class="num" title="Adjust gamma value" type="number" value="0"/></div>
+<div class="row"><label>Fade blacks</label><input id="fade" max="100" min="0" title="Adjust fade blacks value" type="range" value="0"/><input class="num" title="Adjust fade blacks value" type="number" value="0"/></div>
+</section>
+<section>
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Colour" checked="" data-enable="colour" title="Enable or disable Colour" type="checkbox"/></label>Colour <button class="reset" id="colReset" title="Reset all colour adjustments">reset</button></h2>
+<div class="row"><label>Temperature</label><input id="temp" max="100" min="-100" title="Adjust temperature value" type="range" value="0"/><input class="num" title="Adjust temperature value" type="number" value="0"/></div>
+<div class="row"><label>Tint</label><input id="tint" max="100" min="-100" title="Adjust tint value" type="range" value="0"/><input class="num" title="Adjust tint value" type="number" value="0"/></div>
+<div class="row"><label>Saturation</label><input id="sat" max="100" min="-100" title="Adjust saturation value" type="range" value="0"/><input class="num" title="Adjust saturation value" type="number" value="0"/></div>
+<div class="row"><label>Vibrance</label><input id="vib" max="100" min="-100" title="Adjust vibrance value" type="range" value="0"/><input class="num" title="Adjust vibrance value" type="number" value="0"/></div>
+<div class="row"><label>Protect skin</label><input id="skin" max="100" min="0" title="Adjust protect skin value" type="range" value="0"/><input class="num" title="Adjust protect skin value" type="number" value="0"/></div>
+<div class="row"><label>Normalisation</label><input id="colorNorm" max="100" min="0" title="Adjust normalisation value" type="range" value="0"/><input class="num" title="Adjust normalisation value" type="number" value="0"/></div>
+<button class="btn pickbtn" id="wbPick" title="Sample a neutral area in the photo to set white balance">⌖ White balance picker — tap a neutral in the photo</button>
+</section>
+<section>
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Curves" checked="" data-enable="curves" title="Enable or disable Curves" type="checkbox"/></label>Curves <button class="reset" id="curveReset" title="Reset the active curve channel">reset channel</button></h2>
+<div class="chtabs">
+<button class="on" data-ch="m" title="RGB">RGB</button>
+<button data-ch="r" title="Red">Red</button>
+<button data-ch="g" title="Green">Green</button>
+<button data-ch="b" title="Blue">Blue</button>
+</div>
+<canvas height="210" id="curves" title="Edit the active tone curve by adding or dragging control points" width="300"></canvas>
+<p class="tiny">Click to add a point, drag to shape, double-click a point to remove it.</p>
+</section>
 
-  <div id="asideResize" role="separator" aria-orientation="vertical" aria-label="Resize sidebar"></div>
-  <aside>
-    <section>
-      <h2>Loaded LUTs</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="file" id="lutfile" hidden>
-        <input type="checkbox" id="logMode" hidden>
-      </div>
-      <div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input type="checkbox" id="baseEnable" checked> Use base LUT</label>Base LUT: <span id="basename"></span> <button id="baseclear">remove</button></div>
-      <div id="loadedLuts"></div>
-    </section>
-
-    <section>
-      <h2>My LUTs</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="saveLook">Save</button>
-        <button class="btn" id="addLookCube">Add .cube file…</button>
-        <input type="file" id="lookCubeFile" accept=".cube" multiple hidden>
-      </div>
-      <div id="looksDD" class="close">
-        <button id="looksToggle" type="button"><span id="looksCount">Saved LUTs (0)</span><span class="caret">▾</span></button>
-        <div id="looksPanel">
-          <div id="looksList" style="display:flex;flex-direction:column;gap:4px"></div>
-          <p id="looksEmpty" style="padding:6px 4px">Nothing saved yet. Save the current grade, or add .cube files to keep them to hand.</p>
-        </div>
-      </div>
-      <p class="tiny">Pick a look from the list to apply it. Looks are stored in this browser.</p>
-    </section>
-
-    <section>
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="tone" checked aria-label="Enable Tone"></label>Tone <button class="reset" id="toneReset">reset</button></h2>
-      <div class="row"><label>Exposure</label><input type="range" id="exposure" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Contrast</label><input type="range" id="contrast" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Highlights</label><input type="range" id="highlights" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Shadows</label><input type="range" id="shadows" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Blacks</label><input type="range" id="blacks" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Gamma</label><input type="range" id="gamma" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Fade blacks</label><input type="range" id="fade" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
-    </section>
-
-    <section>
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="colour" checked aria-label="Enable Colour"></label>Colour <button class="reset" id="colReset">reset</button></h2>
-      <div class="row"><label>Temperature</label><input type="range" id="temp" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Tint</label><input type="range" id="tint" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Saturation</label><input type="range" id="sat" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Vibrance</label><input type="range" id="vib" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Protect skin</label><input type="range" id="skin" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Normalisation</label><input type="range" id="colorNorm" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <button class="btn pickbtn" id="wbPick">⌖ White balance picker — tap a neutral in the photo</button>
-    </section>
-
-    <section>
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="curves" checked aria-label="Enable Curves"></label>Curves <button class="reset" id="curveReset">reset channel</button></h2>
-      <div class="chtabs">
-        <button data-ch="m" class="on">RGB</button>
-        <button data-ch="r">Red</button>
-        <button data-ch="g">Green</button>
-        <button data-ch="b">Blue</button>
-      </div>
-      <canvas id="curves" width="300" height="210"></canvas>
-      <p class="tiny">Click to add a point, drag to shape, double-click a point to remove it.</p>
-      <div class="curve-tools"><span>Optimize:</span>
-        <button class="btn" id="optDynamic">Dynamic</button>
-        <button class="btn" id="optContrast">Contrast</button>
-        <button class="btn" id="optFilm">Filmish</button>
-      </div>
-      <p class="tiny curve-optimization-note">Calculated based on the current image only</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="hueShift" checked aria-label="Enable Hue vs Hue"></label>Hue vs hue <button class="reset" id="hueReset">reset</button></h2>
-      <canvas id="huecv" class="strip" width="300" height="100"></canvas>
-      <p class="tiny">Drag a handle to rotate that hue (±60°).</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="hueSat" checked aria-label="Enable Hue vs Saturation"></label>Hue vs saturation <button class="reset" id="hsReset">reset</button></h2>
-      <canvas id="hscv" class="strip" width="300" height="100"></canvas>
-      <p class="tiny">Drag up to boost, down to mute, that hue's saturation.</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="lumaSat" checked aria-label="Enable Luma vs Saturation"></label>Luma vs saturation <button class="reset" id="lsReset">reset</button></h2>
-      <canvas id="lscv" class="strip" width="300" height="100"></canvas>
-      <p class="tiny">Saturation by brightness — left is shadows, right is highlights.</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="secondary" checked aria-label="Enable Secondary Colour"></label>Secondary colour <button class="reset" id="secReset">reset</button></h2>
-      <div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input type="range" id="secHueC" min="0" max="360" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Range</label><input type="range" id="secRange" min="5" max="120" value="40"><input type="number" class="num" value="40"></div>
-      <div class="row"><label>Softness</label><input type="range" id="secSoft" min="0" max="100" value="50"><input type="number" class="num" value="50"></div>
-      <div class="row"><label>Hue shift</label><input type="range" id="secHue" min="-60" max="60" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Saturation</label><input type="range" id="secSat" min="-100" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Luminance</label><input type="range" id="secLum" min="-50" max="50" value="0"><input type="number" class="num" value="0"></div>
-      <button class="btn pickbtn" id="secPick">⌖ Pick target colour from photo</button>
-      <p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="colorBalance" checked aria-label="Enable Color Balance"></label>Color balance <button class="reset" id="cbReset">reset</button></h2>
-      <div class="cbwheels">
-        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbSh" width="96" height="96"></canvas><div class="cbwheel-label">Shadows</div></div>
-        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbMd" width="96" height="96"></canvas><div class="cbwheel-label">Midtones</div></div>
-        <div class="cbwheel-wrap"><canvas class="cbwheel" id="cbHi" width="96" height="96"></canvas><div class="cbwheel-label">Highlights</div></div>
-      </div>
-      <p class="tiny">Drag inside a wheel to tint that region. Center = no change. Double-click a wheel to reset just that wheel.</p>
-    </section>
-
-    <section class="closed">
-      <h2 class="has-enable"><label class="section-enable"><input type="checkbox" data-enable="splitToning" checked aria-label="Enable Split Toning"></label>Split toning <button class="reset" id="splitReset">reset</button></h2>
-      <div class="row"><label>Shadows</label><input type="color" id="shCol" value="#406080"><input type="range" id="shAmt" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
-      <div class="row"><label>Highlights</label><input type="color" id="hiCol" value="#e0a060"><input type="range" id="hiAmt" min="0" max="100" value="0"><input type="number" class="num" value="0"></div>
-    </section>
-
-    <section class="closed">
-      <h2>Transfer ramp</h2>
-      <canvas id="ramp" width="290" height="26"></canvas>
-    </section>
-
-    <section class="closed">
-      <h2>Cube analysis</h2>
-      <div id="cubePanelWrap">
-        <div class="panel-title">
-          <span id="cubePanelLabel">Output 17³ preview</span>
-          <button class="refr" id="cubePanelSize" title="Cycle preview resolution">17³</button>
-        </div>
-        <canvas id="cubeHeat" width="170" height="170"></canvas>
-        <div class="cubeHistRow">
-          <canvas id="cubeHistL" width="110" height="60" title="Luma distribution"></canvas>
-          <canvas id="cubeHistRgb" width="180" height="60" title="Per-channel output"></canvas>
-        </div>
-        <div id="cubeStats"></div>
-        <div class="cubemini" id="cubeMiniSwatches"></div>
-        <p class="tiny">The heat slice shows the cube at green = mid; histograms show the distribution of all outputs. Updates as you grade.</p>
-      </div>
-    </section>
-
-    <section class="closed">
-      <h2>Extract look from photo</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="exSingle">Estimate from one photo…</button>
-        <input type="file" id="exSingleF" accept="image/*" hidden>
-      </div>
-      <p class="tiny">Single-photo mode analyses tone, white balance, saturation and split toning, then sets the controls to approximate that look — a starting point to refine.</p>
-    </section>
-
-    <section class="closed">
-      <h2>Import Lightroom preset</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="lrImport">Choose .xmp or .lrtemplate…</button>
-        <input type="file" id="lrFile" hidden>
-      </div>
-      <p class="tiny" id="lrReport">Pick any .xmp or .lrtemplate file (the picker shows all files, because iPadOS hides unknown types when filtered). Converts the colour parts of a Lightroom preset into these controls, so you can export it as a LUT. Approximate: Lightroom works on raw data, a LUT works on rendered pixels.</p>
-    </section>
-
-    <footer>
-      <div class="strengthrow"><label>Look strength</label><input type="range" id="strength" min="0" max="100" value="100"><input type="number" class="num" value="100"></div>
-      <input id="lutname" value="my_grade" spellcheck="false">
-      <div class="exprow">
-        <select id="lutsize">
-          <option value="17">17-point</option>
-          <option value="33" selected>33-point (cameras)</option>
-          <option value="65">65-point (editing only)</option>
-        </select>
-        <button id="export" disabled>Export LUT (.cube)</button>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <label for="lumixStyle" title="Lumix bodies read this from the file to pick the base Photo Style. Without it they assume V-Log.">Base Photo Style</label>
-        <select id="lumixStyle">
-          <option value="">None (camera assumes V-Log)</option>
-          <option value="VLOG" selected>V-Log</option>
-          <option value="STD">Standard</option>
-          <option value="VIVD">Vivid</option>
-          <option value="NAT">Natural</option>
-          <option value="LCLASN">L.ClassicNeo</option>
-          <option value="FLAT">Flat</option>
-          <option value="LAND">Landscape</option>
-          <option value="PORT">Portrait</option>
-          <option value="MONO">Monochrome</option>
-          <option value="LMONO">L.Monochrome</option>
-          <option value="LMONOD">L.Monochrome D</option>
-          <option value="LMONOS">L.Monochrome S</option>
-          <option value="LEICAMONO">LEICA Monochrome</option>
-          <option value="CNED2">Cinelike D2</option>
-          <option value="CNEV2">Cinelike V2</option>
-          <option value="709L">Like709</option>
-          <option value="HLG">HLG</option>
-          <option value="LOGC3">ARRI LogC3</option>
-        </select>
-      </div>
-      <button id="exportPack">Export look pack — every saved look as .cube</button>
-      <p class="hint">Standard .cube format · loads as an in-camera real-time LUT and in Resolve, Premiere, FCP, Photoshop</p>
-      <p class="hint" id="lumixHint"></p>
-    </footer>
-  </aside>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Hue" checked="" data-enable="hueShift" title="Enable or disable Hue vs Hue" type="checkbox"/></label>Hue vs hue <button class="reset" id="hueReset" title="Reset hue vs hue adjustments">reset</button></h2>
+<canvas class="strip" height="100" id="huecv" title="Adjust hue by dragging the colour-band handles" width="300"></canvas>
+<p class="tiny">Drag a handle to rotate that hue (±60°).</p>
+</section>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Saturation" checked="" data-enable="hueSat" title="Enable or disable Hue vs Saturation" type="checkbox"/></label>Hue vs saturation <button class="reset" id="hsReset" title="Reset hue vs saturation adjustments">reset</button></h2>
+<canvas class="strip" height="100" id="hscv" title="Adjust saturation by hue by dragging the colour-band handles" width="300"></canvas>
+<p class="tiny">Drag up to boost, down to mute, that hue's saturation.</p>
+</section>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Luma vs Saturation" checked="" data-enable="lumaSat" title="Enable or disable Luma vs Saturation" type="checkbox"/></label>Luma vs saturation <button class="reset" id="lsReset" title="Reset luma vs saturation adjustments">reset</button></h2>
+<canvas class="strip" height="100" id="lscv" title="Adjust saturation across the luminance range" width="300"></canvas>
+<p class="tiny">Saturation by brightness — left is shadows, right is highlights.</p>
+</section>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Secondary Colour" checked="" data-enable="secondary" title="Enable or disable Secondary Colour" type="checkbox"/></label>Secondary colour <button class="reset" id="secReset" title="Reset secondary colour adjustments">reset</button></h2>
+<div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input id="secHueC" max="360" min="0" title="Adjust target hue value" type="range" value="0"/><input class="num" title="Adjust target hue value" type="number" value="0"/></div>
+<div class="row"><label>Range</label><input id="secRange" max="120" min="5" title="Adjust range value" type="range" value="40"/><input class="num" title="Adjust range value" type="number" value="40"/></div>
+<div class="row"><label>Softness</label><input id="secSoft" max="100" min="0" title="Adjust softness value" type="range" value="50"/><input class="num" title="Adjust softness value" type="number" value="50"/></div>
+<div class="row"><label>Hue shift</label><input id="secHue" max="60" min="-60" title="Adjust hue shift value" type="range" value="0"/><input class="num" title="Adjust hue shift value" type="number" value="0"/></div>
+<div class="row"><label>Saturation</label><input id="secSat" max="100" min="-100" title="Adjust saturation value" type="range" value="0"/><input class="num" title="Adjust saturation value" type="number" value="0"/></div>
+<div class="row"><label>Luminance</label><input id="secLum" max="50" min="-50" title="Adjust luminance value" type="range" value="0"/><input class="num" title="Adjust luminance value" type="number" value="0"/></div>
+<button class="btn pickbtn" id="secPick" title="Sample a colour in the photo for secondary colour adjustments">⌖ Pick target colour from photo</button>
+<p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
+</section>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Color Balance" checked="" data-enable="colorBalance" title="Enable or disable Color Balance" type="checkbox"/></label>Color balance <button class="reset" id="cbReset" title="Reset colour balance wheels">reset</button></h2>
+<div class="cbwheels">
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbSh" title="Drag to tint shadow tones" width="96"></canvas><div class="cbwheel-label">Shadows</div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbMd" title="Drag to tint midtones" width="96"></canvas><div class="cbwheel-label">Midtones</div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbHi" title="Drag to tint highlight tones" width="96"></canvas><div class="cbwheel-label">Highlights</div></div>
+</div>
+<p class="tiny">Drag inside a wheel to tint that region. Center = no change. Double-click a wheel to reset just that wheel.</p>
+</section>
+<section class="closed">
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Split Toning" checked="" data-enable="splitToning" title="Enable or disable Split Toning" type="checkbox"/></label>Split toning <button class="reset" id="splitReset" title="Reset split toning adjustments">reset</button></h2>
+<div class="row"><label>Shadows</label><input id="shCol" title="Choose the shadows colour" type="color" value="#406080"/><input id="shAmt" max="100" min="0" title="Adjust shadows value" type="range" value="0"/><input class="num" title="Adjust shadows value" type="number" value="0"/></div>
+<div class="row"><label>Highlights</label><input id="hiCol" title="Choose the highlights colour" type="color" value="#e0a060"/><input id="hiAmt" max="100" min="0" title="Adjust highlights value" type="range" value="0"/><input class="num" title="Adjust highlights value" type="number" value="0"/></div>
+</section>
+<section class="closed">
+<h2>Transfer ramp</h2>
+<canvas height="26" id="ramp" title="Preview the current colour transfer ramp" width="290"></canvas>
+</section>
+<section class="closed">
+<h2>Cube analysis</h2>
+<div id="cubePanelWrap">
+<div class="panel-title">
+<span id="cubePanelLabel">Output 17³ preview</span>
+<button class="refr" id="cubePanelSize" title="Cycle preview resolution">17³</button>
+</div>
+<canvas height="170" id="cubeHeat" title="Preview the exported LUT colour mapping" width="170"></canvas>
+<div class="cubeHistRow">
+<canvas height="60" id="cubeHistL" title="Luma distribution" width="110"></canvas>
+<canvas height="60" id="cubeHistRgb" title="Per-channel output" width="180"></canvas>
+</div>
+<div id="cubeStats"></div>
+<div class="cubemini" id="cubeMiniSwatches"></div>
+<p class="tiny">The heat slice shows the cube at green = mid; histograms show the distribution of all outputs. Updates as you grade.</p>
+</div>
+</section>
+<section class="closed">
+<h2>Extract look from photo</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" id="exSingle" title="Analyse a reference photo and estimate its grading settings">Estimate from one photo…</button>
+<input accept="image/*" hidden="" id="exSingleF" type="file"/>
+</div>
+<p class="tiny">Single-photo mode analyses tone, white balance, saturation and split toning, then sets the controls to approximate that look — a starting point to refine.</p>
+</section>
+<section class="closed">
+<h2>Import Lightroom preset</h2>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" id="lrImport" title="Import colour settings from a Lightroom preset">Choose .xmp or .lrtemplate…</button>
+<input hidden="" id="lrFile" type="file"/>
+</div>
+<p class="tiny" id="lrReport">Pick any .xmp or .lrtemplate file (the picker shows all files, because iPadOS hides unknown types when filtered). Converts the colour parts of a Lightroom preset into these controls, so you can export it as a LUT. Approximate: Lightroom works on raw data, a LUT works on rendered pixels.</p>
+</section>
+<footer>
+<div class="strengthrow"><label>Look strength</label><input id="strength" max="100" min="0" title="Adjust look strength value" type="range" value="100"/><input class="num" title="Adjust look strength value" type="number" value="100"/></div>
+<input id="lutname" spellcheck="false" title="Use this control" value="my_grade"/>
+<div class="exprow">
+<select id="lutsize" title="Choose LUT resolution; higher values create larger files">
+<option value="17">17-point</option>
+<option selected="" value="33">33-point (cameras)</option>
+<option value="65">65-point (editing only)</option>
+</select>
+<button disabled="" id="export" title="Generate and download the LUT as a .cube file">Export LUT (.cube)</button>
+</div>
+<div class="row" style="margin-top:8px">
+<label for="lumixStyle" title="Lumix bodies read this from the file to pick the base Photo Style. Without it they assume V-Log.">Base Photo Style</label>
+<select id="lumixStyle" title="Choose the base Photo Style expected by your Lumix camera">
+<option value="">None (camera assumes V-Log)</option>
+<option selected="" value="VLOG">V-Log</option>
+<option value="STD">Standard</option>
+<option value="VIVD">Vivid</option>
+<option value="NAT">Natural</option>
+<option value="LCLASN">L.ClassicNeo</option>
+<option value="FLAT">Flat</option>
+<option value="LAND">Landscape</option>
+<option value="PORT">Portrait</option>
+<option value="MONO">Monochrome</option>
+<option value="LMONO">L.Monochrome</option>
+<option value="LMONOD">L.Monochrome D</option>
+<option value="LMONOS">L.Monochrome S</option>
+<option value="LEICAMONO">LEICA Monochrome</option>
+<option value="CNED2">Cinelike D2</option>
+<option value="CNEV2">Cinelike V2</option>
+<option value="709L">Like709</option>
+<option value="HLG">HLG</option>
+<option value="LOGC3">ARRI LogC3</option>
+</select>
+</div>
+<button id="exportPack" title="Export all saved looks together as a .cube pack">Export look pack — every saved look as .cube</button>
+<p class="hint">Standard .cube format · loads as an in-camera real-time LUT and in Resolve, Premiere, FCP, Photoshop</p>
+<p class="hint" id="lumixHint"></p>
+</footer>
+</aside>
 </main>
-<div id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameModalTitle">
-  <div class="box">
-    <h3 id="nameModalTitle">Save LUT as</h3>
-    <input id="nameModalInput" type="text" spellcheck="false" autocomplete="off" aria-label="LUT name">
-    <div class="acts"><button class="btn" id="nameModalCancel" type="button">Cancel</button><button class="btn" id="nameModalOk" type="button">Save</button></div>
-  </div>
+<div aria-labelledby="nameModalTitle" aria-modal="true" id="nameModal" role="dialog">
+<div class="box">
+<h3 id="nameModalTitle">Save LUT as</h3>
+<input aria-label="LUT name" autocomplete="off" id="nameModalInput" spellcheck="false" title="Enter a name for the saved look" type="text"/>
+<div class="acts"><button class="btn" id="nameModalCancel" title="Cancel saving this look" type="button">Cancel</button><button class="btn" id="nameModalOk" title="Save the look with this name" type="button">Save</button></div>
 </div>
-<div id="helpModal" aria-hidden="true">
-  <div class="help-box" role="dialog" aria-modal="true" aria-labelledby="helpTitle" tabindex="-1">
-    <div class="help-head">
-      <h3 id="helpTitle">Quick help</h3>
-      <button class="help-close" id="helpClose" type="button" aria-label="Close help">×</button>
-    </div>
-    <section class="help-group">
-      <h4>Images & navigation</h4>
-      <ul>
-        <li><strong>Load photos:</strong> Drag one or more images into the workspace.</li>
-        <li><strong>Compare:</strong> Hold the image to view the original; release to return to the grade.</li>
-        <li><strong>Curve readout:</strong> Hover over the image to locate its input level on the active tone curve.</li>
-        <li><strong>Zoom:</strong> Scroll the mouse wheel to zoom around the cursor.</li>
-      </ul>
-    </section>
-    <section class="help-group">
-      <h4>Curves & adjustments</h4>
-      <ul>
-        <li><strong>Reset:</strong> Double-click a slider or setting to restore its default.</li>
-        <li><strong>Edit curves:</strong> Click to add a point; drag to adjust; double-click a point to remove it.</li>
-      </ul>
-    </section>
-    <section class="help-group">
-      <h4>Loaded LUTs</h4>
-      <ul>
-        <li><strong>Reorder:</strong> Drag a LUT using its <kbd>⋮</kbd> handle to change processing order.</li>
-      </ul>
-    </section>
-  </div>
 </div>
-
+<div aria-labelledby="fmtModalTitle" aria-modal="true" id="fmtModal" role="dialog">
+<div class="box">
+<h3 id="fmtModalTitle">Export format</h3>
+<label><input checked="" name="fmtChoice" title="JPG 93 small, good quality" type="radio" value="jpg93"/> JPG 93 <small>small, good quality</small></label>
+<label><input name="fmtChoice" title="JPG 100 max JPG quality" type="radio" value="jpg100"/> JPG 100 <small>max JPG quality</small></label>
+<label><input name="fmtChoice" title="PNG lossless, large" type="radio" value="png"/> PNG <small>lossless, large</small></label>
+<div class="acts"><button class="btn" id="fmtCancel" title="Cancel photo export" type="button">Cancel</button><button class="btn" id="fmtOk" title="Export the photo in the selected format" type="button">Export</button></div>
+</div>
+</div>
+<div aria-hidden="true" id="helpModal">
+<div aria-labelledby="helpTitle" aria-modal="true" class="help-box" role="dialog" tabindex="-1">
+<div class="help-head">
+<h3 id="helpTitle">Quick help</h3>
+<button aria-label="Close help" class="help-close" id="helpClose" title="Close the quick help panel" type="button">×</button>
+</div>
+<section class="help-group">
+<h4>Images &amp; navigation</h4>
+<ul>
+<li><strong>Load photos:</strong> Drag one or more images into the workspace.</li>
+<li><strong>Compare:</strong> Hold the image to view the original; release to return to the grade.</li>
+<li><strong>Curve readout:</strong> Hover over the image to locate its input level on the active tone curve.</li>
+<li><strong>Zoom:</strong> Scroll the mouse wheel to zoom around the cursor; double-click the image to fit.</li>
+<li><strong>Shortcuts:</strong> <kbd>\</kbd> hold = original, <kbd>W</kbd> split, <kbd>J</kbd> clipping, <kbd>H</kbd> histogram, <kbd>[</kbd> <kbd>]</kbd> previous / next photo, <kbd>0</kbd> fit.</li>
+</ul>
+</section>
+<section class="help-group">
+<h4>Curves &amp; adjustments</h4>
+<ul>
+<li><strong>Reset:</strong> Double-click a slider or setting to restore its default.</li>
+<li><strong>Edit curves:</strong> Click to add a point; drag to adjust; double-click a point to remove it.</li>
+</ul>
+</section>
+<section class="help-group">
+<h4>Loaded LUTs</h4>
+<ul>
+<li><strong>Reorder:</strong> Drag a LUT using its <kbd>⋮</kbd> handle to change processing order.</li>
+</ul>
+</section>
+</div>
+</div>
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
@@ -659,8 +687,10 @@ state.shCol=hex2rgb("#406080");
 state.hiCol=hex2rgb("#e0a060");
 state.logMode=false;
 state.enabled={...SECTION_DEFAULTS};
-state.curveAuto={dynamic:false,contrast:false,film:false};
-state.curveAutoData={dynamic:null,contrast:null};
+state.curveAuto={dynamic:false,contrast:false,film:false,exposure:false,recover:false,colour:false,wb:false};
+state.curveAutoData={dynamic:null,contrast:null,film:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null};
+state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false};
+state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null};
 
 function syncSectionEnabled(){
   document.querySelectorAll("[data-enable]").forEach(input=>{
@@ -723,7 +753,7 @@ function buildCurveLUT(pts){
   }
   return lut;
 }
-let lutM,lutR,lutG,lutB,autoCurveLUT;
+let lutM,lutR,lutG,lutB;
 function rebuildCurves(){lutM=buildCurveLUT(curves.m);lutR=buildCurveLUT(curves.r);lutG=buildCurveLUT(curves.g);lutB=buildCurveLUT(curves.b);}
 function curvePercentile(hist,total,q){
   const target=total*q;let sum=0;
@@ -740,24 +770,10 @@ function analyseAutoCurve(src){
   const total=src.width*src.height;
   return{low:curvePercentile(hist,total,.01),high:curvePercentile(hist,total,.99),median:curvePercentile(hist,total,.5)};
 }
-function rebuildAutoCurve(){
-  const lut=new Float32Array(256),auto=state.curveAuto;
-  if(!auto.dynamic&&!auto.contrast&&!auto.film){for(let i=0;i<256;i++)lut[i]=i/255;autoCurveLUT=lut;return;}
-  const dynamic=state.curveAutoData.dynamic||{low:0,high:1};
-  const contrast=state.curveAutoData.contrast||{median:.5};
-  const low=dynamic.low,high=dynamic.high,median=contrast.median;
-  const range=Math.max(.08,high-low),pivot=auto.dynamic?clamp((median-low)/range):median;
-  for(let i=0;i<256;i++){
-    let y=i/255;
-    if(auto.dynamic)y=clamp((y-low)/range);
-    if(auto.contrast)y=clamp(y+.34*(y-pivot)*(1-Math.abs(2*y-1)));
-    if(auto.film)y=clamp(.035+.93*y+.16*(y-.5)*(1-Math.abs(2*y-1)));
-    lut[i]=y;
-  }
-  autoCurveLUT=lut;
-}
+// Automatic grading is materialised into the visible controls/curves. These
+// helpers only maintain those controls; grade() never applies a hidden auto pass.
+function rebuildAutoCurve(){rebuildCurves();}
 rebuildCurves();
-rebuildAutoCurve();
 const cAt=(lut,v)=>lut[Math.round(clamp(v)*255)];
 
 /* ================= colour helpers ================= */
@@ -824,6 +840,153 @@ function sampleBase(r,g,b){
   return out;
 }
 
+/* ================= independent image-aware corrections ================= */
+function analyseIndependentCorrections(src){
+  if(!src)return null;
+  const d=src.data,lumHist=new Uint32Array(256),skinHueHist=new Uint32Array(360);
+  let satSum=0,satCount=0,skinCount=0;
+  for(let p=0;p<d.length;p+=4){
+    const r=d[p]/255,g=d[p+1]/255,b=d[p+2]/255;
+    const l=Math.max(0,Math.min(255,Math.round((.2126*r+.7152*g+.0722*b)*255)));
+    lumHist[l]++;
+    const [h,s,v]=rgb2hsl(r,g,b);
+    satSum+=s;satCount++;
+    // Conservative RGB/HSL skin heuristic; excludes near-neutral and very dark pixels.
+    if(s>=.12&&s<=.78&&v>=.16&&r>g*.92&&g>b*.88&&h>=5&&h<=58){
+      skinHueHist[Math.round(h)%360]++;skinCount++;
+    }
+  }
+  const total=src.width*src.height;
+  const pct=q=>curvePercentile(lumHist,total,q);
+  let skinHue=28;
+  if(skinCount>40){
+    let best=0;
+    // Median of the skin-hue histogram, avoiding a mean distorted by outliers.
+    const target=skinCount*.5;let cumulative=0;
+    for(let h=0;h<360;h++){cumulative+=skinHueHist[h];if(cumulative>=target){best=h;break;}}
+    skinHue=best;
+  }
+  const avgSat=satSum/Math.max(1,satCount);
+  return {
+    highlightStart:Math.max(.58,Math.min(.88,pct(.82))),
+    highlightStrength:Math.max(.18,Math.min(.55,(pct(.99)-pct(.82))*.9)),
+    shadowLift:Math.max(.045,Math.min(.15,(.32-pct(.12))*.42)),
+    skinHueShift:skinCount>40?Math.max(-8,Math.min(8,28-skinHue)):0,
+    skinConfidence:Math.min(1,skinCount/Math.max(1,total*.025)),
+    lumaSatStrength:Math.max(.025,Math.min(.16,(.43-avgSat)*.35))
+  };
+}
+function syncIndependentCorrectionButtons(){
+  const map={highlight:$("autoHighlight"),shadow:$("autoShadow"),skin:$("autoSkin"),lumaSat:$("autoLumaSat")};
+  Object.entries(map).forEach(([key,button])=>{
+    const on=state.autoCorrections[key]===true;
+    button.classList.toggle("on",on);
+    button.setAttribute("aria-pressed",on?"true":"false");
+  });
+}
+const independentCorrectionButtons={
+  highlight:$("autoHighlight"),shadow:$("autoShadow"),skin:$("autoSkin"),lumaSat:$("autoLumaSat")
+};
+function setControlValue(id,value){
+  const el=$(id);
+  const v=Math.max(+el.min,Math.min(+el.max,value));
+  state[id]=v;el.value=v;
+  const num=el.parentElement.querySelector(".num");
+  if(num)num.value=v;
+}
+function correctionControlDelta(key,data){
+  if(key==="highlight")return {slider:"highlights",values:[-Math.round(data.highlightStrength*100)]};
+  if(key==="shadow")return {slider:"shadows",values:[Math.round(data.shadowLift*100)]};
+  if(key==="skin"){
+    const values=new Array(HUEN).fill(0),center=28,sigma=34;
+    const weights=values.map((_,i)=>{
+      const hue=i*360/HUEN+180/HUEN;
+      const d=Math.abs(hue-center)%360,dist=Math.min(d,360-d);
+      return Math.exp(-.5*(dist/sigma)**2);
+    });
+    const peak=Math.max(...weights)||1;
+    for(let i=0;i<HUEN;i++)values[i]=weights[i]/peak*(data.skinHueShift/60);
+    return {array:"hueShift",values};
+  }
+  if(key==="lumaSat"){
+    const values=new Array(LUMN);
+    for(let i=0;i<LUMN;i++){
+      const y=i/(LUMN-1),mid=peakMask(y,.50,.58);
+      const shadows=1-sstep(.08,.42,y),highlights=sstep(.68,.96,y);
+      values[i]=data.lumaSatStrength*mid-.10*shadows-.12*highlights;
+    }
+    return {array:"lumaSat",values};
+  }
+  return null;
+}
+function applyCorrectionToControls(key,data,enable){
+  if(!data||typeof data!=="object")return false;
+  const delta=data.controlDelta||correctionControlDelta(key,data);
+  if(!delta)return false;
+  if(delta.slider){
+    const id=delta.slider;
+    if(!["highlights","shadows"].includes(id)||!Number.isFinite(+delta.values?.[0]))return false;
+    const amount=+delta.values[0];
+    if(enable){
+      const before=+state[id]||0;
+      setControlValue(id,before+amount);
+      data.controlDelta={slider:id,values:[state[id]-before]};
+    }else{
+      setControlValue(id,(+state[id]||0)-amount);
+    }
+  }else if(delta.array){
+    const target=delta.array==="hueShift"?hueShift:delta.array==="lumaSat"?lumaSat:null;
+    if(!target||!Array.isArray(delta.values)||delta.values.length!==target.length||
+       !delta.values.every(v=>Number.isFinite(+v)))return false;
+    if(enable){
+      const applied=delta.values.map((v,i)=>{
+        const before=target[i],after=Math.max(-1,Math.min(1,before+(+v)));
+        target[i]=after;return after-before;
+      });
+      data.controlDelta={array:delta.array,values:applied};
+    }else{
+      delta.values.forEach((v,i)=>target[i]=Math.max(-1,Math.min(1,target[i]-(+v))));
+    }
+  }else return false;
+  rebuildCurves();
+  return true;
+}
+function markCorrectionAsManual(key){
+  if(!state.autoCorrections[key])return;
+  // The current visible control value becomes the user's manual grade.
+  // Keep the calculated contribution baked into that value, but stop treating it
+  // as a separately removable automated contribution.
+  state.autoCorrections[key]=false;
+  if(state.autoCorrectionData[key])state.autoCorrectionData[key].controlDelta=null;
+  syncIndependentCorrectionButtons();
+}
+
+Object.entries(independentCorrectionButtons).forEach(([key,button])=>button.addEventListener("click",()=>{
+  const next=!state.autoCorrections[key];
+  state.autoCorrectionData=state.autoCorrectionData||{};
+  if(next){
+    const analysis=cur>=0?analyseIndependentCorrections(images[cur].data):null;
+    if(!analysis){fail("Open a photo with usable pixels first to calculate this correction.");return;}
+    if(key==="skin"&&analysis.skinConfidence<.05){
+      fail("No sufficiently reliable skin-colour region was detected in this photo.");
+      return;
+    }
+    applyCorrectionToControls(key,analysis,true);
+    state.autoCorrectionData[key]=analysis;
+  }else{
+    const existing=state.autoCorrectionData[key];
+    if(existing)applyCorrectionToControls(key,existing,false);
+  }
+  state.autoCorrections[key]=next;
+  syncIndependentCorrectionButtons();
+  render();
+  pushHistory();
+}));
+function setIndependentCorrectionsEnabled(on){
+  Object.values(independentCorrectionButtons).forEach(button=>button.disabled=!on);
+  syncIndependentCorrectionButtons();
+}
+
 /* ================= the transfer function ================= */
 function grade(r,g,b){
   if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
@@ -860,15 +1023,15 @@ function grade(r,g,b){
   }
 
   if(state.enabled.curves){
-    r=cAt(autoCurveLUT,cAt(lutR,cAt(lutM,r)));
-    g=cAt(autoCurveLUT,cAt(lutG,cAt(lutM,g)));
-    b=cAt(autoCurveLUT,cAt(lutB,cAt(lutM,b)));
+    r=cAt(lutR,cAt(lutM,r));
+    g=cAt(lutG,cAt(lutM,g));
+    b=cAt(lutB,cAt(lutM,b));
   }
   let needHsl=false;
   for(let i=0;i<HUEN;i++)if((state.enabled.hueShift&&hueShift[i])||(state.enabled.hueSat&&hueSat[i])){needHsl=true;break;}
   if(needHsl){
     const[h,s,l]=rgb2hsl(r,g,b);
-    if(s>0.02){
+    if(s>1e-4){
       let nh=(h+(state.enabled.hueShift?periodic8(hueShift,h)*60*Math.min(1,s*4):0))%360;if(nh<0)nh+=360;
       let ns=clamp(s*(1+(state.enabled.hueSat?periodic8(hueSat,h)*Math.min(1,s*4):0)));
       [r,g,b]=hsl2rgb(nh,ns,l);
@@ -876,7 +1039,7 @@ function grade(r,g,b){
   }
   if(state.enabled.secondary&&(state.secHue||state.secSat||state.secLum)){
     const[h,sx,lx]=rgb2hsl(r,g,b);
-    if(sx>0.02){
+    if(sx>1e-4){
       let d=Math.abs(h-state.secHueC)%360;if(d>180)d=360-d;
       const range=Math.max(state.secRange,1e-3);
       let w=0;
@@ -944,7 +1107,7 @@ function grade(r,g,b){
       if(d<28)w=1-sm(d/28);
     }
     if(w>0){
-      const k=w*state.skin/100;
+      const k=w*Math.min(100,state.skin)/100;
       const lOut=0.2126*r+0.7152*g+0.0722*b,lIn=0.2126*inR+0.7152*inG+0.0722*inB;
       const sc=lIn>0.004?lOut/lIn:1;
       const pr=clamp(inR*sc),pg=clamp(inG*sc),pb=clamp(inB*sc);
@@ -1053,6 +1216,7 @@ function refreshUIAfterLoad(){
   $("thumbs").style.display=images.length>1?"flex":"none";
   $("scopes").style.display=$("scopeOn").checked?"flex":"none";
   $("export").disabled=false;
+  setOptimizeEnabled(true);
   requestAnimationFrame(fitPreviewToStage);
 }
 function selectImage(i){
@@ -1110,6 +1274,10 @@ function makeTestChart(){
 
 let raf=null;
 function render(){
+  const logButton=$("logMode");
+  logButton.classList.toggle("on",state.logMode===true);
+  logButton.setAttribute("aria-pressed",state.logMode===true?"true":"false");
+  syncIndependentCorrectionButtons();
   if(raf)return;
   raf=requestAnimationFrame(()=>{
     raf=null;
@@ -1119,8 +1287,8 @@ function render(){
     scheduleCubeAnalysis();
     if(cur<0)return;
     const src=images[cur].data;
-    // Keep preview and exported LUT grids aligned, avoiding different interpolation.
-    const N=+$("lutsize").value||33,plut=new Float32Array(N*N*N*3);
+    // Preview grid is capped at 33: a 65-point export setting would cost 274k grade() calls per frame.
+    const N=Math.min(33,+$("lutsize").value||33),plut=new Float32Array(N*N*N*3);
     let i=0;
     for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
       const o=grade(r/(N-1),g/(N-1),b/(N-1));
@@ -1247,17 +1415,17 @@ function scheduleThumbs(plut, N) {
   thumbTimer = setTimeout(() => {
     images.forEach(im => {
       const tc = im.thumb.getContext("2d");
-      const sc = document.createElement("canvas");
-      sc.width = im.thumb.width;
-      sc.height = im.thumb.height; // Changed from hardcoded 54
-      const scx = sc.getContext("2d");
-      const full = document.createElement("canvas");
-      full.width = im.data.width;
-      full.height = im.data.height;
-      full.getContext("2d").putImageData(im.data, 0, 0);
-      scx.drawImage(full, 0, 0, sc.width, sc.height);
-      const small = scx.getImageData(0, 0, sc.width, sc.height);
-      tc.putImageData(applyLut(small, plut, N), 0, 0);
+      if (!im.small) {
+        const full = document.createElement("canvas");
+        full.width = im.data.width; full.height = im.data.height;
+        full.getContext("2d").putImageData(im.data, 0, 0);
+        const sc = document.createElement("canvas");
+        sc.width = im.thumb.width; sc.height = im.thumb.height;
+        const scx = sc.getContext("2d");
+        scx.drawImage(full, 0, 0, sc.width, sc.height);
+        im.small = scx.getImageData(0, 0, sc.width, sc.height);
+      }
+      tc.putImageData(applyLut(im.small, plut, N), 0, 0);
     });
   }, 250);
 }
@@ -1342,6 +1510,7 @@ function nearestPoint(px,py){
   return best;
 }
 ccv.addEventListener("pointerdown",e=>{
+  if(curveCh==="m")markAutoCurveAsManual();
   const[px,py]=curvePos(e);
   let p=nearestPoint(px,py);
   if(!p){p={x:px2cx(px),y:px2cy(py)};curves[curveCh].push(p);}
@@ -1351,12 +1520,13 @@ ccv.addEventListener("pointermove",e=>{
   if(!dragPt)return;
   const[px,py]=curvePos(e);
   const pts=curves[curveCh],isEnd=dragPt===pts.reduce((a,b)=>a.x<b.x?a:b)||dragPt===pts.reduce((a,b)=>a.x>b.x?a:b);
-  if(!isEnd)dragPt.x=px2cx(px);
+  if(!isEnd){const o=pts.filter(q=>q!==dragPt),lo=Math.max(0,...o.filter(q=>q.x<=dragPt.x).map(q=>q.x))+.005,hi=Math.min(1,...o.filter(q=>q.x>dragPt.x).map(q=>q.x))-.005;dragPt.x=Math.max(lo,Math.min(hi,px2cx(px)));}
   dragPt.y=px2cy(py);
   rebuildCurves();render();
 });
 window.addEventListener("pointerup",()=>{if(dragPt){dragPt=null;pushHistory();}else dragPt=null;});
 ccv.addEventListener("dblclick",e=>{
+  if(curveCh==="m")markAutoCurveAsManual();
   const[px,py]=curvePos(e),p=nearestPoint(px,py),pts=curves[curveCh];
   if(p&&pts.length>2){curves[curveCh]=pts.filter(q=>q!==p);rebuildCurves();render();pushHistory();}
 });
@@ -1365,19 +1535,160 @@ document.querySelectorAll(".chtabs button").forEach(b=>b.addEventListener("click
   document.querySelectorAll(".chtabs button").forEach(x=>x.classList.remove("on"));
   b.classList.add("on");curveCh=b.dataset.ch;drawCurves();
 }));
-$("curveReset").addEventListener("click",()=>{curves[curveCh]=defCurve();rebuildCurves();render();pushHistory();});
-const autoCurveButtons={dynamic:$("optDynamic"),contrast:$("optContrast"),film:$("optFilm")};
+$("curveReset").addEventListener("click",()=>{if(curveCh==="m")markAutoCurveAsManual();curves[curveCh]=defCurve();rebuildCurves();render();pushHistory();});
+function autoCurveTransform(y,key){
+  const d=state.curveAutoData[key]||{};
+  if(key==="dynamic"){
+    const low=Number.isFinite(d.low)?d.low:0,high=Number.isFinite(d.high)?d.high:1;
+    return clamp((y-low)/Math.max(.08,high-low));
+  }
+  if(key==="contrast"){
+    const pivot=Number.isFinite(d.median)?d.median:.5;
+    return clamp(y+.34*(y-pivot)*(1-Math.abs(2*y-1)));
+  }
+  if(key==="film")return clamp(.035+.93*y+.16*(y-.5)*(1-Math.abs(2*y-1)));
+  return y;
+}
+function anyAutoCurveActive(){return ["dynamic","contrast","film"].some(k=>state.curveAuto[k]);}
+function rebuildVisibleAutoCurve(){
+  const active=["dynamic","contrast","film"].filter(k=>state.curveAuto[k]);
+  if(!active.length){
+    const base=state.curveAutoData.baseCurve;
+    if(Array.isArray(base))curves.m=base.map(q=>({x:q.x,y:q.y}));
+    state.curveAutoData.baseCurve=null;
+    rebuildCurves();drawCurves();return;
+  }
+  if(!Array.isArray(state.curveAutoData.baseCurve))
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y}));
+
+  // Keep the user's existing control points and add only the semantic anchors
+  // needed by the active automatic transforms. This keeps the result editable
+  // without flooding the curve editor with 33 generated points.
+  const base=state.curveAutoData.baseCurve;
+  const sourceLut=buildCurveLUT(base);
+  const findXForY=target=>{
+    target=clamp(target);
+    // Find the first crossing on the source curve; fall back to the nearest
+    // sampled value for curves that do not cross the requested level.
+    for(let i=0;i<255;i++){
+      const y0=sourceLut[i],y1=sourceLut[i+1];
+      if((target>=Math.min(y0,y1)&&target<=Math.max(y0,y1))&&Math.abs(y1-y0)>1e-7){
+        const f=(target-y0)/(y1-y0);
+        return (i+f)/255;
+      }
+    }
+    let best=0,error=Infinity;
+    for(let i=0;i<256;i++){const e=Math.abs(sourceLut[i]-target);if(e<error){error=e;best=i;}}
+    return best/255;
+  };
+  const anchors=[];
+  if(active.includes("dynamic")){
+    const d=state.curveAutoData.dynamic||{};
+    const low=Number.isFinite(d.low)?clamp(d.low):0,high=Number.isFinite(d.high)?clamp(d.high):1;
+    const span=Math.max(.08,high-low),margin=Math.min(span*.1,Math.max(2/255,span*.02));
+    anchors.push(findXForY(low),findXForY(low+margin),findXForY(high-margin),findXForY(high));
+  }
+  if(active.includes("contrast")){
+    const d=state.curveAutoData.contrast||{};
+    anchors.push(findXForY(.25),findXForY(Number.isFinite(d.median)?d.median:.5),findXForY(.5),findXForY(.75));
+  }
+  if(active.includes("film"))anchors.push(findXForY(.25),findXForY(.5),findXForY(.75));
+  const xs=[...base.map(p=>p.x),...anchors,0,1]
+    .map(x=>clamp(x)).sort((a,b)=>a-b)
+    .filter((x,i,a)=>i===0||x-a[i-1]>1/255);
+  curves.m=xs.map(x=>{
+    let y=sourceLut[Math.round(x*255)];
+    for(const key of active)y=autoCurveTransform(y,key);
+    return{x,y};
+  });
+  rebuildCurves();
+  drawCurves();
+}
+function autoControlMap(key,data){
+  if(key==="exposure")return{exposure:data.exposure};
+  if(key==="recover")return{highlights:data.highlights,shadows:data.shadows,blacks:data.blacks};
+  if(key==="colour")return{vib:data.vib,sat:data.sat,skin:data.skin};
+  if(key==="wb")return{temp:data.temp,tint:data.tint};
+  return null;
+}
+function applyAutoControls(key,data,enable){
+  const values=enable?autoControlMap(key,data):data.controlDelta;
+  if(!values||typeof values!=="object")return false;
+  const applied={};
+  for(const [id,raw] of Object.entries(values)){
+    if(!(id in state)||!Number.isFinite(+raw))continue;
+    const el=$(id),before=+state[id]||0;
+    const next=Math.max(+el.min,Math.min(+el.max,before+(enable?+raw:-(+raw))));
+    setControlValue(id,next);
+    if(enable)applied[id]=next-before;
+  }
+  if(enable)data.controlDelta=applied;
+  else data.controlDelta=null;
+  return Object.keys(enable?applied:values).length>0;
+}
+function markAutoControlAsManual(id){
+  const owner={exposure:"exposure",highlights:"recover",shadows:"recover",blacks:"recover",
+    vib:"colour",sat:"colour",skin:"colour",temp:"wb",tint:"wb"}[id];
+  if(!owner||!state.curveAuto[owner])return;
+  state.curveAuto[owner]=false;
+  if(state.curveAutoData[owner])state.curveAutoData[owner].controlDelta=null;
+  syncAutoCurveButtons();
+}
+function refreshActiveAutoControl(key){
+  if(!state.curveAuto[key])return;
+  const old=state.curveAutoData[key];
+  if(old)applyAutoControls(key,old,false);
+  const next=cur>=0?computeAutoAdj(key):null;
+  if(!next){state.curveAuto[key]=false;state.curveAutoData[key]=null;syncAutoCurveButtons();return;}
+  state.curveAutoData[key]=next;
+  applyAutoControls(key,next,true);
+}
+function markAutoCurveAsManual(){
+  if(!anyAutoCurveActive())return;
+  // Keep the currently displayed curve as the user's edited starting point.
+  ["dynamic","contrast","film"].forEach(k=>state.curveAuto[k]=false);
+  state.curveAutoData.baseCurve=null;
+  syncAutoCurveButtons();
+}
+const autoCurveButtons={dynamic:$("optDynamic"),contrast:$("optContrast"),film:$("optFilm"),exposure:$("autoExp"),recover:$("autoRec"),colour:$("autoCol"),wb:$("autoWBbtn")};
 function syncAutoCurveButtons(){
-  Object.entries(autoCurveButtons).forEach(([key,button])=>button.classList.toggle("on",state.curveAuto[key]));
+  Object.entries(autoCurveButtons).forEach(([key,button])=>{
+    button.classList.toggle("on",state.curveAuto[key]===true);
+    button.setAttribute("aria-pressed",state.curveAuto[key]===true?"true":"false");
+  });
 }
 Object.entries(autoCurveButtons).forEach(([key,button])=>button.addEventListener("click",()=>{
-  state.curveAuto[key]=!state.curveAuto[key];
-  if(state.curveAuto[key]&&key!=="film")state.curveAutoData[key]=analyseAutoCurve(cur>=0?images[cur].data:null);
-  syncAutoCurveButtons();
-  render();
-  pushHistory();
+  const next=!state.curveAuto[key];
+  if(next){
+    if(key==="film")state.curveAutoData.film={};
+    else if(["dynamic","contrast"].includes(key)){
+      const analysis=cur>=0?analyseAutoCurve(images[cur].data):null;
+      if(!analysis){fail("Open a photo with usable pixels first to calculate this optimisation.");return;}
+      state.curveAutoData[key]=analysis;
+    }else{
+      const d=cur>=0?computeAutoAdj(key):null;
+      if(!d){fail("Open a photo with usable pixels first to calculate this optimisation.");return;}
+      state.curveAutoData[key]=d;
+      applyAutoControls(key,state.curveAutoData[key],true);
+    }
+    state.curveAuto[key]=true;
+  }else{
+    if(["dynamic","contrast","film"].includes(key))state.curveAuto[key]=false;
+    else if(state.curveAutoData[key])applyAutoControls(key,state.curveAutoData[key],false);
+    state.curveAuto[key]=false;
+  }
+  if(["dynamic","contrast","film"].includes(key))rebuildVisibleAutoCurve();
+  if(key==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
+  syncAutoCurveButtons();render();pushHistory();
 }));
 syncAutoCurveButtons();
+function setOptimizeEnabled(on){
+  Object.values(autoCurveButtons).forEach(b=>b.disabled=!on);
+  $("logMode").disabled=!on;
+  setIndependentCorrectionsEnabled(on);
+  syncAutoCurveButtons();
+  syncIndependentCorrectionButtons();
+}
 
 /* ================= generic handle strips ================= */
 function makeStrip(cvId,arr,n,periodic,bgFn){
@@ -1408,6 +1719,8 @@ function makeStrip(cvId,arr,n,periodic,bgFn){
   let di=-1;
   const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height];};
   cv.addEventListener("pointerdown",e=>{
+    if(cvId==="huecv")markCorrectionAsManual("skin");
+    if(cvId==="lscv")markCorrectionAsManual("lumaSat");
     const[px,py]=pos(e);
     let best=-1,bd=400;
     for(let i=0;i<n;i++){const d=(hx(i)-px)**2+(hy(arr[i])-py)**2;if(d<bd){bd=d;best=i;}}
@@ -1422,6 +1735,8 @@ function makeStrip(cvId,arr,n,periodic,bgFn){
   });
   window.addEventListener("pointerup",()=>{if(di>=0){di=-1;pushHistory();}else di=-1;});
   cv.addEventListener("dblclick",e=>{
+    if(cvId==="huecv")markCorrectionAsManual("skin");
+    if(cvId==="lscv")markCorrectionAsManual("lumaSat");
     const[px,py]=pos(e);
     let best=-1,bd=400;
     for(let i=0;i<n;i++){const d=(hx(i)-px)**2+(hy(arr[i])-py)**2;if(d<bd){bd=d;best=i;}}
@@ -1433,9 +1748,19 @@ const drawHueHue=makeStrip("huecv",hueShift,HUEN,true,u=>`hsl(${u*360} 60% 38%)`
 const drawHueSat=makeStrip("hscv",hueSat,HUEN,true,u=>`hsl(${u*360} 60% 38%)`);
 const drawLumaSat=makeStrip("lscv",lumaSat,LUMN,false,u=>{const v=Math.round(u*255);return`rgb(${v},${v},${v})`;});
 function drawStrips(){drawHueHue();drawHueSat();drawLumaSat();}
-$("hueReset").addEventListener("click",()=>{hueShift.fill(0);render();pushHistory();});
+$("hueReset").addEventListener("click",()=>{
+  hueShift.fill(0);
+  state.autoCorrections.skin=false;
+  if(state.autoCorrectionData.skin)state.autoCorrectionData.skin.controlDelta=null;
+  syncIndependentCorrectionButtons();render();pushHistory();
+});
 $("hsReset").addEventListener("click",()=>{hueSat.fill(0);render();pushHistory();});
-$("lsReset").addEventListener("click",()=>{lumaSat.fill(0);render();pushHistory();});
+$("lsReset").addEventListener("click",()=>{
+  lumaSat.fill(0);
+  state.autoCorrections.lumaSat=false;
+  if(state.autoCorrectionData.lumaSat)state.autoCorrectionData.lumaSat.controlDelta=null;
+  syncIndependentCorrectionButtons();render();pushHistory();
+});
 
 /* ================= colour balance wheels ================= */
 function drawColorWheel(canvas,sx,sy){
@@ -1555,23 +1880,36 @@ sliders.forEach(id=>{
   const num=el.parentElement.querySelector(".num");
   if(num){num.min=el.min;num.max=el.max;num.step=1;}
   el.addEventListener("input",()=>{
+    if(id==="highlights")markCorrectionAsManual("highlight");
+    if(id==="shadows")markCorrectionAsManual("shadow");
+    markAutoControlAsManual(id);
     state[id]=+el.value;
     if(num)num.value=el.value;
+    if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
     render();
   });
   el.addEventListener("change",pushHistory);
   el.addEventListener("dblclick",()=>{
+    if(id==="highlights")markCorrectionAsManual("highlight");
+    if(id==="shadows")markCorrectionAsManual("shadow");
+    markAutoControlAsManual(id);
     const v=DEF[id]||0;
     el.value=v;state[id]=v;
     if(num)num.value=v;
+    if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
     render();pushHistory();
   });
   if(num){
     const commit=()=>{
+      if(id==="highlights")markCorrectionAsManual("highlight");
+      if(id==="shadows")markCorrectionAsManual("shadow");
+      markAutoControlAsManual(id);
       let v=parseFloat(num.value);
       if(isNaN(v))v=state[id];
       v=Math.max(+el.min,Math.min(+el.max,Math.round(v)));
-      num.value=v;el.value=v;state[id]=v;render();pushHistory();
+      num.value=v;el.value=v;state[id]=v;
+      if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
+      render();pushHistory();
     };
     num.addEventListener("change",commit);
     num.addEventListener("keydown",e=>{if(e.key==="Enter"){commit();num.blur();}});
@@ -1581,7 +1919,7 @@ $("shCol").addEventListener("input",e=>{state.shCol=hex2rgb(e.target.value);rend
 $("shCol").addEventListener("change",pushHistory);
 $("hiCol").addEventListener("input",e=>{state.hiCol=hex2rgb(e.target.value);render();});
 $("hiCol").addEventListener("change",pushHistory);
-$("logMode").addEventListener("change",e=>{state.logMode=e.target.checked;render();pushHistory();});
+$("logMode").addEventListener("click",()=>{state.logMode=!state.logMode;render();pushHistory();});
 document.querySelectorAll("[data-enable]").forEach(input=>{
   input.addEventListener("change",()=>{
     state.enabled[input.dataset.enable]=input.checked;
@@ -1667,6 +2005,7 @@ function samplePixel(e,radius){
   const info={n,clipped:clipped/n,lum:0.2126*r+0.7152*g+0.0722*b};
   if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
   if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
+  if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
   return[r,g,b,info];
 }
 function setSliderUI(id,v){
@@ -1731,10 +2070,16 @@ view.addEventListener("pointermove",e=>{
   hoverCurveValues={r:r/n/255,g:g/n/255,b:b/n/255};
   hoverCurveValues.m=.2126*hoverCurveValues.r+.7152*hoverCurveValues.g+.0722*hoverCurveValues.b;
   drawCurves();
+  const pi=$("pixinfo");
+  if(pi&&lastOut&&cx>=0&&cx<src.width&&cy>=0&&cy<src.height){
+    const j=(cy*src.width+cx)*4,sd=src.data,od=lastOut.data;
+    pi.textContent=sd[j]+" "+sd[j+1]+" "+sd[j+2]+" \u2192 "+od[j]+" "+od[j+1]+" "+od[j+2];
+  }
 });
 view.addEventListener("pointerleave",()=>{
   if(!hoverCurveValues)return;
   hoverCurveValues=null;drawCurves();
+  const pi=$("pixinfo");if(pi)pi.textContent="";
 });
 viewwrap.addEventListener("wheel",e=>{
   if(cur<0)return;
@@ -1781,17 +2126,7 @@ $("lutfile").addEventListener("change",e=>{
   const reader=new FileReader();
   reader.onload=()=>{
     try{
-      const lines=reader.result.split(/\r?\n/);
-      let size=0;const vals=[];
-      for(const ln of lines){
-        const s=ln.trim();
-        if(!s||s[0]==="#")continue;
-        if(/^LUT_3D_SIZE/i.test(s)){size=parseInt(s.split(/\s+/)[1]);continue;}
-        if(/^(TITLE|DOMAIN_|LUT_1D)/i.test(s))continue;
-        const parts=s.split(/\s+/);
-        if(parts.length>=3&&!isNaN(+parts[0])){vals.push(+parts[0],+parts[1],+parts[2]);}
-      }
-      if(!size||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
+      const {size,vals}=parseCubeText(reader.result);
       baseLUT={size,data:Float32Array.from(vals),name:file.name};
       $("basename").textContent=file.name+" ("+size+"\u00B3)";
       $("baseinfo").style.display="block";
@@ -1803,64 +2138,6 @@ $("lutfile").addEventListener("change",e=>{
 });
 $("baseclear").addEventListener("click",()=>{baseLUT=null;$("baseinfo").style.display="none";render();pushHistory();});
 $("baseEnable").addEventListener("change",e=>{baseOn=e.target.checked;render();pushHistory();});
-
-/* ================= film presets ================= */
-const presets={
-  neutral:{},
-  portra400:{temp:10,tint:3,contrast:-6,sat:-10,vib:8,fade:8,shAmt:12,shCol:"#4a5468",hiAmt:18,hiCol:"#ecc89a",
-    curves:{m:[{x:0,y:0.03},{x:0.25,y:0.24},{x:0.8,y:0.84},{x:1,y:0.97}]},
-    hue:[0,0.06,0,-0.10,0,0,0,0.04]},
-  ektar100:{temp:6,contrast:18,sat:24,vib:10,
-    curves:{m:[{x:0,y:0},{x:0.2,y:0.16},{x:0.85,y:0.9},{x:1,y:1}],r:[{x:0,y:0},{x:0.5,y:0.53},{x:1,y:1}]},
-    hue:[0.04,0.05,0,0,0,-0.05,0,0]},
-  gold200:{temp:24,tint:4,contrast:8,sat:10,fade:5,shAmt:10,shCol:"#5c4e3a",hiAmt:26,hiCol:"#f0c478",
-    curves:{b:[{x:0,y:0.02},{x:0.5,y:0.46},{x:1,y:0.95}]},
-    hue:[0,0.05,-0.12,-0.16,0,0,0,0]},
-  kodachrome64:{temp:4,contrast:26,sat:-4,vib:14,gamma:-6,shAmt:16,shCol:"#2e4450",hiAmt:10,hiCol:"#e8c8a0",
-    curves:{m:[{x:0,y:0},{x:0.18,y:0.12},{x:0.5,y:0.5},{x:0.88,y:0.92},{x:1,y:1}],r:[{x:0,y:0},{x:0.45,y:0.5},{x:1,y:1}]},
-    hue:[0.05,0.04,0,-0.06,0,0,0,-0.06]},
-  velvia50:{temp:-4,contrast:30,sat:34,vib:8,gamma:-4,
-    curves:{m:[{x:0,y:0},{x:0.15,y:0.09},{x:0.85,y:0.93},{x:1,y:1}]},
-    hue:[0.03,0,0.06,0.08,0,-0.04,0,0.06]},
-  provia100f:{temp:-6,contrast:12,sat:6,vib:4,
-    curves:{m:[{x:0,y:0},{x:0.22,y:0.19},{x:0.82,y:0.86},{x:1,y:1}]},
-    hue:[0,0,0,0,0,-0.03,0,0]},
-  pro400h:{temp:-4,tint:-6,contrast:-12,sat:-12,vib:10,fade:14,shAmt:24,shCol:"#4e7268",hiAmt:12,hiCol:"#eadfd0",
-    curves:{m:[{x:0,y:0.05},{x:0.5,y:0.52},{x:1,y:0.96}]},
-    hue:[0,0.04,0,0.10,0.06,0,0,0]},
-  superia400:{temp:-3,tint:-10,contrast:14,sat:14,shAmt:18,shCol:"#2f5a58",hiAmt:8,hiCol:"#e6e0c8",
-    curves:{m:[{x:0,y:0},{x:0.2,y:0.15},{x:1,y:1}]},
-    hue:[0.03,0,0.08,0.06,0.05,0,0,0]},
-  cinestill800t:{temp:-22,tint:2,contrast:6,sat:4,fade:16,shAmt:28,shCol:"#2a4a60",hiAmt:30,hiCol:"#f0907a",
-    curves:{m:[{x:0,y:0.05},{x:0.5,y:0.5},{x:0.9,y:0.93},{x:1,y:0.98}]},
-    hue:[0.05,0,0,0,0.04,-0.05,0,0]},
-  trix400:{sat:-100,contrast:24,gamma:2,
-    curves:{m:[{x:0,y:0},{x:0.2,y:0.13},{x:0.78,y:0.86},{x:1,y:1}]}},
-  hp5:{sat:-100,contrast:8,fade:6,
-    curves:{m:[{x:0,y:0.02},{x:0.3,y:0.3},{x:0.85,y:0.88},{x:1,y:0.97}]}}
-};
-function applyPreset(p){
-  sliders.forEach(s=>{
-    state[s]=(p[s]!==undefined)?p[s]:(DEF[s]||0);$(s).value=state[s];
-    const out=$(s).parentElement.querySelector(".num");if(out)out.value=state[s];
-  });
-  state.shCol=hex2rgb(p.shCol||"#406080");$("shCol").value=p.shCol||"#406080";
-  state.hiCol=hex2rgb(p.hiCol||"#e0a060");$("hiCol").value=p.hiCol||"#e0a060";
-  ["m","r","g","b"].forEach(ch=>{
-    curves[ch]=(p.curves&&p.curves[ch])?p.curves[ch].map(q=>({x:q.x,y:q.y})):defCurve();
-  });
-  hueShift.fill(0);if(p.hue)p.hue.forEach((v,i)=>hueShift[i]=v);
-  hueSat.fill(0);if(p.hueSat)p.hueSat.forEach((v,i)=>hueSat[i]=v);
-  lumaSat.fill(0);if(p.lumaSat)p.lumaSat.forEach((v,i)=>lumaSat[i]=v);
-  cbState.shadows={x:0,y:0};
-  cbState.midtones={x:0,y:0};
-  cbState.highlights={x:0,y:0};
-  drawColorWheel($("cbSh"),0,0);
-  drawColorWheel($("cbMd"),0,0);
-  drawColorWheel($("cbHi"),0,0);
-  rebuildCurves();render();
-}
-document.querySelectorAll(".presets button").forEach(btn=>btn.addEventListener("click",()=>{applyPreset(presets[btn.dataset.p]);pushHistory();}));
 
 /* ================= extract look from photo ================= */
 function exDecode(file,cb){
@@ -1921,7 +2198,8 @@ $("exSingleF").addEventListener("change",e=>{
     const binsR=[],binsG=[],binsB=[],binsL=[],binW=new Float64Array(NB);
     for(let i=0;i<NB;i++){binsR.push([]);binsG.push([]);binsB.push([]);binsL.push([]);}
     const stride=(n>200000)?8:4;   // subsample very large references for speed
-    for(let p=0;p<d.data.length;p+=4*(stride/4)){
+    let samples=0;
+    for(let p=0;p<d.data.length;p+=4*(stride/4)){samples++;
       const r=d.data[p]/255,g=d.data[p+1]/255,b=d.data[p+2]/255;
       const l=0.2126*r+0.7152*g+0.0722*b;
       lumHist[Math.min(255,Math.round(l*255))]++;
@@ -1962,8 +2240,8 @@ $("exSingleF").addEventListener("change",e=>{
        luminance, which is the scene, not the look. A straight line through
        them keeps the coherent cast and discards the swing.
        Each bin's weight is capped so one large area (a big sky) can't dominate. */
-    const minCount=Math.max(8,n/stride*0.004);
-    const wCap=n/stride*0.12;
+    const minCount=Math.max(8,samples*0.004);
+    const wCap=samples*0.12;
 
     /* Fit offset(x) = a + b*x + c*x^2, where x = L - 0.5.
        "a" is the overall cast, "b" the shadow-to-highlight tilt (split toning)
@@ -2049,8 +2327,8 @@ $("exSingleF").addEventListener("change",e=>{
     /* Saturation: only act on clear desaturation, which is usually a grading
        choice. High chroma is more often just a colourful subject, so we don't
        crank saturation up on that evidence. */
-    const meanChroma=chroma/(n/stride);
-    if(meanChroma<0.12)setS("sat",Math.max(-45,(meanChroma/0.12-1)*60));
+    const meanChroma=chroma/Math.max(1,samples);
+    if(meanChroma<0.10)setS("sat",Math.max(-45,(meanChroma/0.10-1)*60));
 
     rebuildCurves();render();pushHistory();
     fail("Look extracted \u2014 the reference's colour cast and black level are now on the curves. Review and refine; a single photo can only suggest a look.");
@@ -2113,7 +2391,7 @@ function lrParse(text){
   // --- tone curves: <crs:ToneCurvePV2012> <rdf:Seq> <rdf:li>x, y</rdf:li> ---
   const curveNames=["ToneCurvePV2012","ToneCurvePV2012Red","ToneCurvePV2012Green","ToneCurvePV2012Blue","ToneCurve"];
   for(const nm of curveNames){
-    const blk=new RegExp("<crs:"+nm+"[\\s\\S]*?<\\/crs:"+nm+">","i").exec(text);
+    const blk=new RegExp("<crs:"+nm+"(?=[\\s>])[\\s\\S]*?<\\/crs:"+nm+">","i").exec(text);
     if(blk){
       const pts=[...blk[0].matchAll(/<rdf:li>\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*<\/rdf:li>/g)]
         .map(p=>({x:parseFloat(p[1])/255,y:parseFloat(p[2])/255}));
@@ -2302,12 +2580,20 @@ $("lrFile").addEventListener("change",e=>{
 });
 
 /* ================= shared grade serialise / apply ================= */
-function buildGradeData(){
+function buildGradeData(opts){
   return {
     app:"LutMaster",version:2,name:$("lutname").value,
     // Clone nested state so A/B slots and history entries retain independent
     // section-enable checkbox states instead of sharing the mutable object.
-    state:{...state,enabled:{...state.enabled},shCol:undefined,hiCol:undefined},
+    state:{
+      ...state,
+      enabled:{...state.enabled},
+      curveAuto:{...state.curveAuto},
+      curveAutoData:JSON.parse(JSON.stringify(state.curveAutoData||{})),
+      autoCorrections:{...state.autoCorrections},
+      autoCorrectionData:JSON.parse(JSON.stringify(state.autoCorrectionData||{})),
+      shCol:undefined,hiCol:undefined
+    },
     // Capture the loaded LUT stack order, enable checkboxes and strength values.
     loadedLuts:loadedLuts.map(lk=>({id:lk.slotId,name:lk.name,type:lk.type,active:!!lk.active,strength:+lk.strength})),
     shCol:$("shCol").value,hiCol:$("hiCol").value,
@@ -2319,7 +2605,7 @@ function buildGradeData(){
       highlights:{x:cbState.highlights.x,y:cbState.highlights.y}
     },
     baseOn:baseOn,
-    baseLUT:baseLUT?{size:baseLUT.size,data:Array.from(baseLUT.data),name:baseLUT.name}:null
+    baseLUT:(opts&&opts.light)?undefined:(baseLUT?{size:baseLUT.size,data:Array.from(baseLUT.data),name:baseLUT.name}:null)
   };
 }
 function applyDataSilent(p){
@@ -2328,12 +2614,18 @@ function applyDataSilent(p){
   state.hiCol=hex2rgb(p.hiCol||"#e0a060");
   state.logMode=!!p.logMode;
   state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
-  state.curveAuto={dynamic:false,contrast:false,film:false,...((p.state&&p.state.curveAuto)||{})};
-  state.curveAutoData={dynamic:null,contrast:null,...((p.state&&p.state.curveAutoData)||{})};
+  state.curveAuto={dynamic:false,contrast:false,film:false,exposure:false,recover:false,colour:false,wb:false,...((p.state&&p.state.curveAuto)||{})};
+  state.curveAutoData={dynamic:null,contrast:null,film:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null,...((p.state&&p.state.curveAutoData)||{})};
+  state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false,...((p.state&&p.state.autoCorrections)||{})};
+  state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
   ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
+  ["highlight","shadow","skin","lumaSat"].forEach(key=>{
+    const data=state.autoCorrectionData&&state.autoCorrectionData[key];
+    if(state.autoCorrections[key]&&data&&!data.controlDelta)applyCorrectionToControls(key,data,true);
+  });
   if(p.cbState){
     if(p.cbState.shadows)   cbState.shadows   ={x:p.cbState.shadows.x||0,   y:p.cbState.shadows.y||0};
     if(p.cbState.midtones)  cbState.midtones  ={x:p.cbState.midtones.x||0,  y:p.cbState.midtones.y||0};
@@ -2342,8 +2634,10 @@ function applyDataSilent(p){
     cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
   }
   rebuildCurves();
+  migrateLegacyAutoAdjustments();
   syncSectionEnabled();
   syncAutoCurveButtons();
+  syncIndependentCorrectionButtons();
 }
 function restoreLoadedLutSettings(savedList){
   // LUT data itself remains loaded globally. Restore only the selected stack
@@ -2371,7 +2665,7 @@ function restoreSavedLoadedLutData(savedData){
   const restored=savedData.map(item=>{
     const id=item.id||("loaded-lut-"+(loadedLutSerial++));
     const old=oldById.get(id)||{};
-    const vals=item.data instanceof Float32Array?item.data:Float32Array.from(item.data||[]);
+    const vals=item.packed?Float32Array.from(item.packed.trim().split(/\s+/).map(Number)):(item.data instanceof Float32Array?item.data:Float32Array.from(item.data||[]));
     const strength=Number(item.strength);
     Object.assign(old,{
       slotId:id,source:old.source||null,type:"cube",name:item.name||"Loaded LUT",
@@ -2392,16 +2686,22 @@ function applyGradeData(p){
   });
   $("shCol").value=p.shCol||"#406080";state.shCol=hex2rgb($("shCol").value);
   $("hiCol").value=p.hiCol||"#e0a060";state.hiCol=hex2rgb($("hiCol").value);
-  state.logMode=!!p.logMode;$("logMode").checked=state.logMode;
+  state.logMode=!!p.logMode;
   state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
-  state.curveAuto={dynamic:false,contrast:false,film:false,...((p.state&&p.state.curveAuto)||{})};
-  state.curveAutoData={dynamic:null,contrast:null,...((p.state&&p.state.curveAutoData)||{})};
+  state.curveAuto={dynamic:false,contrast:false,film:false,exposure:false,recover:false,colour:false,wb:false,...((p.state&&p.state.curveAuto)||{})};
+  state.curveAutoData={dynamic:null,contrast:null,film:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null,...((p.state&&p.state.curveAutoData)||{})};
+  state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false,...((p.state&&p.state.autoCorrections)||{})};
+  state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
   if(Array.isArray(p.loadedLutData))restoreSavedLoadedLutData(p.loadedLutData);
   restoreLoadedLutSettings(p.loadedLuts);
   ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
+  ["highlight","shadow","skin","lumaSat"].forEach(key=>{
+    const data=state.autoCorrectionData&&state.autoCorrectionData[key];
+    if(state.autoCorrections[key]&&data&&!data.controlDelta)applyCorrectionToControls(key,data,true);
+  });
   if(p.cbState){
     cbState.shadows   =p.cbState.shadows   ?{x:p.cbState.shadows.x   ||0,y:p.cbState.shadows.y   ||0}:{x:0,y:0};
     cbState.midtones  =p.cbState.midtones  ?{x:p.cbState.midtones.x  ||0,y:p.cbState.midtones.y  ||0}:{x:0,y:0};
@@ -2409,8 +2709,10 @@ function applyGradeData(p){
   }else{
     cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
   }
+  migrateLegacyAutoAdjustments();
   syncSectionEnabled();
   syncAutoCurveButtons();
+  syncIndependentCorrectionButtons();
   drawColorWheel($("cbSh"),cbState.shadows.x,cbState.shadows.y);
   drawColorWheel($("cbMd"),cbState.midtones.x,cbState.midtones.y);
   drawColorWheel($("cbHi"),cbState.highlights.x,cbState.highlights.y);
@@ -2430,7 +2732,7 @@ function applyGradeData(p){
 /* ================= undo / redo ================= */
 let history=[],hpos=-1,restoring=false;
 function snapshot(){
-  const g=buildGradeData();
+  const g=buildGradeData({light:true});
   // Keep the heavy base-LUT samples OUT of the serialised snapshot: a 65-point
   // cube is ~800k numbers (~7 MB of JSON) and would otherwise be duplicated into
   // all 60 history entries. We store the live object by reference instead and
@@ -2438,11 +2740,12 @@ function snapshot(){
   delete g.baseLUT;
   g.baseOn=baseOn;
   g.baseRef=baseLUT?baseLUT.name+"|"+baseLUT.size:null;
-  return {s:JSON.stringify(g),base:baseLUT};
+  return {s:JSON.stringify(g),base:baseLUT,luts:[...loadedLuts]};
 }
 function restoreSnap(entry){
   const g=JSON.parse(entry.s);
   restoring=true;
+  if(entry.luts)loadedLuts.splice(0,loadedLuts.length,...entry.luts);
   if(entry.base){
     baseLUT=entry.base;
     baseOn=g.baseOn!==false;$("baseEnable").checked=baseOn;
@@ -2594,7 +2897,7 @@ function sampleLutArr(data,N,r,g,b){
 }
 function compileGradeLook(lk){
   if(lk.compiled)return lk.compiled;
-  const snap=buildGradeData(),savedBase=baseLUT,savedBaseOn=baseOn,
+  const snap=buildGradeData({light:true}),savedBase=baseLUT,savedBaseOn=baseOn,
         savedGains=normalisationGains,savedApplyingLookStack=applyingLookStack;
   const N=25,data=new Float32Array(N*N*N*3);
   let i=0;
@@ -2604,7 +2907,7 @@ function compileGradeLook(lk){
     applyingLookStack=true;
     baseLUT=null;baseOn=false;normalisationGains=[1,1,1];
     applyDataSilent(lk.data);
-    state.logMode=false;
+    state.logMode=false;rebuildAutoCurve();
     for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
       const o=grade(r/(N-1),g/(N-1),b/(N-1));
       data[i++]=o[0];data[i++]=o[1];data[i++]=o[2];
@@ -2612,7 +2915,7 @@ function compileGradeLook(lk){
   }finally{
     // Always return the editor to its exact pre-compile state, even if LUT
     // compilation fails. In particular, preserve the caller's stack flag.
-    applyDataSilent(snap);baseLUT=savedBase;baseOn=savedBaseOn;
+    applyDataSilent(snap);rebuildAutoCurve();baseLUT=savedBase;baseOn=savedBaseOn;
     normalisationGains=savedGains;applyingLookStack=savedApplyingLookStack;
   }
   lk.compiled={size:N,data};
@@ -2722,14 +3025,16 @@ function computeLookSwatch(lk){
     return SWATCH_IN.map(p=>{const o=sampleLutArr(d,lk.size,p[0],p[1],p[2]);
       return`rgb(${o[0]*255|0},${o[1]*255|0},${o[2]*255|0})`;});
   }
-  const snap=buildGradeData(),snapBase=baseLUT,wasApplying=applyingLookStack;
-  applyingLookStack=true;
-  baseLUT=null;
-  applyDataSilent(lk.data);state.logMode=false;
-  const cols=SWATCH_IN.map(p=>{const o=grade(p[0],p[1],p[2]);
-    return`rgb(${o[0]*255|0},${o[1]*255|0},${o[2]*255|0})`;});
-  applyDataSilent(snap);state.logMode=snap.logMode;baseLUT=snapBase;applyingLookStack=wasApplying;
-  return cols;
+  const snap=buildGradeData({light:true}),snapBase=baseLUT,wasApplying=applyingLookStack,snapGains=normalisationGains;
+  applyingLookStack=true;baseLUT=null;normalisationGains=[1,1,1];
+  try{
+    applyDataSilent(lk.data);state.logMode=false;rebuildAutoCurve();
+    return SWATCH_IN.map(p=>{const o=grade(p[0],p[1],p[2]);
+      return`rgb(${o[0]*255|0},${o[1]*255|0},${o[2]*255|0})`;});
+  }finally{
+    applyDataSilent(snap);state.logMode=snap.logMode;rebuildAutoCurve();
+    baseLUT=snapBase;applyingLookStack=wasApplying;normalisationGains=snapGains;
+  }
 }
 function applyLook(lk){
   if(lk.type==="grade"){
@@ -2799,16 +3104,38 @@ $("saveLook").addEventListener("click",async e=>{
   $("looksDD").classList.add("open");
 });
 function parseCubeText(text){
-  const lines=text.split(/\r?\n/);let size=0;const vals=[];
-  for(const ln of lines){
+  let size=0,size1=0,vals=[],dmin=[0,0,0],dmax=[1,1,1];
+  for(const ln of text.split(/\r?\n/)){
     const t=ln.trim();
     if(!t||t[0]==="#")continue;
-    if(/^LUT_3D_SIZE/i.test(t)){size=parseInt(t.split(/\s+/)[1]);continue;}
-    if(/^(TITLE|DOMAIN_|LUT_1D)/i.test(t))continue;
-    const parts=t.split(/\s+/);
-    if(parts.length>=3&&!isNaN(+parts[0]))vals.push(+parts[0],+parts[1],+parts[2]);
+    const w=t.split(/\s+/),key=w[0].toUpperCase();
+    if(key==="LUT_3D_SIZE"){size=parseInt(w[1]);continue;}
+    if(key==="LUT_1D_SIZE"){size1=parseInt(w[1]);continue;}
+    if(key==="DOMAIN_MIN"||key==="DOMAIN_MAX"){
+      const v=w.slice(1,4).map(Number);
+      if(v.length===3&&v.every(Number.isFinite)){if(key==="DOMAIN_MIN")dmin=v;else dmax=v;}
+      continue;
+    }
+    if(w.length>=3&&w.slice(0,3).every(x=>x!==""&&Number.isFinite(+x)))vals.push(+w[0],+w[1],+w[2]);
   }
-  if(!size||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
+  const cd=(x,c)=>(x-dmin[c])/((dmax[c]-dmin[c])||1);
+  if(size&&size1)vals.splice(0,size1*3);            // 1D shaper + 3D table: keep the 3D table
+  if(!size&&size1>=2&&vals.length>=size1*3){         // pure 1D LUT -> equivalent 33-point 3D table
+    const L=vals,m=size1-1,out=[];
+    const f=(x,c)=>{const u=Math.min(1,Math.max(0,cd(x,c)))*m,i=Math.min(m-1,Math.floor(u)),k=u-i;return L[i*3+c]*(1-k)+L[(i+1)*3+c]*k;};
+    size=33;
+    for(let b=0;b<size;b++)for(let g=0;g<size;g++)for(let r=0;r<size;r++)out.push(f(r/32,0),f(g/32,1),f(b/32,2));
+    vals=out;dmin=[0,0,0];dmax=[1,1,1];
+  }
+  if(!size||size<2||size>129||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
+  vals.length=size*size*size*3;
+  if(dmin.some(v=>v!==0)||dmax.some(v=>v!==1)){      // remap non-default input domains onto 0..1
+    const out=[];
+    for(let b=0;b<size;b++)for(let g=0;g<size;g++)for(let r=0;r<size;r++){
+      const o=sampleLutArr(vals,size,cd(r/(size-1),0),cd(g/(size-1),1),cd(b/(size-1),2));out.push(o[0],o[1],o[2]);
+    }
+    vals=out;
+  }
   return{size,vals};
 }
 $("addLookCube").addEventListener("click",()=>$("lookCubeFile").click());
@@ -2857,18 +3184,27 @@ function resetGroup(ids,render2=true){ids.forEach(id=>setS(id,DEF[id]||0));if(re
 $("toneReset").addEventListener("click",e=>{
   e.stopPropagation();
   resetGroup(["exposure","contrast","highlights","shadows","blacks","gamma","fade"]);
+  ["highlight","shadow"].forEach(key=>{
+    state.autoCorrections[key]=false;
+    if(state.autoCorrectionData[key])state.autoCorrectionData[key].controlDelta=null;
+  });
+  ["exposure","recover"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});
+  syncAutoCurveButtons();syncIndependentCorrectionButtons();
   pushHistory();
 });
-$("colReset").addEventListener("click",e=>{e.stopPropagation();resetGroup(["temp","tint","sat","vib","skin","colorNorm"]);pushHistory();});
+$("colReset").addEventListener("click",e=>{e.stopPropagation();resetGroup(["temp","tint","sat","vib","skin","colorNorm"]);["colour","wb"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});syncAutoCurveButtons();pushHistory();});
 $("splitReset").addEventListener("click",e=>{e.stopPropagation();setS("shAmt",0);setS("hiAmt",0);state.shCol=hex2rgb("#406080");$("shCol").value="#406080";state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";render();pushHistory();});
 $("resetAll").addEventListener("click",()=>{
   sliders.forEach(id=>setS(id,DEF[id]||0));
   state.shCol=hex2rgb("#406080");$("shCol").value="#406080";
   state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";
-  state.logMode=false;$("logMode").checked=false;
+  state.logMode=false;
   state.enabled={...SECTION_DEFAULTS};syncSectionEnabled();
-  state.curveAuto={dynamic:false,contrast:false,film:false};syncAutoCurveButtons();
-  state.curveAutoData={dynamic:null,contrast:null};
+  state.curveAuto={dynamic:false,contrast:false,film:false,exposure:false,recover:false,colour:false,wb:false};syncAutoCurveButtons();
+  state.curveAutoData={dynamic:null,contrast:null,film:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null};
+  state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false};
+  state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null};
+  syncIndependentCorrectionButtons();
   ["m","r","g","b"].forEach(ch=>curves[ch]=defCurve());
   hueShift.fill(0);hueSat.fill(0);lumaSat.fill(0);
   cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
@@ -2884,6 +3220,7 @@ document.querySelectorAll("aside section h2").forEach(h=>{
   h.addEventListener("click",e=>{
     if(e.target.closest(".reset,.section-enable"))return;
     h.parentElement.classList.toggle("closed");
+    if(h.parentElement===cubeSection&&!cubeSection.classList.contains("closed"))renderCubeAnalysis();
   });
 });
 
@@ -2905,7 +3242,8 @@ function download(name,text,type){
   });
 }
 $("saveProj").addEventListener("click",()=>{
-  download(($("lutname").value||"project")+".lutmaster.json",JSON.stringify(buildGradeData(),null,1),"application/json");
+  const g=buildGradeData();g.loadedLutData=serialiseLutStack();
+  download(($("lutname").value||"project").replace(/[^\w-]+/g,"_")+".lutmaster.json",JSON.stringify(g),"application/json");
 });
 $("loadProj").addEventListener("click",()=>$("projfile").click());
 $("projfile").addEventListener("change",e=>{
@@ -2932,6 +3270,7 @@ function removeImage(idx){
     $("scopes").style.display="none";
     $("drop").style.display="block";
     $("export").disabled=true;
+    setOptimizeEnabled(false);
     return;
   }
   $("thumbs").style.display=images.length>1?"flex":"none";
@@ -2973,15 +3312,36 @@ function saveBlob(name,blob){
     }
   }).catch(err=>{console.error("Could not save graded photo:",err);return false;});
 }
+let photoFmtValue="jpg93";
+function askPhotoFormat(){
+  return new Promise(resolve=>{
+    const modal=$("fmtModal"),ok=$("fmtOk"),cancel=$("fmtCancel");
+    modal.querySelectorAll('input[name="fmtChoice"]').forEach(r=>r.checked=(r.value===photoFmtValue));
+    modal.classList.add("show");ok.focus();
+    function done(v){
+      modal.classList.remove("show");
+      ok.removeEventListener("click",onOk);cancel.removeEventListener("click",onCancel);
+      modal.removeEventListener("mousedown",onBack);document.removeEventListener("keydown",onKey,true);
+      resolve(v);
+    }
+    function onOk(){const c=modal.querySelector('input[name="fmtChoice"]:checked');photoFmtValue=c?c.value:"jpg93";done(true);}
+    function onCancel(){done(false);}
+    function onBack(e){if(e.target===modal)done(false);}
+    function onKey(e){if(e.key==="Escape"){e.preventDefault();e.stopPropagation();done(false);}else if(e.key==="Enter"&&e.target.tagName!=="BUTTON"){e.preventDefault();onOk();}}
+    ok.addEventListener("click",onOk);cancel.addEventListener("click",onCancel);
+    modal.addEventListener("mousedown",onBack);document.addEventListener("keydown",onKey,true);
+  });
+}
+function photoFmt(){const v=photoFmtValue;return v==="png"?{mime:"image/png",q:undefined,ext:".png"}:{mime:"image/jpeg",q:v==="jpg100"?1:0.93,ext:".jpg"};}
 function gradedFilename(imgName){
   const base=(imgName||"photo").replace(/\.[^.]+$/,"");
   const lut=($("lutname").value||"graded").replace(/[^\w-]+/g,"_");
-  return base+"_"+lut+".jpg";
+  return base+"_"+lut+photoFmt().ext;
 }
 function buildPhotoExportLut(normalisationSource){
   // Normalisation is image-dependent, so calculate it from the corresponding loaded preview.
   updateNormalisationGains(normalisationSource||null);
-  const N=+$("lutsize").value||33,plut=new Float32Array(N*N*N*3);
+  const N=Math.max(33,+$("lutsize").value||33),plut=new Float32Array(N*N*N*3);   // photo output never uses a coarser grid than 33
   let i=0;
   for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
     const o=grade(r/(N-1),g/(N-1),b/(N-1));
@@ -3067,7 +3427,7 @@ async function encodeGradedPhoto(source,imgName,normalisationSource){
   let blob;
   try{
     blob=await new Promise((resolve,reject)=>{
-      cv.toBlob(result=>result?resolve(result):reject(new Error("the browser could not encode the full-resolution canvas")),"image/jpeg",0.93);
+      cv.toBlob(result=>result?resolve(result):reject(new Error("the browser could not encode the full-resolution canvas")),photoFmt().mime,photoFmt().q);
     });
   }catch(err){
     throw new Error("Full-resolution JPEG export failed for "+(imgName||"photo")+": "+(err.message||err)+". No downscaling was applied; try another browser or the desktop app.");
@@ -3090,6 +3450,7 @@ async function exportGradedFrom(source,imgName,btn,normalisationSource){
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 $("savephoto").addEventListener("click",async()=>{
   if(cur<0)return;
+  if(!(await askPhotoFormat()))return;
   const im=images[cur],btn=$("savephoto");
   btn.disabled=true;btn.textContent="Saving…";
   try{
@@ -3106,6 +3467,8 @@ $("savephoto").addEventListener("click",async()=>{
 let batchSaving=false;
 $("saveallphotos").addEventListener("click",async()=>{
   if(batchSaving||!images.length)return;
+  if(!(await askPhotoFormat()))return;
+  if(batchSaving)return;
   batchSaving=true;
   const btn=$("saveallphotos"),singleBtn=$("savephoto");
   btn.disabled=true;singleBtn.disabled=true;
@@ -3142,9 +3505,9 @@ $("saveallphotos").addEventListener("click",async()=>{
       const result=await encodeGradedPhoto(source,im.name,im.data);
       let name=result.name;
       if(usedNames.has(name)){
-        const dot=name.lastIndexOf(".jpg"),base=dot>=0?name.slice(0,dot):name;
-        let n=2;while(usedNames.has(base+"_"+n+".jpg"))n++;
-        name=base+"_"+n+".jpg";
+        const dot=name.lastIndexOf("."),base=dot>=0?name.slice(0,dot):name,ext=dot>=0?name.slice(dot):"";
+        let n=2;while(usedNames.has(base+"_"+n+ext))n++;
+        name=base+"_"+n+ext;
       }
       usedNames.add(name);
       if(targetDir){
@@ -3478,7 +3841,7 @@ function drawAnalysisMiniSwatches(lut){
 }
 
 function renderCubeAnalysis(){
-  if(analysisRunning)return;
+  if(analysisRunning){analysisDirty=true;return;}
   analysisRunning=true;
   const N=analysisSize;
   chLabel.textContent="Output "+N+"³ preview";
@@ -3490,16 +3853,15 @@ function renderCubeAnalysis(){
     drawAnalysisHeat(lut);
     drawAnalysisHistograms(lut);
     analysisRunning=false;
+    if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}
   },0);
 }
 
+let analysisTimer=null,analysisDirty=false;
+const cubeSection=$("cubePanelWrap").closest("section");
 function scheduleCubeAnalysis(){
-  if(analysisPending)return;
-  analysisPending=true;
-  requestAnimationFrame(()=>{
-    analysisPending=false;
-    renderCubeAnalysis();
-  });
+  if(cubeSection.classList.contains("closed"))return;
+  clearTimeout(analysisTimer);analysisTimer=setTimeout(renderCubeAnalysis,120);
 }
 
 chSizeBtn.addEventListener("click",()=>{
@@ -3509,6 +3871,88 @@ chSizeBtn.addEventListener("click",()=>{
 });
 
 renderCubeAnalysis();
+
+/* ================= extras: auto WB, serialised LUT stack, shortcuts ================= */
+function serialiseLutStack(){
+  return loadedLuts.map(lk=>{
+    const lut=lk.type==="cube"?{size:lk.size,data:lk.data}:compileGradeLook(lk);
+    return{id:lk.slotId,name:lk.name,active:!!lk.active,strength:+lk.strength,size:lut.size,packed:packLutValues(lut.data)};
+  });
+}
+/* ---- analysis behind the Exposure / Recover / Colour / White bal. optimisations ----
+   Works on the photo after base LUT and loaded LUTs. Results are written directly into
+   the visible grading sliders; grade() consumes those controls without an auto layer. */
+const AUTO_KEYS=["exposure","recover","colour","wb"];
+function gradeSamples(){
+  const d=images[cur].data.data,L=[],C=[];
+  for(let i=0;i<d.length;i+=32){
+    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+    if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+    if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
+    if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
+    L.push(.2126*r+.7152*g+.0722*b);C.push(Math.max(r,g,b)-Math.min(r,g,b));
+  }
+  return{L:Float32Array.from(L),C:Float32Array.from(C)};
+}
+const pctl=(a,q)=>Float32Array.from(a).sort()[Math.min(a.length-1,Math.floor(q*a.length))];
+const fracOf=(a,fn)=>{let n=0;for(const v of a)if(fn(v))n++;return n/a.length;};
+function computeAutoAdj(key){
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  if(key==="wb"){
+    const d=images[cur].data.data;let sr=0,sg=0,sb=0,n=0;
+    for(let i=0;i<d.length;i+=16){
+      const mx=Math.max(d[i],d[i+1],d[i+2]);
+      if(mx>=250||mx<12)continue;                    // ignore clipped and near-black pixels
+      sr+=d[i];sg+=d[i+1];sb+=d[i+2];n++;
+    }
+    if(!n)return null;
+    let c=[sr/n/255,sg/n/255,sb/n/255];
+    if(state.logMode)c=c.map(vlog2rec709);
+    if(baseLUT&&baseOn)c=sampleBase(c[0],c[1],c[2]);
+    if(!applyingLookStack)c=applyActiveLooks(c[0],c[1],c[2]);
+    const t=(c[2]-c[0])/2,ti=((c[0]+t+c[2]-t)/2-c[1])/1.5;
+    return{temp:cl(t*300,-100,100),tint:cl(ti*300,-100,100)};
+  }
+  const sm=gradeSamples(),L=sm.L,C=sm.C;
+  if(key==="exposure")return{exposure:cl(100*Math.log2(.46/Math.max(pctl(L,.5),.03)),-60,60)};
+  if(key==="recover"){
+    // Exposure is already materialised in the visible slider; never add a hidden offset.
+    const gain=Math.pow(2,state.exposure/100);
+    const hi=fracOf(L,v=>v*gain>.9),lo=fracOf(L,v=>v*gain<.1),p1=pctl(L,.01)*gain;
+    return{highlights:-Math.min(70,hi*350),shadows:Math.min(70,lo*300),blacks:p1>.05?-Math.min(40,(p1-.05)*250):0};
+  }
+  let mc=0;for(const v of C)mc+=v;mc/=C.length;      // colour
+  const vib=cl((.22-mc)*260,-20,50);
+  return{vib,sat:mc<.10?8:0,skin:vib>10?35:0};
+}
+function migrateLegacyAutoAdjustments(){
+  state.curveAutoData=state.curveAutoData||{};
+  for(const key of ["exposure","recover","colour","wb"]){
+    const d=state.curveAutoData[key];
+    if(state.curveAuto[key]&&d&&!d.controlDelta)applyAutoControls(key,d,true);
+  }
+  const active=["dynamic","contrast","film"].some(k=>state.curveAuto[k]);
+  if(active&&!Array.isArray(state.curveAutoData.baseCurve)){
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y}));
+    rebuildVisibleAutoCurve();
+  }
+}
+view.addEventListener("dblclick",()=>{if(cur>=0){resetPreviewZoom();fitPreviewToStage();}});
+document.addEventListener("keydown",e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey||cur<0)return;
+  const t=e.target;
+  if(t&&/^(TEXTAREA|SELECT)$/.test(t.tagName))return;
+  if(t&&t.tagName==="INPUT"&&!/^(range|checkbox)$/.test(t.type))return;
+  const k=e.key.toLowerCase();
+  if(k==="\\"){e.preventDefault();if(!showOriginal){showOriginal=true;render();}}
+  else if(k==="w")$("wipeOn").click();
+  else if(k==="j")$("clipOn").click();
+  else if(k==="h")$("scopeOn").click();
+  else if(k==="]"&&cur<images.length-1)selectImage(cur+1);
+  else if(k==="["&&cur>0)selectImage(cur-1);
+  else if(k==="0"){resetPreviewZoom();fitPreviewToStage();}
+});
+document.addEventListener("keyup",e=>{if(e.key==="\\"&&showOriginal){showOriginal=false;render();}});
 
 render();
 pushHistory();
