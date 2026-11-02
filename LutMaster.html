@@ -72,7 +72,7 @@
   .sprockets{height:16px;background-image:radial-gradient(3.2px 4.2px at 50% 50%,var(--bath) 97%,transparent 100%);background-size:19px 16px;background-repeat:repeat-x;background-position:center}
   .rebate{display:flex;justify-content:space-between;gap:12px;font:10px/1 var(--mono);letter-spacing:.16em;color:var(--orange);padding:1px 2px 5px;text-transform:uppercase}
   #viewwrap{position:relative;max-width:100%;width:fit-content;margin:0 auto;overflow:hidden}
-  canvas#view{display:block;cursor:ew-resize;transform-origin:top left}
+  canvas#view{display:block;cursor:default;transform-origin:top left}
   #wipeline{position:absolute;top:0;bottom:0;width:2px;background:var(--orange-hi);display:none;pointer-events:none}
   #wipeline::after{content:"◂ original · graded ▸";position:absolute;top:6px;left:6px;font:9px var(--mono);letter-spacing:.08em;color:var(--orange-hi);white-space:nowrap;background:rgba(12,11,8,.75);padding:3px 6px;border-radius:2px}
   #stagebar{display:none;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:center}
@@ -143,7 +143,8 @@
   .auto-correction-group.medium{--auto-btn-min:92px}
   .auto-correction-group.long{--auto-btn-min:126px}
   .auto-correction-groups .btn{width:100%;min-width:0;min-height:34px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
-  .auto-correction-groups .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3);box-shadow:inset 0 0 0 1px var(--orange)}
+  .auto-correction-groups .btn.on,.auto-grade-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3);box-shadow:inset 0 0 0 1px var(--orange)}
+  .auto-grade-tools .btn{width:100%;min-width:0;min-height:34px}
   .curve-tools span{font:10px var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
   .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
   #curves{width:100%;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:crosshair;touch-action:none}
@@ -227,7 +228,7 @@
   #abwrap button+button{border-left:1px solid var(--line)}
   #abwrap button.on{background:var(--orange);color:var(--film)}
   #abwrap button:hover:not(.on){color:var(--text)}
-  #view.picking{cursor:crosshair}
+  #view.picking{cursor:default}
   .pickbtn.on{border-color:var(--orange);color:var(--orange-hi)}
   #secSwatch{width:22px;height:22px;border-radius:3px;border:1px solid var(--line);flex-shrink:0}
   .look .lswatch{display:flex;gap:1px;flex-shrink:0}
@@ -428,6 +429,15 @@
 </section>
 <section>
 <h2>Automated Corrections</h2>
+<div class="auto-grade-tools" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:6px;margin:0 0 10px">
+  <button class="btn" id="autoGradeBtn" type="button" aria-pressed="false" title="Automatically optimize global tonal parameters from the whole image">Auto Grade</button>
+  <button class="btn" id="autoGradeSubjectBtn" type="button" aria-pressed="false" title="Draw around a subject; preserve scene brightness while increasing subject contrast">Auto Grade – Subject</button>
+</div>
+<div id="subjectGradeControls" style="display:none;gap:6px;align-items:center;margin:0 0 8px">
+  <span class="tiny" id="subjectGradeHint">Draw a closed outline around the subject. Double-click to finish.</span>
+  <button class="btn" id="subjectGradeApply" type="button" disabled>Apply</button>
+  <button class="btn" id="subjectGradeCancel" type="button">Cancel</button>
+</div>
 <div class="auto-correction-groups">
   <div class="auto-correction-group short" aria-label="Short-label corrections">
     <button aria-pressed="false" class="btn" disabled="" id="logMode" title="Toggle V-Log input conversion to Rec.709 before applying the grade">Vlog</button>
@@ -1314,6 +1324,7 @@ function render(){
       try{drawHisto(out);}catch(err){console.error("histogram:",err);}
     }
     try{scheduleThumbs(plut,N);}catch(err){console.error("thumbnails:",err);}
+    try{drawSubjectSelection();}catch(err){console.error("subject selection overlay:",err);}
   });
 }
 function applyLut(src,plut,N){
@@ -1650,6 +1661,150 @@ function markAutoCurveAsManual(){
   state.curveAutoData.baseCurve=null;
   syncAutoCurveButtons();
 }
+/* ================= one-shot Auto Grade tools ================= */
+let subjectGradeMode=false,subjectGradePoints=[],subjectGradeApplied=false,subjectGradeDrawing=false,subjectGradeClosed=false;
+let autoGradeBaselineCurve=null,autoGradeLastCurve=null,autoGradeImageIndex=-1,autoGradeAppliedMode=null;
+function cloneCurve(c){return Array.isArray(c)?c.map(p=>({x:+p.x,y:+p.y})):null;}
+function curvesEqual(a,b){return !!a&&!!b&&a.length===b.length&&a.every((p,i)=>Math.abs(p.x-b[i].x)<1e-7&&Math.abs(p.y-b[i].y)<1e-7);}
+function clearAutoGradeState(){autoGradeBaselineCurve=null;autoGradeLastCurve=null;autoGradeImageIndex=-1;autoGradeAppliedMode=null;}
+function resetAutoGrade(mode){
+  if(!autoGradeBaselineCurve||autoGradeAppliedMode!==mode)return false;
+  // The Master RGB curve is shared by the project, not owned by the image
+  // currently displayed. Always restore the captured pre-Auto-Grade curve,
+  // even when the user has switched to another image since applying it.
+  curves.m=cloneCurve(autoGradeBaselineCurve);
+  clearAutoGradeState();
+  $('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');
+  $('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');
+  rebuildCurves();drawCurves();render();pushHistory();return true;
+}
+function setAutoGradeMode(mode){
+  subjectGradeMode=mode==='subject';
+  $('autoGradeBtn').classList.toggle('on',mode==='global');
+  $('autoGradeSubjectBtn').classList.toggle('on',subjectGradeMode);
+  $('autoGradeBtn').setAttribute('aria-pressed',mode==='global'?'true':'false');
+  $('autoGradeSubjectBtn').setAttribute('aria-pressed',subjectGradeMode?'true':'false');
+  $('subjectGradeControls').style.display=subjectGradeMode?'flex':'none';
+  subjectGradePoints=[];subjectGradeApplied=false;subjectGradeClosed=false;subjectGradeDrawing=false;render();
+}
+function tonalSamples(src,points=null,baseLut=null){
+  const d=src.data,w=src.width,h=src.height,hist=new Uint32Array(256),total=w*h;
+  let count=0;
+  // Selection vertices and sampled pixels share normalized source-image coordinates.
+  const inside=(nx,ny)=>{
+    if(!points||points.length<3)return true;
+    let hit=false;
+    for(let i=0,j=points.length-1;i<points.length;j=i++){
+      const a=points[i],b=points[j];
+      if((a.y>ny)!==(b.y>ny)){
+        const crossX=(b.x-a.x)*(ny-a.y)/(b.y-a.y)+a.x;
+        if(nx<crossX)hit=!hit;
+      }
+    }
+    return hit;
+  };
+  const stride=Math.max(1,Math.floor(Math.sqrt(total/1200000)));
+  for(let y=0;y<h;y+=stride)for(let x=0;x<w;x+=stride){
+    const nx=(x+.5)/w,ny=(y+.5)/h;
+    if(points&&!inside(nx,ny))continue;
+    const i=(y*w+x)*4;
+    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+    if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+    // Apply the existing user curve before measuring the distribution.
+    if(baseLut){r=baseLut[Math.round(clamp(r)*255)];g=baseLut[Math.round(clamp(g)*255)];b=baseLut[Math.round(clamp(b)*255)];}
+    const l=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
+    hist[l]++;count++;
+  }
+  if(!count)return null;
+  const pct=q=>curvePercentile(hist,count,q);
+  let mode=0;for(let i=1;i<256;i++)if(hist[i]>hist[mode])mode=i;
+  // A lightly smoothed mode avoids overreacting to a one-bin histogram spike.
+  let smoothMode=0,smoothPeak=-1;
+  for(let i=1;i<255;i++){const v=hist[i-1]+2*hist[i]+hist[i+1];if(v>smoothPeak){smoothPeak=v;smoothMode=i;}}
+  return {count,hist,mode:smoothMode/255,p001:pct(.001),p01:pct(.01),p05:pct(.05),p10:pct(.10),p15:pct(.15),p25:pct(.25),p50:pct(.50),p75:pct(.75),p85:pct(.85),p90:pct(.90),p95:pct(.95),p99:pct(.99),p999:pct(.999),coverage:count/total};
+}
+function autoLevelsCurve(baseLut,globalStats,roiStats,isSubject){
+  // Keep Auto Grade lightweight and editable: add only three interior
+  // anchors (shadow / dominant-midpoint / highlight). Preserve the user's
+  // existing control-point locations and never move either endpoint.
+  const clamp01=v=>clamp(v);
+  const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const pivot=clampRange(roiStats.mode*.35+roiStats.p50*.65,.18,.82);
+  const occupiedSpan=Math.max(.035,roiStats.p85-roiStats.p15);
+  const contrastGain=isSubject
+    ? clampRange(1.30 + (0.34-occupiedSpan)*.42,1.20,1.43)
+    : clampRange(1.16 + (0.42-occupiedSpan)*.30,1.08,1.27);
+  const lowGuard=isSubject?globalStats.p001:roiStats.p001;
+  const highGuard=isSubject?globalStats.p999:roiStats.p999;
+  const softMap=v=>{
+    const z=clamp01(v);
+    let y=pivot+(z-pivot)*contrastGain;
+    const toe=Math.max(.018,Math.min(.055,(pivot-lowGuard)*.22+.018));
+    const shoulder=Math.max(.018,Math.min(.055,(highGuard-pivot)*.22+.018));
+    if(y<lowGuard)y=lowGuard-toe*(1-Math.exp(-(lowGuard-y)/toe));
+    if(y>highGuard)y=highGuard+shoulder*(1-Math.exp(-(y-highGuard)/shoulder));
+    return clamp01(y);
+  };
+  // Three generated anchors are sufficient for a smooth, restrained tonal
+  // adjustment while remaining quick to edit by hand. Merge with existing
+  // user anchors so a custom curve is not discarded.
+  const anchors=[clampRange(pivot*.52,.12,.38),pivot,clampRange(pivot+(1-pivot)*.55,.62,.88)];
+  const xs=[...new Set([...baseCurveXs(baseLut),...anchors].map(x=>clampRange(x,.001,.999)))].sort((a,b)=>a-b);
+  const pts=xs.map(x=>({x,y:softMap(baseLut[Math.round(x*255)])}));
+  // Endpoints are immutable: retain the exact original x/y values.
+  const first=curves.m&&curves.m[0],last=curves.m&&curves.m[curves.m.length-1];
+  if(first&&Math.abs(first.x)<1e-9)pts.unshift({x:first.x,y:first.y});
+  else pts.unshift({x:0,y:baseLut[0]});
+  if(last&&Math.abs(last.x-1)<1e-9)pts.push({x:last.x,y:last.y});
+  else pts.push({x:1,y:baseLut[255]});
+  return pts;
+}
+function baseCurveXs(baseLut){
+  // `curves.m` is the source of editable anchor positions; the LUT is only
+  // used to evaluate the curve at those positions.
+  return Array.isArray(curves.m)?curves.m.filter(p=>p.x>0&&p.x<1).map(p=>p.x):[];
+}
+function applyTonalAutoGrade(points=null){
+  if(cur<0){fail('Open a photo before using Auto Grade.');return false;}
+  // Every run starts from the exact pre-Auto-Grade curve; never grade a prior result.
+  if(autoGradeBaselineCurve){curves.m=cloneCurve(autoGradeBaselineCurve);clearAutoGradeState();rebuildCurves();}
+  const baseline=cloneCurve(curves.m),baseLut=buildCurveLUT(baseline),src=images[cur].data;
+  const isSubject=Array.isArray(points)&&points.length>=3;
+  const roi=tonalSamples(src,isSubject?points:null,baseLut);
+  const all=isSubject?tonalSamples(src,null,baseLut):roi;
+  if(!roi||roi.count<100||!all){fail('The selected area is too small or contains no usable image pixels.');return false;}
+  if(isSubject&&roi.coverage<.001){fail('The selection contains too few image pixels. Please draw a larger outline.');return false;}
+  if(roi.p999-roi.p001<.012){fail('The image region has insufficient tonal variation for reliable Auto Grade.');return false;}
+  // Subject and global modes use different histogram populations. For subject
+  // mode, ROI defines the contrast pivot/strength; full-frame stats only guard extremes.
+  const next=autoLevelsCurve(baseLut,all,roi,isSubject);
+  const changed=next.some((p,i)=>Math.abs(p.y-baseLut[Math.round(p.x*255)])>.002);
+  if(!changed){fail('The image already has a balanced tonal distribution; no meaningful curve adjustment was found.');return false;}
+  curves.m=next;rebuildCurves();drawCurves();
+  autoGradeBaselineCurve=baseline;autoGradeLastCurve=cloneCurve(curves.m);autoGradeImageIndex=cur;autoGradeAppliedMode=isSubject?'subject':'global';
+  render();pushHistory();return true;
+}
+$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade();setAutoGradeMode(null);if(ok){$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
+$('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode==='global')resetAutoGrade('global');setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
+function smoothSubjectPolygon(points,steps=4){
+  if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y}));
+  // Closed Catmull-Rom interpolation: smooths hand-drawn corners while
+  // retaining the user's outline. Clamp samples to normalized image bounds.
+  const out=[],n=points.length;
+  for(let i=0;i<n;i++){
+    const p0=points[(i-1+n)%n],p1=points[i],p2=points[(i+1)%n],p3=points[(i+2)%n];
+    for(let j=0;j<steps;j++){
+      const t=j/steps,t2=t*t,t3=t2*t;
+      const interp=k=>.5*((2*p1[k])+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3);
+      out.push({x:clamp(interp('x')),y:clamp(interp('y'))});
+    }
+  }
+  return out;
+}
+$('subjectGradeApply').addEventListener('click',()=>{if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y)}));const ok=applyTonalAutoGrade(pts);setAutoGradeMode(null);if(ok){$('autoGradeSubjectBtn').classList.add('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','true');$('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');}});
+$('subjectGradeCancel').addEventListener('click',()=>setAutoGradeMode(null));
+document.addEventListener('keydown',e=>{if(subjectGradeMode&&e.key==='Enter'){e.preventDefault();$('subjectGradeApply').click();}if(subjectGradeMode&&e.key==='Escape'){e.preventDefault();setAutoGradeMode(null);}});
+function drawSubjectSelection(){if(!subjectGradeMode||subjectGradePoints.length===0)return;const pathPts=subjectGradeClosed?smoothSubjectPolygon(subjectGradePoints):subjectGradePoints;ctx.save();ctx.strokeStyle='#ff9d36';ctx.fillStyle='rgba(255,157,54,.12)';ctx.lineWidth=Math.max(1,view.width/900);ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(subjectGradeClosed?[]:[6,4]);ctx.beginPath();pathPts.forEach((p,i)=>{const x=p.x*view.width,y=p.y*view.height;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});if(subjectGradeClosed&&pathPts.length>=3){ctx.closePath();ctx.fill();}ctx.stroke();ctx.restore();}
 const autoCurveButtons={dynamic:$("optDynamic"),contrast:$("optContrast"),film:$("optFilm"),exposure:$("autoExp"),recover:$("autoRec"),colour:$("autoCol"),wb:$("autoWBbtn")};
 function syncAutoCurveButtons(){
   Object.entries(autoCurveButtons).forEach(([key,button])=>{
@@ -2048,6 +2203,7 @@ function handlePick(e){
   return true;
 }
 view.addEventListener("pointerdown",e=>{
+  if(subjectGradeMode){e.preventDefault();view.setPointerCapture(e.pointerId);subjectGradeDrawing=true;const p=previewPoint(e);subjectGradePoints.push({x:p.x/view.offsetWidth,y:p.y/view.offsetHeight});$('subjectGradeApply').disabled=subjectGradePoints.length<3;render();return;}
   if(handlePick(e))return;
   if($("wipeOn").checked){
     wipeDragging=true;view.setPointerCapture(e.pointerId);
@@ -2055,9 +2211,12 @@ view.addEventListener("pointerdown",e=>{
   }else{showOriginal=true;render();}
 });
 view.addEventListener("pointermove",e=>{
+  if(subjectGradeMode&&subjectGradeDrawing){const p=previewPoint(e),q=subjectGradePoints[subjectGradePoints.length-1];const x=p.x/view.offsetWidth,y=p.y/view.offsetHeight;if(!q||Math.hypot((x-q.x)*images[cur].data.width,(y-q.y)*images[cur].data.height)>Math.max(3,images[cur].data.width/500)){subjectGradePoints.push({x,y});$('subjectGradeApply').disabled=subjectGradePoints.length<3;render();}return;}
   if(!wipeDragging)return;
   const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
 });
+view.addEventListener("pointerup",e=>{if(subjectGradeMode&&subjectGradeDrawing){subjectGradeDrawing=false;subjectGradeClosed=subjectGradePoints.length>=3;try{view.releasePointerCapture(e.pointerId);}catch(_){}$('subjectGradeApply').disabled=subjectGradePoints.length<3;render();}});
+view.addEventListener("pointercancel",e=>{if(subjectGradeMode&&subjectGradeDrawing){subjectGradeDrawing=false;subjectGradeClosed=subjectGradePoints.length>=3;try{view.releasePointerCapture(e.pointerId);}catch(_){}$('subjectGradeApply').disabled=subjectGradePoints.length<3;render();}});
 view.addEventListener("pointermove",e=>{
   if(cur<0)return;
   const point=previewPoint(e),src=images[cur].data;
@@ -3937,7 +4096,7 @@ function migrateLegacyAutoAdjustments(){
     rebuildVisibleAutoCurve();
   }
 }
-view.addEventListener("dblclick",()=>{if(cur>=0){resetPreviewZoom();fitPreviewToStage();}});
+view.addEventListener("dblclick",()=>{if(subjectGradeMode){$('subjectGradeApply').disabled=subjectGradePoints.length<3;return;}if(cur>=0){resetPreviewZoom();fitPreviewToStage();}});
 document.addEventListener("keydown",e=>{
   if(e.ctrlKey||e.metaKey||e.altKey||cur<0)return;
   const t=e.target;
