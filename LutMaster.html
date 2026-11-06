@@ -46,6 +46,12 @@
   header button:disabled{opacity:.4;cursor:default}
   #helpBtn{width:28px;height:28px;flex:0 0 28px;padding:0;border-radius:50%;font:600 14px var(--mono);letter-spacing:0;color:var(--orange-hi);border-color:var(--line-hi)}
   #helpBtn:hover{color:var(--text);border-color:var(--orange)}
+  #previewQualityControl{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font:10px var(--mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+  #previewQualityBtn{min-width:48px;height:28px;padding:0 8px;border:1px solid var(--line-hi);border-radius:3px;background:var(--panel2);color:var(--dim);font:600 10px var(--mono);cursor:pointer}
+  #previewQualityBtn[aria-pressed="true"]{border-color:var(--orange);color:var(--orange-hi);background:var(--orange-dim)}
+  #previewQualityBtn:disabled{opacity:.4;cursor:default}
+  #previewQualityBtn:focus-visible{outline:2px solid var(--orange-hi);outline-offset:2px}
+  @media(max-width:760px){header{gap:8px;padding:10px 12px}header h1{font-size:18px}header p{display:none}#previewQualityControl span{display:none}}
   #helpModal{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.68)}
   #helpModal.show{display:flex}
   #helpModal .help-box{width:min(540px,calc(100vw - 28px));max-height:min(80vh,680px);overflow:auto;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
@@ -72,8 +78,12 @@
   .sprockets{height:16px;background-image:radial-gradient(3.2px 4.2px at 50% 50%,var(--bath) 97%,transparent 100%);background-size:19px 16px;background-repeat:repeat-x;background-position:center}
   .rebate{display:flex;justify-content:space-between;gap:12px;font:10px/1 var(--mono);letter-spacing:.16em;color:var(--orange);padding:1px 2px 5px;text-transform:uppercase}
   #viewwrap{position:relative;max-width:100%;width:fit-content;margin:0 auto;overflow:hidden}
-  canvas#view{display:block;cursor:default;transform-origin:top left}
+  canvas#view{display:block;cursor:default;transform-origin:top left;touch-action:none;user-select:none;-webkit-user-select:none}
+  canvas#view:not(.subject-select){cursor:var(--preview-cursor,default)}
+  canvas#view.panning{cursor:grabbing}
   canvas#view.subject-select{touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none}
+  #hiresLayer{position:absolute;left:0;top:0;pointer-events:none;transform-origin:top left;overflow:visible}
+  #hiresLayer canvas{position:absolute;display:block;pointer-events:none;image-rendering:auto}
   #wipeline{position:absolute;top:0;bottom:0;width:2px;background:var(--orange-hi);display:none;pointer-events:none}
   #wipeline::after{content:"◂ original · graded ▸";position:absolute;top:6px;left:6px;font:9px var(--mono);letter-spacing:.08em;color:var(--orange-hi);white-space:nowrap;background:rgba(12,11,8,.75);padding:3px 6px;border-radius:2px}
   #stagebar{display:none;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:center}
@@ -166,6 +176,8 @@
   .loaded-lut{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:7px 8px;position:relative}
   .loaded-lut-top{display:flex;align-items:center;gap:8px;min-width:0}
   .loaded-lut-bottom{display:flex;align-items:center;width:100%}
+  .loaded-lut.base-lut-row{border-color:var(--orange);}
+  .loaded-lut.base-lut-row .lname{color:var(--orange-hi)}
   .loaded-lut.inactive .lname{color:var(--faint)}
   .loaded-lut.inactive .lstrength-num{color:var(--faint);background:var(--panel2);border-color:var(--line);opacity:.55;cursor:not-allowed}
   .loaded-lut.inactive .lstrength{opacity:.35;cursor:not-allowed}
@@ -347,6 +359,64 @@
     color:var(--dim);font:11px var(--mono);text-transform:uppercase;letter-spacing:.07em;
     text-decoration:none;transition:color .12s,border-color .12s}
   #supportLink:hover{color:var(--orange);border-color:var(--orange)}
+
+  /* ---------- cross-device usability refinements ---------- */
+  /* Thumbnail removal is a primary touch action: never rely on hover alone. */
+  #thumbs .thumb .tdel{
+    width:36px;height:36px;top:5px;right:5px;border:1px solid rgba(255,255,255,.22);
+    border-radius:4px;background:rgba(12,11,8,.88);font:20px/1 var(--mono);
+    opacity:0;z-index:3;touch-action:manipulation;
+  }
+  #thumbs .thumb:hover .tdel,#thumbs .thumb .tdel:focus-visible{opacity:1}
+  #thumbs .thumb .tdel:focus-visible{outline:2px solid var(--orange-hi);outline-offset:2px}
+  @media (hover:none), (pointer:coarse){
+    #thumbs .thumb .tdel{width:44px;height:44px;top:4px;right:4px;opacity:1;font-size:23px;background:rgba(12,11,8,.9)}
+  }
+  /* Unified remove controls: compact on desktop, reliably touchable on coarse pointers. */
+  .remove-control{
+    width:32px;height:32px;min-width:32px;min-height:32px;flex:0 0 32px;
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:0;border:1px solid var(--line-hi);border-radius:4px;
+    background:rgba(12,11,8,.72);color:var(--dim);
+    font:18px/1 var(--mono);cursor:pointer;touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    transition:background .12s,border-color .12s,color .12s,opacity .12s;
+  }
+  .remove-control:hover{background:var(--red);border-color:var(--red);color:var(--film)}
+  .remove-control:active{background:var(--red);border-color:var(--red);color:var(--film);transform:scale(.96)}
+  .remove-control:focus-visible{outline:2px solid var(--orange-hi);outline-offset:2px}
+  #thumbs .thumb .tdel.remove-control{position:absolute;top:5px;right:5px;width:32px;height:32px;min-width:32px;min-height:32px;flex-basis:32px;font-size:18px;z-index:3;opacity:0}
+  #thumbs .thumb:hover .tdel,#thumbs .thumb .tdel:focus-visible{opacity:1}
+  .look .ldel.remove-control,.loaded-lut .ldel.remove-control{width:32px;height:32px;min-width:32px;min-height:32px;flex-basis:32px;padding:0;font:18px/1 var(--mono);background:rgba(12,11,8,.45);border:1px solid var(--line);color:var(--dim)}
+  #baseclear{margin-left:6px;vertical-align:middle}
+  @media (hover:none), (pointer:coarse){
+    .remove-control{width:36px;height:36px;min-width:36px;min-height:36px;flex-basis:36px;font-size:20px}
+    #thumbs .thumb .tdel.remove-control,.look .ldel.remove-control,.loaded-lut .ldel.remove-control{width:36px;height:36px;min-width:36px;min-height:36px;flex-basis:36px;font-size:20px}
+    #thumbs .thumb .tdel{top:4px;right:4px;opacity:1}
+  }
+  /* Make common controls easier to hit without making desktop layouts bulky. */
+  button,select,input[type=checkbox]{touch-action:manipulation}
+  button:focus-visible,select:focus-visible,input:focus-visible{outline-color:var(--orange-hi);outline-offset:2px}
+  @media (max-width:820px){
+    #stagebar button{min-height:40px;padding:9px 12px}
+    aside section h2{min-height:38px;margin-bottom:10px;touch-action:manipulation}
+    #thumbs{min-height:72px;gap:6px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+    #thumbs .thumb{scroll-snap-align:start}
+  }
+  @media (max-width:560px){
+    #thumbs{min-height:82px;padding:8px;gap:8px}
+    #thumbs canvas{width:112px}
+    #stagebar{justify-content:stretch}
+    #stagebar button{flex:1 1 auto;min-width:88px}
+    #stagebar label{min-height:38px;padding:4px 2px}
+    .auto-correction-groups .btn,.curve-tools .btn,.chtabs button{min-height:42px}
+    section h2{padding-top:3px;padding-bottom:5px}
+  }
+  @media (max-width:380px){
+    #thumbs canvas{width:96px}
+    #stagebar button{min-width:76px;padding-left:8px;padding-right:8px}
+  }
+
 </style>
 </head>
 <body>
@@ -355,12 +425,16 @@
 <p>Create your Style on all Devices</p>
 <span class="spacer"></span>
 <button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" id="helpBtn" title="Quick help" type="button">?</button>
+<label id="previewQualityControl" title="Standard preview adapts up to 2×; Full uses original image resolution as far as the display and zoom allow.">
+  <span>Preview</span>
+  <button aria-pressed="false" id="previewQualityBtn" type="button" title="Toggle between standard adaptive preview and full-resolution preview">STD</button>
+</label>
 <button disabled="" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↶ Undo</button>
 <button disabled="" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↷ Redo</button>
 <button id="resetAll" title="Reset every adjustment">⟲ Reset all</button>
 <button id="saveProj" title="Save the current project and its settings to a file">Save project</button>
 <button id="loadProj" title="Load a previously saved project">Load project</button>
-<input hidden="" id="projfile" type="file"/>
+<input hidden="" id="projfile" type="file"/ title="Select a LutMaster project file to load">
 </header>
 <main>
 <div id="thumbs"></div>
@@ -370,7 +444,7 @@
       or click to choose example images. They never leave your device.
       <div class="or">No photo to hand?<br/><button id="chartbtn1" title="Load the built-in test chart as a sample image" type="button">Use the built-in test chart</button></div>
 <div id="droperr"></div>
-<input accept="image/*" hidden="" id="file" multiple="" type="file"/>
+<input accept="image/*" hidden="" id="file" multiple="" type="file"/ title="Select image files to add to the workspace">
 </div>
 <div id="previewArea">
 <div id="filmframe">
@@ -378,6 +452,7 @@
 <div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
 <div id="viewwrap">
 <canvas id="view" title="Image preview; hold to compare with the original and drag to inspect the wipe"></canvas>
+<div aria-hidden="true" id="hiresLayer"></div>
 <div id="wipeline"></div>
 </div>
 <div class="sprockets" style="margin-top:6px"></div>
@@ -405,9 +480,9 @@
 <div aria-label="Resize sidebar" aria-orientation="vertical" id="asideResize" role="separator"></div>
 <aside>
 <section>
-<h2>Loaded LUTs</h2>
-<input hidden="" id="lutfile" type="file"/>
-<div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input checked="" id="baseEnable" title="Use base LUT" type="checkbox"/> Use base LUT</label>Base LUT: <span id="basename"></span> <button id="baseclear" title="Remove the base LUT">remove</button></div>
+<h2>Pipeline</h2>
+<input hidden="" id="lutfile" type="file"/ title="Select a Cube LUT file">
+<div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input checked="" id="baseEnable" title="Use base LUT" type="checkbox"/> Use base LUT</label>Base LUT: <span id="basename"></span> <button aria-label="Remove the base LUT" class="ldel remove-control" id="baseclear" title="Remove the base LUT" type="button">×</button></div>
 <div id="loadedLuts"></div>
 </section>
 <section>
@@ -415,7 +490,7 @@
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="saveLook" title="Save the current grade as a reusable look">Save</button>
 <button class="btn" id="addLookCube" title="Import one or more .cube LUT files">Add .cube file…</button>
-<input accept=".cube" hidden="" id="lookCubeFile" multiple="" type="file"/>
+<input accept=".cube" hidden="" id="lookCubeFile" multiple="" type="file"/ title="Select one or more Cube LUT files to import">
 </div>
 <div class="close" id="looksDD">
 <button id="looksToggle" title="Show or hide your saved looks" type="button"><span id="looksCount">Saved LUTs (0)</span><span class="caret">▾</span></button>
@@ -444,8 +519,8 @@
     </div>
     <div id="subjectGradeControls" style="display:none;gap:6px;align-items:center;margin:0 0 8px">
       <span class="tiny" id="subjectGradeHint">Draw a closed outline around the subject. Double-click to finish.</span>
-      <button class="btn" id="subjectGradeApply" type="button" disabled>Apply</button>
-      <button class="btn" id="subjectGradeCancel" type="button">Cancel</button>
+      <button class="btn" id="subjectGradeApply" type="button" disabled title="Apply the subject-based correction to the current grade">Apply</button>
+      <button class="btn" id="subjectGradeCancel" type="button" title="Cancel subject selection without applying the correction">Cancel</button>
     </div>
   </div>
 
@@ -491,22 +566,22 @@
 </section>
 <section>
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Tone" checked="" data-enable="tone" title="Enable or disable Tone" type="checkbox"/></label>Tone <button class="reset" id="toneReset" title="Reset all tone adjustments">reset</button></h2>
-<div class="row"><label>Exposure</label><input id="exposure" max="100" min="-100" title="Adjust exposure value" type="range" value="0"/><input class="num" title="Adjust exposure value" type="number" value="0"/></div>
-<div class="row"><label>Contrast</label><input id="contrast" max="100" min="-100" title="Adjust contrast value" type="range" value="0"/><input class="num" title="Adjust contrast value" type="number" value="0"/></div>
-<div class="row"><label>Highlights</label><input id="highlights" max="100" min="-100" title="Adjust highlights value" type="range" value="0"/><input class="num" title="Adjust highlights value" type="number" value="0"/></div>
-<div class="row"><label>Shadows</label><input id="shadows" max="100" min="-100" title="Adjust shadows value" type="range" value="0"/><input class="num" title="Adjust shadows value" type="number" value="0"/></div>
-<div class="row"><label>Blacks</label><input id="blacks" max="100" min="-100" title="Adjust blacks value" type="range" value="0"/><input class="num" title="Adjust blacks value" type="number" value="0"/></div>
-<div class="row"><label>Gamma</label><input id="gamma" max="100" min="-100" title="Adjust gamma value" type="range" value="0"/><input class="num" title="Adjust gamma value" type="number" value="0"/></div>
-<div class="row"><label>Fade blacks</label><input id="fade" max="100" min="0" title="Adjust fade blacks value" type="range" value="0"/><input class="num" title="Adjust fade blacks value" type="number" value="0"/></div>
+<div class="row"><label>Exposure</label><input id="exposure" max="100" min="-100" title="Exposure compensation: shift the overall image brightness." type="range" value="0"/><input class="num" title="Exposure compensation: shift the overall image brightness." type="number" value="0"/></div>
+<div class="row"><label>Contrast</label><input id="contrast" max="100" min="-100" title="Contrast: change separation between darker and brighter tones." type="range" value="0"/><input class="num" title="Contrast: change separation between darker and brighter tones." type="number" value="0"/></div>
+<div class="row"><label>Highlights</label><input id="highlights" max="100" min="-100" title="Adjust the highlight tint strength." type="range" value="0"/><input class="num" title="Adjust the highlight tint strength." type="number" value="0"/></div>
+<div class="row"><label>Shadows</label><input id="shadows" max="100" min="-100" title="Adjust the shadow tint strength." type="range" value="0"/><input class="num" title="Adjust the shadow tint strength." type="number" value="0"/></div>
+<div class="row"><label>Blacks</label><input id="blacks" max="100" min="-100" title="Blacks: set the depth of the darkest tones." type="range" value="0"/><input class="num" title="Blacks: set the depth of the darkest tones." type="number" value="0"/></div>
+<div class="row"><label>Gamma</label><input id="gamma" max="100" min="-100" title="Gamma: reshape midtone brightness without moving both endpoints equally." type="range" value="0"/><input class="num" title="Gamma: reshape midtone brightness without moving both endpoints equally." type="number" value="0"/></div>
+<div class="row"><label>Fade blacks</label><input id="fade" max="100" min="0" title="Fade blacks: raise the black floor for a faded look." type="range" value="0"/><input class="num" title="Fade blacks: raise the black floor for a faded look." type="number" value="0"/></div>
 </section>
 <section>
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Colour" checked="" data-enable="colour" title="Enable or disable Colour" type="checkbox"/></label>Colour <button class="reset" id="colReset" title="Reset all colour adjustments">reset</button></h2>
-<div class="row"><label>Temperature</label><input id="temp" max="100" min="-100" title="Adjust temperature value" type="range" value="0"/><input class="num" title="Adjust temperature value" type="number" value="0"/></div>
-<div class="row"><label>Tint</label><input id="tint" max="100" min="-100" title="Adjust tint value" type="range" value="0"/><input class="num" title="Adjust tint value" type="number" value="0"/></div>
-<div class="row"><label>Saturation</label><input id="sat" max="100" min="-100" title="Adjust saturation value" type="range" value="0"/><input class="num" title="Adjust saturation value" type="number" value="0"/></div>
-<div class="row"><label>Vibrance</label><input id="vib" max="100" min="-100" title="Adjust vibrance value" type="range" value="0"/><input class="num" title="Adjust vibrance value" type="number" value="0"/></div>
-<div class="row"><label>Protect skin</label><input id="skin" max="100" min="0" title="Adjust protect skin value" type="range" value="0"/><input class="num" title="Adjust protect skin value" type="number" value="0"/></div>
-<div class="row"><label>Normalisation</label><input id="colorNorm" max="100" min="0" title="Adjust normalisation value" type="range" value="0"/><input class="num" title="Adjust normalisation value" type="number" value="0"/></div>
+<div class="row"><label>Temperature</label><input id="temp" max="100" min="-100" title="Temperature: shift the image between cooler blue and warmer yellow." type="range" value="0"/><input class="num" title="Temperature: shift the image between cooler blue and warmer yellow." type="number" value="0"/></div>
+<div class="row"><label>Tint</label><input id="tint" max="100" min="-100" title="Tint: shift the colour balance between green and magenta." type="range" value="0"/><input class="num" title="Tint: shift the colour balance between green and magenta." type="number" value="0"/></div>
+<div class="row"><label>Saturation</label><input id="sat" max="100" min="-100" title="Saturation: change colour intensity uniformly." type="range" value="0"/><input class="num" title="Saturation: change colour intensity uniformly." type="number" value="0"/></div>
+<div class="row"><label>Vibrance</label><input id="vib" max="100" min="-100" title="Vibrance: adjust muted colours more selectively than already saturated colours." type="range" value="0"/><input class="num" title="Vibrance: adjust muted colours more selectively than already saturated colours." type="number" value="0"/></div>
+<div class="row"><label>Protect skin</label><input id="skin" max="100" min="0" title="Skin protection: reduce the effect of colour adjustments on likely skin tones." type="range" value="0"/><input class="num" title="Skin protection: reduce the effect of colour adjustments on likely skin tones." type="number" value="0"/></div>
+<div class="row"><label>Normalisation</label><input id="colorNorm" max="100" min="0" title="Adjust image-adaptive channel normalisation strength" type="range" value="0"/><input class="num" title="Adjust image-adaptive channel normalisation strength" type="number" value="0"/></div>
 <button class="btn pickbtn" id="wbPick" title="Sample a neutral area in the photo to set white balance">⌖ White balance picker — tap a neutral in the photo</button>
 </section>
 <section>
@@ -538,11 +613,11 @@
 </section>
 <section class="closed">
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Secondary Colour" checked="" data-enable="secondary" title="Enable or disable Secondary Colour" type="checkbox"/></label>Secondary colour <button class="reset" id="secReset" title="Reset secondary colour adjustments">reset</button></h2>
-<div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input id="secHueC" max="360" min="0" title="Adjust target hue value" type="range" value="0"/><input class="num" title="Adjust target hue value" type="number" value="0"/></div>
-<div class="row"><label>Range</label><input id="secRange" max="120" min="5" title="Adjust range value" type="range" value="40"/><input class="num" title="Adjust range value" type="number" value="40"/></div>
-<div class="row"><label>Softness</label><input id="secSoft" max="100" min="0" title="Adjust softness value" type="range" value="50"/><input class="num" title="Adjust softness value" type="number" value="50"/></div>
-<div class="row"><label>Hue shift</label><input id="secHue" max="60" min="-60" title="Adjust hue shift value" type="range" value="0"/><input class="num" title="Adjust hue shift value" type="number" value="0"/></div>
-<div class="row"><label>Saturation</label><input id="secSat" max="100" min="-100" title="Adjust saturation value" type="range" value="0"/><input class="num" title="Adjust saturation value" type="number" value="0"/></div>
+<div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input id="secHueC" max="360" min="0" title="Set the centre hue of the secondary-colour selection" type="range" value="0"/><input class="num" title="Set the centre hue of the secondary-colour selection" type="number" value="0"/></div>
+<div class="row"><label>Range</label><input id="secRange" max="120" min="5" title="Set the hue range included in the secondary-colour selection" type="range" value="40"/><input class="num" title="Set the hue range included in the secondary-colour selection" type="number" value="40"/></div>
+<div class="row"><label>Softness</label><input id="secSoft" max="100" min="0" title="Soften the edges of the secondary-colour selection" type="range" value="50"/><input class="num" title="Soften the edges of the secondary-colour selection" type="number" value="50"/></div>
+<div class="row"><label>Hue shift</label><input id="secHue" max="60" min="-60" title="Hue shift: change the selected secondary colour hue." type="range" value="0"/><input class="num" title="Hue shift: change the selected secondary colour hue." type="number" value="0"/></div>
+<div class="row"><label>Saturation</label><input id="secSat" max="100" min="-100" title="Saturation: change colour intensity uniformly." type="range" value="0"/><input class="num" title="Saturation: change colour intensity uniformly." type="number" value="0"/></div>
 <div class="row"><label>Luminance</label><input id="secLum" max="50" min="-50" title="Adjust luminance value" type="range" value="0"/><input class="num" title="Adjust luminance value" type="number" value="0"/></div>
 <button class="btn pickbtn" id="secPick" title="Sample a colour in the photo for secondary colour adjustments">⌖ Pick target colour from photo</button>
 <p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
@@ -558,8 +633,8 @@
 </section>
 <section class="closed">
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Split Toning" checked="" data-enable="splitToning" title="Enable or disable Split Toning" type="checkbox"/></label>Split toning <button class="reset" id="splitReset" title="Reset split toning adjustments">reset</button></h2>
-<div class="row"><label>Shadows</label><input id="shCol" title="Choose the shadows colour" type="color" value="#406080"/><input id="shAmt" max="100" min="0" title="Adjust shadows value" type="range" value="0"/><input class="num" title="Adjust shadows value" type="number" value="0"/></div>
-<div class="row"><label>Highlights</label><input id="hiCol" title="Choose the highlights colour" type="color" value="#e0a060"/><input id="hiAmt" max="100" min="0" title="Adjust highlights value" type="range" value="0"/><input class="num" title="Adjust highlights value" type="number" value="0"/></div>
+<div class="row"><label>Shadows</label><input id="shCol" title="Choose the shadows colour" type="color" value="#406080"/><input id="shAmt" max="100" min="0" title="Adjust the shadow tint strength." type="range" value="0"/><input class="num" title="Adjust the shadow tint strength." type="number" value="0"/></div>
+<div class="row"><label>Highlights</label><input id="hiCol" title="Choose the highlights colour" type="color" value="#e0a060"/><input id="hiAmt" max="100" min="0" title="Adjust the highlight tint strength." type="range" value="0"/><input class="num" title="Adjust the highlight tint strength." type="number" value="0"/></div>
 </section>
 <section class="closed">
 <h2>Transfer ramp</h2>
@@ -586,7 +661,7 @@
 <h2>Extract look from photo</h2>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="exSingle" title="Analyse a reference photo and estimate its grading settings">Estimate from one photo…</button>
-<input accept="image/*" hidden="" id="exSingleF" type="file"/>
+<input accept="image/*" hidden="" id="exSingleF" type="file"/ title="Reference photo used to estimate grading settings">
 </div>
 <p class="tiny">Single-photo mode analyses tone, white balance, saturation and split toning, then sets the controls to approximate that look — a starting point to refine.</p>
 </section>
@@ -594,13 +669,13 @@
 <h2>Import Lightroom preset</h2>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="lrImport" title="Import colour settings from a Lightroom preset">Choose .xmp or .lrtemplate…</button>
-<input hidden="" id="lrFile" type="file"/>
+<input hidden="" id="lrFile" type="file"/ title="Select a Lightroom preset file to import">
 </div>
 <p class="tiny" id="lrReport">Pick any .xmp or .lrtemplate file (the picker shows all files, because iPadOS hides unknown types when filtered). Converts the colour parts of a Lightroom preset into these controls, so you can export it as a LUT. Approximate: Lightroom works on raw data, a LUT works on rendered pixels.</p>
 </section>
 <footer>
-<div class="strengthrow"><label>Look strength</label><input id="strength" max="100" min="0" title="Adjust look strength value" type="range" value="100"/><input class="num" title="Adjust look strength value" type="number" value="100"/></div>
-<input id="lutname" spellcheck="false" title="Use this control" value="my_grade"/>
+<div class="strengthrow"><label>Look strength</label><input id="strength" max="100" min="0" title="Blend the current exported look with the ungraded input." type="range" value="100"/><input class="num" title="Blend the current exported look with the ungraded input." type="number" value="100"/></div>
+<input id="lutname" spellcheck="false" title="Name the current grade for Cube LUT export" value="my_grade"/>
 <div class="exprow">
 <select id="lutsize" title="Choose LUT resolution; higher values create larger files">
 <option value="17">17-point</option>
@@ -664,24 +739,47 @@
 <section class="help-group">
 <h4>Images &amp; navigation</h4>
 <ul>
-<li><strong>Load photos:</strong> Drag one or more images into the workspace.</li>
-<li><strong>Compare:</strong> Hold the image to view the original; release to return to the grade.</li>
-<li><strong>Curve readout:</strong> Hover over the image to locate its input level on the active tone curve.</li>
-<li><strong>Zoom:</strong> Scroll the mouse wheel to zoom around the cursor; double-click the image to fit.</li>
-<li><strong>Shortcuts:</strong> <kbd>\</kbd> hold = original, <kbd>W</kbd> split, <kbd>J</kbd> clipping, <kbd>H</kbd> histogram, <kbd>[</kbd> <kbd>]</kbd> previous / next photo, <kbd>0</kbd> fit.</li>
+<li><strong>Load photos:</strong> Drop image files into the workspace or click the empty area. Add more photos at any time; use the thumbnail strip to switch the active photo.</li>
+<li><strong>Compare:</strong> Press and hold the preview to temporarily show the unedited original. Use Split compare for a movable before/after divider.</li>
+<li><strong>Zoom &amp; pan (PC):</strong> Use the mouse wheel to zoom. When zoomed in, hold the left mouse button and drag to pan the image. The cursor changes to a grab hand. Double-click to fit the image in the available preview area. On touchscreens, use a two-finger pinch to zoom and drag to pan.</li>
+<li><strong>Preview quality:</strong> STD uses an adaptive preview for faster interaction. FULL renders from the original image resolution where display size and zoom permit; it can require more processing time and memory.</li>
+<li><strong>Scopes:</strong> Enable the histogram to inspect the graded image. Clipping warnings identify values at or beyond the output limits.</li>
+<li><strong>Shortcuts:</strong> <kbd>\</kbd> hold = original, <kbd>W</kbd> split compare, <kbd>J</kbd> clipping, <kbd>H</kbd> histogram, <kbd>[</kbd>/<kbd>]</kbd> previous/next photo, <kbd>0</kbd> fit.</li>
 </ul>
 </section>
 <section class="help-group">
-<h4>Curves &amp; adjustments</h4>
+<h4>Pipeline &amp; saved Grades</h4>
 <ul>
-<li><strong>Reset:</strong> Double-click a slider or setting to restore its default.</li>
-<li><strong>Edit curves:</strong> Click to add a point; drag to adjust; double-click a point to remove it.</li>
+<li><strong>Pipeline:</strong> Shows the active Base LUT and every loaded Cube LUT or saved Grade layer. The list order is the processing order; drag the <kbd>⋮</kbd> handle to reorder layers.</li>
+<li><strong>Enable / bypass:</strong> Use a layer checkbox to bypass it without removing it. Use the <kbd>×</kbd> control to remove only that layer.</li>
+<li><strong>Intensity:</strong> Set each layer from 0–100%. At 0% the layer has no visible effect; at 100% its full transform is applied. Intermediate values blend the layer output with its input.</li>
+<li><strong>Base LUT:</strong> This is a separate upstream input transform. It is applied before the layers in the Pipeline and can be bypassed or removed independently.</li>
+<li><strong>Save Grade:</strong> Saves the current editor adjustments internally as a reusable Grade. It does not create a .cube file. Select a saved Grade under My LUTs to add it as a reversible layer in the Pipeline.</li>
+<li><strong>Cube LUT:</strong> Import a .cube file to add an external transform as a layer. Cube LUTs and saved Grades can be mixed in the same stack.</li>
+<li><strong>Undo:</strong> Layer additions, removals, intensity changes and reordering are part of the edit history. Reset all clears the current edit state.</li>
 </ul>
 </section>
 <section class="help-group">
-<h4>Loaded LUTs</h4>
+<h4>Adjustments &amp; curves</h4>
 <ul>
-<li><strong>Reorder:</strong> Drag a LUT using its <kbd>⋮</kbd> handle to change processing order.</li>
+<li><strong>Sections:</strong> Use each section's checkbox to bypass that adjustment family while retaining its settings. The reset button resets that section; Reset all clears the complete edit.</li>
+<li><strong>Sliders:</strong> Drag for continuous adjustment or enter a numeric value. Double-click a slider or setting to restore its default.</li>
+<li><strong>Tone curve:</strong> Select RGB or an individual channel. Click to add a control point, drag to move it, and double-click a point to remove it. Curve endpoints are fixed.</li>
+<li><strong>Hue curves:</strong> Drag the handles to change hue or saturation within the corresponding hue/luminance range.</li>
+<li><strong>Colour pickers:</strong> Activate the white-balance or secondary-colour picker, then click a suitable neutral or target area in the photo.</li>
+<li><strong>Automated corrections:</strong> Auto Grade estimates global tonal settings. Auto Grade – Subject lets you outline a subject before applying a localised tonal optimisation. Other automated controls estimate individual corrections from the active photo.</li>
+<li><strong>A/B slots:</strong> Store two adjustment states for comparison. Copy transfers the current slot's settings to the other slot.</li>
+</ul>
+</section>
+<section class="help-group">
+<h4>Export &amp; project files</h4>
+<ul>
+<li><strong>Save photo:</strong> Exports the active photo with the current pipeline and adjustments. Choose JPG quality or lossless PNG in the export dialog.</li>
+<li><strong>Save all photos:</strong> Applies the same current edit to every loaded photo and exports them as a batch.</li>
+<li><strong>Export LUT:</strong> Generates a .cube transform from the current grade. Choose the LUT size; larger cubes preserve finer interpolation but increase file size.</li>
+<li><strong>Export look pack:</strong> Exports saved looks as .cube files. This is separate from saving a Grade internally.</li>
+<li><strong>Save / load project:</strong> Stores or restores the editing state and layer stack. The project file stores the current editing state and pipeline configuration.</li>
+<li><strong>Local processing:</strong> Image editing and saved looks are handled in this browser; photos are not uploaded by the app.</li>
 </ul>
 </section>
 </div>
@@ -1043,6 +1141,11 @@ function setIndependentCorrectionsEnabled(on){
 }
 
 /* ================= the transfer function ================= */
+/* Canonical processing order (also used by preview and per-photo export):
+   input transform -> base LUT -> ordered additional LUTs -> image-adaptive
+   normalisation -> white balance -> tone parameters -> master RGB curves ->
+   secondary curves / colour balance -> saturation / output. Reusable .cube
+   generation uses this same function with normalisation gains fixed to unity. */
 function grade(r,g,b){
   if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
   if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
@@ -1178,15 +1281,25 @@ function grade(r,g,b){
 
 /* ================= images & preview ================= */
 const view=$("view"),ctx=view.getContext("2d");
-const viewwrap=$("viewwrap");
+const viewwrap=$("viewwrap"),hiresLayer=$("hiresLayer");
+const previewQuality={full:false};
+let currentPreviewLut=null,currentPreviewLutSize=0,previewGradeRevision=0;
+const hiresTileCache=new Map();
+const HIRES_TILE_SIZE=512,HIRES_CACHE_LIMIT=64*1024*1024;
+let hiresRenderTimer=null,hiresRenderToken=0;
 const images=[];
 let cur=-1,showOriginal=false,wipeX=0.5,wipeDragging=false;
 let lastOut=null;
 const previewZoom={scale:1,x:0,y:0};
+// Mouse panning is available while zoomed in. Pointer capture keeps dragging
+// continuous even when the cursor leaves the canvas or crosses the overlay.
+let mousePan=null;
 
 function resetPreviewZoom(){
   previewZoom.scale=1;previewZoom.x=0;previewZoom.y=0;
   view.style.transform="";
+  hiresLayer.style.transform="";
+  hiresLayer.replaceChildren();
   viewwrap.style.width="";viewwrap.style.height="";
 }
 function fitPreviewToStage(){
@@ -1202,6 +1315,8 @@ function fitPreviewToStage(){
   const image=images[cur].data,scale=Math.max(0.01,Math.min(width/image.width,height/image.height));
   view.style.width=Math.floor(image.width*scale)+"px";
   view.style.height=Math.floor(image.height*scale)+"px";
+  hiresLayer.style.width=view.style.width;
+  hiresLayer.style.height=view.style.height;
   previewAvail.w=Math.max(0,Math.floor(width));previewAvail.h=Math.max(0,Math.floor(height));
   applyPreviewZoom();
 }
@@ -1223,8 +1338,12 @@ function clampPreviewPan(){
 function applyPreviewZoom(){
   updatePreviewWindow();
   clampPreviewPan();
-  view.style.transform=`translate(${previewZoom.x}px,${previewZoom.y}px) scale(${previewZoom.scale})`;
+  const transform=`translate(${previewZoom.x}px,${previewZoom.y}px) scale(${previewZoom.scale})`;
+  view.style.transform=transform;
+  hiresLayer.style.transform=transform;
+  view.style.setProperty("--preview-cursor",previewZoom.scale>1?"grab":"default");
   positionWipe();
+  scheduleHiresTiles();
 }
 function previewPoint(e){
   const r=viewwrap.getBoundingClientRect();
@@ -1233,6 +1352,205 @@ function previewPoint(e){
     y:Math.max(0,Math.min(view.offsetHeight,(e.clientY-r.top-previewZoom.y)/previewZoom.scale))
   };
 }
+
+
+function clearHiresTileCache(){
+  clearTimeout(hiresRenderTimer);hiresRenderTimer=null;hiresRenderToken++;
+  hiresLayer.replaceChildren();
+  hiresTileCache.clear();
+}
+function cacheHiresTile(key,canvas){
+  const bytes=canvas.width*canvas.height*4;
+  hiresTileCache.set(key,{canvas,bytes,used:performance.now()});
+  let total=0;for(const item of hiresTileCache.values())total+=item.bytes;
+  while(total>HIRES_CACHE_LIMIT&&hiresTileCache.size>1){
+    let oldestKey=null,oldest=Infinity;
+    for(const [k,v] of hiresTileCache){
+      if(!v.canvas.isConnected&&v.used<oldest){oldest=v.used;oldestKey=k;}
+    }
+    if(oldestKey===null)break; // Keep currently visible tiles even if the viewport alone exceeds the cache budget.
+    const item=hiresTileCache.get(oldestKey);total-=item.bytes;
+    item.canvas.width=1;item.canvas.height=1;hiresTileCache.delete(oldestKey);
+  }
+}
+function previewNeedsHires(){
+  if(cur<0||!images[cur]?.hiresSource)return false;
+  return !showOriginal&&!subjectGradeMode&&(previewQuality.full||previewZoom.scale>=1.35);
+}
+function scheduleHiresTiles(){
+  if(!hiresLayer||cur<0)return;
+  clearTimeout(hiresRenderTimer);
+  const token=++hiresRenderToken;
+  if(!previewNeedsHires()||!currentPreviewLut){
+    hiresLayer.replaceChildren();return;
+  }
+  hiresRenderTimer=setTimeout(()=>renderVisibleHiresTiles(token),90);
+}
+async function renderVisibleHiresTiles(token){
+  const im=images[cur];if(!im?.hiresSource||!currentPreviewLut||token!==hiresRenderToken)return;
+  const source=im.hiresSource,ow=im.originalWidth,oh=im.originalHeight;
+  const baseW=view.offsetWidth,baseH=view.offsetHeight;
+  if(!ow||!oh||!baseW||!baseH)return;
+  // Standard mode upgrades detail with zoom, capped at 2× source sampling.
+  // Full mode continues to native source resolution, bounded by display DPR.
+  const targetFactor=previewQuality.full?previewZoom.scale:Math.min(previewZoom.scale,2);
+  const dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  const renderScale=Math.min(1,baseW*targetFactor*dpr/ow,baseH*targetFactor*dpr/oh);
+  if(renderScale<=0)return;
+  const wrapW=viewwrap.clientWidth,wrapH=viewwrap.clientHeight,scale=previewZoom.scale;
+  let x0=Math.max(0,(-previewZoom.x)/scale),y0=Math.max(0,(-previewZoom.y)/scale);
+  let x1=Math.min(baseW,(wrapW-previewZoom.x)/scale),y1=Math.min(baseH,(wrapH-previewZoom.y)/scale);
+  const marginX=Math.max(24,(x1-x0)*.12),marginY=Math.max(24,(y1-y0)*.12);
+  x0=Math.max(0,x0-marginX);y0=Math.max(0,y0-marginY);
+  x1=Math.min(baseW,x1+marginX);y1=Math.min(baseH,y1+marginY);
+  const sx0=Math.max(0,Math.floor(x0/baseW*ow/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
+  const sy0=Math.max(0,Math.floor(y0/baseH*oh/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
+  const sx1=Math.min(ow,Math.ceil(x1/baseW*ow/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
+  const sy1=Math.min(oh,Math.ceil(y1/baseH*oh/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
+  const needed=[];
+  for(let sy=sy0;sy<sy1;sy+=HIRES_TILE_SIZE)for(let sx=sx0;sx<sx1;sx+=HIRES_TILE_SIZE)needed.push({sx,sy,sw:Math.min(HIRES_TILE_SIZE,ow-sx),sh:Math.min(HIRES_TILE_SIZE,oh-sy)});
+  const wanted=new Set(needed.map(t=>`${im.uid}:${previewGradeRevision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`));
+  // Detach off-screen tiles but retain them in the bounded LRU cache.
+  for(const node of [...hiresLayer.children]){
+    if(!wanted.has(node.dataset.tileKey))node.remove();
+  }
+  const plut=currentPreviewLut,N=currentPreviewLutSize,revision=previewGradeRevision;
+  for(const t of needed){
+    if(token!==hiresRenderToken||cur<0||images[cur]!==im||revision!==previewGradeRevision)return;
+    const key=`${im.uid}:${revision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`;
+    let item=hiresTileCache.get(key);
+    if(item){
+      item.used=performance.now();
+      if(!item.canvas.isConnected)hiresLayer.appendChild(item.canvas);
+      continue;
+    }
+    try{
+      const dw=Math.max(1,Math.round(t.sw*renderScale)),dh=Math.max(1,Math.round(t.sh*renderScale));
+      const tile=document.createElement("canvas");tile.width=dw;tile.height=dh;
+      const tc=tile.getContext("2d",{willReadFrequently:true});
+      if(!tc)continue;
+      tc.imageSmoothingEnabled=true;tc.drawImage(source,t.sx,t.sy,t.sw,t.sh,0,0,dw,dh);
+      const pixels=tc.getImageData(0,0,dw,dh);
+      const gradedTile=await applyHiresTileLut(pixels,plut,N,revision);
+      if(token!==hiresRenderToken||revision!==previewGradeRevision)return;
+      tc.putImageData(applyTileClippingWarnings(gradedTile),0,0);
+      tile.style.left=(t.sx/ow*baseW)+"px";
+      tile.style.top=(t.sy/oh*baseH)+"px";
+      tile.style.width=(t.sw/ow*baseW)+"px";
+      tile.style.height=(t.sh/oh*baseH)+"px";
+      tile.dataset.tileKey=key;
+      hiresLayer.appendChild(tile);cacheHiresTile(key,tile);
+    }catch(err){
+      console.warn("High-resolution preview tile skipped:",err);
+      fail("Full-resolution preview tile could not be rendered. Standard preview remains available.");
+      break;
+    }
+    // Yield between tiles to keep gestures and controls responsive.
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+}
+
+let hiresWorker=null,hiresWorkerUrl=null,hiresWorkerSeq=0,hiresWorkerLutRevision=-1;
+const hiresWorkerPending=new Map();
+function getHiresWorker(){
+  if(hiresWorker)return hiresWorker;
+  if(!("Worker" in window)||!("Blob" in window)||!URL.createObjectURL)return null;
+  const source=`
+    let lut=null,N=0,revision=-1;
+    self.onmessage=e=>{
+      const m=e.data;
+      if(m.type==="lut"){
+        lut=new Float32Array(m.buffer);N=m.N;revision=m.revision;
+        self.postMessage({id:m.id,ok:true,revision});return;
+      }
+      if(m.type==="tile"){
+        if(!lut||revision!==m.revision){self.postMessage({id:m.id,ok:false,error:"stale LUT"});return;}
+        const d=new Uint8ClampedArray(m.buffer),n=N,scale=(n-1)/255,nn=n*n;
+        for(let p=0;p<d.length;p+=4){
+          const rf=d[p]*scale,gf=d[p+1]*scale,bf=d[p+2]*scale;
+          const r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(n-1,r0+1),g1=Math.min(n-1,g0+1),b1=Math.min(n-1,b0+1);
+          const fr=rf-r0,fg=gf-g0,fb=bf-b0;
+          const i000=((b0*n+g0)*n+r0)*3,i100=((b0*n+g0)*n+r1)*3,i010=((b0*n+g1)*n+r0)*3,i110=((b0*n+g1)*n+r1)*3;
+          const i001=((b1*n+g0)*n+r0)*3,i101=((b1*n+g0)*n+r1)*3,i011=((b1*n+g1)*n+r0)*3,i111=((b1*n+g1)*n+r1)*3;
+          for(let ch=0;ch<3;ch++){
+            const c00=lut[i000+ch]+(lut[i100+ch]-lut[i000+ch])*fr,c10=lut[i010+ch]+(lut[i110+ch]-lut[i010+ch])*fr;
+            const c01=lut[i001+ch]+(lut[i101+ch]-lut[i001+ch])*fr,c11=lut[i011+ch]+(lut[i111+ch]-lut[i011+ch])*fr;
+            const c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;
+            d[p+ch]=255*(c0+(c1-c0)*fb);
+          }
+          d[p+3]=255;
+        }
+        self.postMessage({id:m.id,ok:true,buffer:d.buffer},[d.buffer]);
+      }
+    };`;
+  try{
+    const blob=new Blob([source],{type:"text/javascript"});
+    hiresWorkerUrl=URL.createObjectURL(blob);
+    hiresWorker=new Worker(hiresWorkerUrl);
+    hiresWorker.onmessage=e=>{
+      const m=e.data,p=hiresWorkerPending.get(m.id);if(!p)return;
+      hiresWorkerPending.delete(m.id);
+      if(m.ok)p.resolve(m);else p.reject(new Error(m.error||"worker processing failed"));
+    };
+    hiresWorker.onerror=()=>{
+      for(const p of hiresWorkerPending.values())p.reject(new Error("preview worker failed"));
+      hiresWorkerPending.clear();hiresWorker.terminate();hiresWorker=null;hiresWorkerLutRevision=-1;
+    };
+    return hiresWorker;
+  }catch(err){console.warn("High-resolution preview worker unavailable:",err);hiresWorker=null;return null;}
+}
+function workerRequest(message,transfer=[]){
+  const worker=getHiresWorker();if(!worker)return Promise.reject(new Error("worker unavailable"));
+  const id=++hiresWorkerSeq;
+  return new Promise((resolve,reject)=>{
+    hiresWorkerPending.set(id,{resolve,reject});
+    try{worker.postMessage({...message,id},transfer);}
+    catch(err){hiresWorkerPending.delete(id);reject(err);}
+  });
+}
+async function applyHiresTileLut(pixels,plut,N,revision){
+  const worker=getHiresWorker();
+  if(!worker)return applyLut(pixels,plut,N);
+  try{
+    if(hiresWorkerLutRevision!==revision){
+      const lutCopy=plut.slice();
+      await workerRequest({type:"lut",revision,N,buffer:lutCopy.buffer},[lutCopy.buffer]);
+      hiresWorkerLutRevision=revision;
+    }
+    const copy=new Uint8ClampedArray(pixels.data);
+    const result=await workerRequest({type:"tile",revision,buffer:copy.buffer},[copy.buffer]);
+    return new ImageData(new Uint8ClampedArray(result.buffer),pixels.width,pixels.height);
+  }catch(err){
+    console.warn("High-resolution worker fallback:",err);
+    return applyLut(pixels,plut,N);
+  }
+}
+function applyTileClippingWarnings(imageData){
+  if(!$("clipOn").checked)return imageData;
+  const d=imageData.data,w=imageData.width,h=imageData.height;
+  for(let p=0;p<d.length;p+=4){
+    const hi=d[p]>=254||d[p+1]>=254||d[p+2]>=254;
+    const lo=d[p]<=1&&d[p+1]<=1&&d[p+2]<=1;
+    if(hi){d[p]=232;d[p+1]=60;d[p+2]=76;}
+    else if(lo){d[p]=60;d[p+1]=140;d[p+2]=232;}
+  }
+  return imageData;
+}
+function updatePreviewQualityButton(){
+  const btn=$("previewQualityBtn");
+  btn.textContent=previewQuality.full?"FULL":"STD";
+  btn.setAttribute("aria-pressed",previewQuality.full?"true":"false");
+  btn.disabled=cur<0;
+  btn.title=previewQuality.full
+    ?"Full Preview Resolution: original image pixels are rendered progressively in visible tiles."
+    :"Standard Preview: adaptive detail up to 2×; switch to Full for original-resolution detail.";
+}
+$("previewQualityBtn").addEventListener("click",()=>{
+  previewQuality.full=!previewQuality.full;
+  updatePreviewQualityButton();
+  scheduleHiresTiles();
+});
+updatePreviewQualityButton();
 
 function fail(msg){
   const e=$("droperr");e.textContent=msg;e.style.display="block";
@@ -1246,7 +1564,8 @@ function fail(msg){
   clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",6000);
 }
 
-function addImageData(idata,name,srcURL){
+let imageUid=0;
+function addImageData(idata,name,srcURL,hiresSource=null){
 const th = document.createElement("canvas");
   const tw = 150; // Fixed width for all thumbnails
   const thh = Math.round(idata.height * tw / idata.width);
@@ -1254,9 +1573,13 @@ const th = document.createElement("canvas");
   th.height = thh;
   th.title = name;
   const wrap = document.createElement("div"); wrap.className = "thumb";
-  const del = document.createElement("button"); del.className = "tdel"; del.textContent = "\u00D7"; del.title = "Remove " + name;
+  const del = document.createElement("button"); del.className = "tdel remove-control"; del.type = "button"; del.textContent = "\u00D7"; del.title = "Remove " + name; del.setAttribute("aria-label", "Remove photo: " + name);
   wrap.append(th, del);
-  const rec = { data: idata, thumb: th, wrap, name, srcURL: srcURL || null };
+  const rec = { data: idata, thumb: th, wrap, name, srcURL: srcURL || null,
+    hiresSource: hiresSource || null,
+    originalWidth: hiresSource?(hiresSource.naturalWidth||hiresSource.width||idata.width):idata.width,
+    originalHeight: hiresSource?(hiresSource.naturalHeight||hiresSource.height||idata.height):idata.height,
+    uid: "img-"+(++imageUid) };
   images.push(rec);
   th.addEventListener("click", () => { selectImage(images.indexOf(rec)); });
   del.addEventListener("click", e => { e.stopPropagation(); removeImage(images.indexOf(rec)); });
@@ -1270,12 +1593,15 @@ function refreshUIAfterLoad(){
   $("stagebar").style.display="flex";
   $("thumbs").style.display=images.length>1?"flex":"none";
   $("scopes").style.display=$("scopeOn").checked?"flex":"none";
+  updatePreviewQualityButton();
   $("export").disabled=false;
   setOptimizeEnabled(true);
   requestAnimationFrame(fitPreviewToStage);
 }
 function selectImage(i){
   cur=i;
+  clearHiresTileCache();
+  updatePreviewQualityButton();
   images.forEach((im,k)=>im.wrap.classList.toggle("on",k===i));
   resetPreviewZoom();
   view.width=images[i].data.width;view.height=images[i].data.height;
@@ -1296,7 +1622,7 @@ function loadFiles(list){
           const w=Math.max(1,Math.round(img.width*sc)),h=Math.max(1,Math.round(img.height*sc));
           const sc2=document.createElement("canvas");sc2.width=w;sc2.height=h;
           sc2.getContext("2d").drawImage(img,0,0,w,h);
-          addImageData(sc2.getContext("2d").getImageData(0,0,w,h),file.name,reader.result);
+          addImageData(sc2.getContext("2d").getImageData(0,0,w,h),file.name,reader.result,img);
         }catch(err){fail("Browser blocked image pixels: "+err.message);}
       };
       img.src=reader.result;
@@ -1324,7 +1650,7 @@ function makeTestChart(){
   const skins=["#ffe0cd","#f5cba7","#e0ac69","#c68642","#8d5524","#5a3a22"];
   const sw2=w/skins.length;
   skins.forEach((col,i)=>{c.fillStyle=col;c.fillRect(i*sw2+4,gy+136,sw2-8,h-gy-144);});
-  addImageData(c.getImageData(0,0,w,h),"test-chart");
+  addImageData(c.getImageData(0,0,w,h),"test-chart",null,cv);
 }
 
 let raf=null;
@@ -1349,6 +1675,11 @@ function render(){
       const o=grade(r/(N-1),g/(N-1),b/(N-1));
       plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];
     }
+    currentPreviewLut=plut;currentPreviewLutSize=N;previewGradeRevision++;
+    hiresTileCache.clear();hiresLayer.replaceChildren();
+    hiresLayer.style.display=showOriginal?"none":"block";
+    hiresLayer.style.clipPath=$("wipeOn").checked?`inset(0 0 0 ${wipeX*100}%)`:"none";
+    updatePreviewQualityButton();
     const out=applyLut(src,plut,N);
     lastOut=out;
     if(showOriginal&&!$("wipeOn").checked){ctx.putImageData(src,0,0);}
@@ -1370,6 +1701,7 @@ function render(){
     }
     try{scheduleThumbs(plut,N);}catch(err){console.error("thumbnails:",err);}
     try{drawSubjectSelection();}catch(err){console.error("subject selection overlay:",err);}
+    scheduleHiresTiles();
   });
 }
 function applyLut(src,plut,N){
@@ -1494,6 +1826,7 @@ function drawRamp(){
   }
 }
 function positionWipe(){
+  hiresLayer.style.clipPath=$("wipeOn").checked?`inset(0 0 0 ${wipeX*100}%)`:"none";
   const wl=$("wipeline"),r=view.getBoundingClientRect(),wr=$("viewwrap").getBoundingClientRect();
   wl.style.display=$("wipeOn").checked?"block":"none";
   wl.style.left=(r.left-wr.left+wipeX*r.width)+"px";
@@ -1565,21 +1898,77 @@ function nearestPoint(px,py){
   for(const p of curves[curveCh]){const d=(cx2px(p.x)-px)**2+(cy2px(p.y)-py)**2;if(d<bd){bd=d;best=p;}}
   return best;
 }
-ccv.addEventListener("pointerdown",e=>{
+const curveTouchPointers=new Map();
+let curveGesture=null,curveTouchPending=null;
+function curveGestureMetrics(){
+  const pts=[...curveTouchPointers.values()];if(pts.length<2)return null;
+  return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,
+    distance:Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y))};
+}
+function zoomCurveAt(px,py,factor){
+  const x=px2cx(px),y=px2cy(py);
+  let x0=x+(curveView.x0-x)*factor,x1=x+(curveView.x1-x)*factor;
+  let y0=y+(curveView.y0-y)*factor,y1=y+(curveView.y1-y)*factor;
+  [x0,x1]=clampCurveRange(x0,x1);[y0,y1]=clampCurveRange(y0,y1);
+  curveView={x0,x1,y0,y1};drawCurves();
+}
+function beginCurveEditAt(px,py){
   if(curveCh==="m")markAutoCurveAsManual();
-  const[px,py]=curvePos(e);
   let p=nearestPoint(px,py);
   if(!p){p={x:px2cx(px),y:px2cy(py)};curves[curveCh].push(p);}
-  dragPt=p;ccv.setPointerCapture(e.pointerId);rebuildCurves();render();
-});
-ccv.addEventListener("pointermove",e=>{
+  dragPt=p;rebuildCurves();render();
+}
+function moveCurveEditTo(px,py){
   if(!dragPt)return;
-  const[px,py]=curvePos(e);
   const pts=curves[curveCh],isEnd=dragPt===pts.reduce((a,b)=>a.x<b.x?a:b)||dragPt===pts.reduce((a,b)=>a.x>b.x?a:b);
   if(!isEnd){const o=pts.filter(q=>q!==dragPt),lo=Math.max(0,...o.filter(q=>q.x<=dragPt.x).map(q=>q.x))+.005,hi=Math.min(1,...o.filter(q=>q.x>dragPt.x).map(q=>q.x))-.005;dragPt.x=Math.max(lo,Math.min(hi,px2cx(px)));}
-  dragPt.y=px2cy(py);
-  rebuildCurves();render();
+  dragPt.y=px2cy(py);rebuildCurves();render();
+}
+ccv.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="touch"){
+    curveTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{ccv.setPointerCapture(e.pointerId);}catch(_){}
+    if(curveTouchPointers.size===1){curveTouchPending={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,original:curves[curveCh].map(q=>({x:q.x,y:q.y}))};return;}
+    if(curveTouchPointers.size>=2){e.preventDefault();if(curveTouchPending&&curveTouchPending.moved){curves[curveCh]=curveTouchPending.original.map(q=>({x:q.x,y:q.y}));rebuildCurves();render();}dragPt=null;curveTouchPending=null;curveGesture=curveGestureMetrics();curveGesture.view={...curveView};return;}
+  }
+  const[px,py]=curvePos(e);beginCurveEditAt(px,py);ccv.setPointerCapture(e.pointerId);
 });
+ccv.addEventListener("pointermove",e=>{
+  if(e.pointerType==="touch"&&curveTouchPointers.has(e.pointerId)){
+    curveTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(curveTouchPointers.size>=2&&curveGesture){
+      e.preventDefault();const m=curveGestureMetrics(),factor=curveGesture.distance/m.distance;
+      // Keep the curve value under the two-finger midpoint anchored while panning.
+      const r=ccv.getBoundingClientRect(),px=(curveGesture.x-r.left)*ccv.width/r.width,py=(curveGesture.y-r.top)*ccv.height/r.height;
+      const anchorX=curveGesture.view.x0+(px-PAD)/(ccv.width-2*PAD)*(curveGesture.view.x1-curveGesture.view.x0);
+      const anchorY=curveGesture.view.y0+(ccv.height-PAD-py)/(ccv.height-2*PAD)*(curveGesture.view.y1-curveGesture.view.y0);
+      const newMidX=(m.x-r.left)*ccv.width/r.width,newMidY=(m.y-r.top)*ccv.height/r.height;
+      let x0=anchorX+(curveGesture.view.x0-anchorX)*factor,x1=anchorX+(curveGesture.view.x1-anchorX)*factor;
+      let y0=anchorY+(curveGesture.view.y0-anchorY)*factor,y1=anchorY+(curveGesture.view.y1-anchorY)*factor;
+      [x0,x1]=clampCurveRange(x0,x1);[y0,y1]=clampCurveRange(y0,y1);
+      const spanX=x1-x0,spanY=y1-y0;
+      const shiftX=(curveGesture.x-m.x)/ccv.width*spanX,shiftY=(m.y-curveGesture.y)/ccv.height*spanY;
+      [x0,x1]=clampCurveRange(x0+shiftX,x1+shiftX);[y0,y1]=clampCurveRange(y0+shiftY,y1+shiftY);
+      curveView={x0,x1,y0,y1};drawCurves();return;
+    }
+    if(curveTouchPending&&curveTouchPending.id===e.pointerId){
+      const moved=Math.hypot(e.clientX-curveTouchPending.startX,e.clientY-curveTouchPending.startY)>3;
+      if(moved){curveTouchPending.moved=true;if(!dragPt){const r=ccv.getBoundingClientRect();beginCurveEditAt((curveTouchPending.startX-r.left)*ccv.width/r.width,(curveTouchPending.startY-r.top)*ccv.height/r.height);}}
+      if(dragPt){const[px,py]=curvePos(e);moveCurveEditTo(px,py);}return;
+    }
+  }
+  if(!dragPt)return;const[px,py]=curvePos(e);moveCurveEditTo(px,py);
+});
+function finishCurveTouch(e){
+  if(e&&curveTouchPointers.has(e.pointerId))curveTouchPointers.delete(e.pointerId);
+  if(curveTouchPointers.size<2)curveGesture=null;
+  if(curveTouchPending&&(!e||curveTouchPending.id===e.pointerId)){
+    if(!curveTouchPending.moved){const r=ccv.getBoundingClientRect();beginCurveEditAt((curveTouchPending.startX-r.left)*ccv.width/r.width,(curveTouchPending.startY-r.top)*ccv.height/r.height);}
+    curveTouchPending=null;
+  }
+}
+ccv.addEventListener("pointerup",finishCurveTouch);
+ccv.addEventListener("pointercancel",finishCurveTouch);
 window.addEventListener("pointerup",()=>{if(dragPt){dragPt=null;pushHistory();}else dragPt=null;});
 ccv.addEventListener("dblclick",e=>{
   if(curveCh==="m")markAutoCurveAsManual();
@@ -2364,7 +2753,53 @@ function handlePick(e){
   setPick(null);render();pushHistory();
   return true;
 }
+// Touch gestures on the image: one finger retains existing interactions;
+// two fingers perform pinch zoom and pan together without triggering grading tools.
+const imageTouchPointers=new Map();
+let imageGesture=null;
+function imageGestureMetrics(){
+  const pts=[...imageTouchPointers.values()];
+  if(pts.length<2)return null;
+  return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,
+    distance:Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y))};
+}
+function updateImageGesture(){
+  const m=imageGestureMetrics();if(!m||!imageGesture)return;
+  const old=imageGesture;
+  const nextScale=Math.max(1,Math.min(20,old.scale*m.distance/old.distance));
+  const rect=viewwrap.getBoundingClientRect();
+  const anchorX=(old.x-rect.left-old.panX)/old.scale;
+  const anchorY=(old.y-rect.top-old.panY)/old.scale;
+  previewZoom.scale=nextScale;
+  previewZoom.x=m.x-rect.left-anchorX*nextScale;
+  previewZoom.y=m.y-rect.top-anchorY*nextScale;
+  applyPreviewZoom();
+  imageGesture={...m,scale:previewZoom.scale,panX:previewZoom.x,panY:previewZoom.y};
+}
 view.addEventListener("pointerdown",e=>{
+  if(subjectGradeMode||e.pointerType!=="touch")return;
+  imageTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  try{view.setPointerCapture(e.pointerId);}catch(_){}
+  if(imageTouchPointers.size===2){
+    e.preventDefault();imageGesture=imageGestureMetrics();
+    imageGesture.scale=previewZoom.scale;imageGesture.panX=previewZoom.x;imageGesture.panY=previewZoom.y;
+    showOriginal=false;wipeDragging=false;render();
+  }
+},{passive:false});
+view.addEventListener("pointermove",e=>{
+  if(subjectGradeMode||e.pointerType!=="touch"||!imageTouchPointers.has(e.pointerId))return;
+  imageTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(imageTouchPointers.size>=2&&imageGesture){e.preventDefault();updateImageGesture();}
+},{passive:false});
+function endImageTouch(e){
+  if(e&&imageTouchPointers.has(e.pointerId))imageTouchPointers.delete(e.pointerId);
+  if(imageTouchPointers.size<2)imageGesture=null;
+}
+view.addEventListener("pointerup",endImageTouch);
+view.addEventListener("pointercancel",endImageTouch);
+
+view.addEventListener("pointerdown",e=>{
+  if(e.pointerType==="touch"&&imageTouchPointers.size>=2)return;
   if(subjectGradeMode){
     if(cur<0||!images[cur]||e.button!==0)return;
     e.preventDefault();
@@ -2377,12 +2812,27 @@ view.addEventListener("pointerdown",e=>{
     $('subjectGradeApply').disabled=true;render();return;
   }
   if(handlePick(e))return;
+  if(e.pointerType==="mouse"&&e.button===0&&previewZoom.scale>1&&!$("wipeOn").checked){
+    e.preventDefault();
+    mousePan={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,
+      originX:previewZoom.x,originY:previewZoom.y};
+    try{view.setPointerCapture(e.pointerId);}catch(_){}
+    showOriginal=false;view.classList.add("panning");
+    return;
+  }
   if($("wipeOn").checked){
     wipeDragging=true;view.setPointerCapture(e.pointerId);
     const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
   }else{showOriginal=true;render();}
 });
 view.addEventListener("pointermove",e=>{
+  if(mousePan&&e.pointerId===mousePan.pointerId){
+    e.preventDefault();
+    previewZoom.x=mousePan.originX+(e.clientX-mousePan.startX);
+    previewZoom.y=mousePan.originY+(e.clientY-mousePan.startY);
+    applyPreviewZoom();
+    return;
+  }
   if(subjectGradeMode&&subjectGradeDrawing){
     e.preventDefault();
     const events=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[e];
@@ -2455,7 +2905,16 @@ viewwrap.addEventListener("wheel",e=>{
   previewZoom.y=e.clientY-r2.top-cy*nextScale;
   applyPreviewZoom();
 },{passive:false});
-window.addEventListener("pointerup",()=>{
+function finishMousePan(e){
+  if(!mousePan||e&&e.pointerId!==mousePan.pointerId)return;
+  try{if(view.hasPointerCapture(mousePan.pointerId))view.releasePointerCapture(mousePan.pointerId);}catch(_){}
+  mousePan=null;view.classList.remove("panning");
+}
+view.addEventListener("pointerup",finishMousePan);
+view.addEventListener("pointercancel",finishMousePan);
+view.addEventListener("lostpointercapture",()=>{if(mousePan){mousePan=null;view.classList.remove("panning");}});
+window.addEventListener("pointerup",e=>{
+  finishMousePan(e);
   wipeDragging=false;
   if(showOriginal){showOriginal=false;render();}
 });
@@ -2486,6 +2945,7 @@ $("lutfile").addEventListener("change",e=>{
       baseLUT={size,data:Float32Array.from(vals),name:file.name};
       $("basename").textContent=file.name+" ("+size+"\u00B3)";
       $("baseinfo").style.display="block";
+      loadedLutsRender();
       syncLoadedLutSection();
       render();pushHistory();
     }catch(err){fail("Couldn't import LUT: "+err.message);}
@@ -2493,8 +2953,8 @@ $("lutfile").addEventListener("change",e=>{
   reader.readAsText(file);
   e.target.value="";
 });
-$("baseclear").addEventListener("click",()=>{baseLUT=null;$("baseinfo").style.display="none";syncLoadedLutSection();render();pushHistory();});
-$("baseEnable").addEventListener("change",e=>{baseOn=e.target.checked;render();pushHistory();});
+$("baseclear").addEventListener("click",()=>{baseLUT=null;$("baseinfo").style.display="none";loadedLutsRender();syncLoadedLutSection();render();pushHistory();});
+$("baseEnable").addEventListener("change",e=>{baseOn=e.target.checked;loadedLutsRender();render();pushHistory();});
 
 /* ================= extract look from photo ================= */
 function exDecode(file,cb){
@@ -3019,15 +3479,25 @@ function restoreLoadedLutSettings(savedList){
 }
 function restoreSavedLoadedLutData(savedData){
   if(!Array.isArray(savedData))return;
+  // Validate the complete payload before changing the live stack. A malformed
+  // project must fail atomically rather than leave a partially restored stack.
+  const validated=savedData.map((item,index)=>{
+    if(!item||typeof item!=="object")throw new Error("Saved LUT "+(index+1)+" is malformed.");
+    const raw=item.packed?item.packed.trim().split(/\s+/).map(Number):item.data;
+    return{item,data:validateLutTable(item.size,raw,"Saved LUT "+(item.name||index+1))};
+  });
   const oldById=new Map(loadedLuts.map(lk=>[lk.slotId,lk]));
-  const restored=savedData.map(item=>{
+  const restored=validated.map(({item,data})=>{
     const id=item.id||("loaded-lut-"+(loadedLutSerial++));
     const old=oldById.get(id)||{};
-    const vals=item.packed?Float32Array.from(item.packed.trim().split(/\s+/).map(Number)):(item.data instanceof Float32Array?item.data:Float32Array.from(item.data||[]));
+    const vals=data;
     const strength=Number(item.strength);
+    const isGrade=item.type==="grade";
     Object.assign(old,{
-      slotId:id,source:old.source||null,type:"cube",name:item.name||"Loaded LUT",
-      size:+item.size,data:vals,active:item.active!==false,
+      slotId:id,source:old.source||null,type:isGrade?"grade":"cube",name:item.name||"Loaded LUT",
+      size:+item.size,data:isGrade?(item.gradeData||old.data||null):vals,
+      baked:isGrade?{size:+item.size,data:vals}:undefined,
+      active:item.active!==false,
       strength:Math.max(0,Math.min(100,Number.isFinite(strength)?strength:100))
     });
     delete old.compiled;
@@ -3038,6 +3508,13 @@ function restoreSavedLoadedLutData(savedData){
 }
 function applyGradeData(p){
   if(p.app!=="LutMaster")throw new Error("not a LutMaster grade");
+  // Validate embedded LUT payloads before touching editor state; project loads
+  // therefore either restore completely or leave the current grade intact.
+  if(p.baseLUT)validateLutTable(p.baseLUT.size,p.baseLUT.data,"Project base LUT");
+  if(Array.isArray(p.loadedLutData))p.loadedLutData.forEach((item,index)=>{
+    const raw=item&&item.packed?item.packed.trim().split(/\s+/).map(Number):item&&item.data;
+    validateLutTable(item&&item.size,raw,"Project LUT "+(item&&item.name||index+1));
+  });
   sliders.forEach(s2=>{
     state[s2]=(p.state&&p.state[s2]!==undefined)?p.state[s2]:(DEF[s2]||0);$(s2).value=state[s2];
     const out=$(s2).parentElement.querySelector(".num");if(out)out.value=state[s2];
@@ -3075,7 +3552,7 @@ function applyGradeData(p){
   drawColorWheel($("cbMd"),cbState.midtones.x,cbState.midtones.y);
   drawColorWheel($("cbHi"),cbState.highlights.x,cbState.highlights.y);
   if(p.baseLUT){
-    baseLUT={size:p.baseLUT.size,data:Float32Array.from(p.baseLUT.data),name:p.baseLUT.name};
+    baseLUT={size:p.baseLUT.size,data:validateLutTable(p.baseLUT.size,p.baseLUT.data,"Project base LUT"),name:p.baseLUT.name};
     baseOn=(p.baseOn!==false);
     $("baseEnable").checked=baseOn;
     $("basename").textContent=p.baseLUT.name+" ("+p.baseLUT.size+"\u00B3)";
@@ -3084,6 +3561,11 @@ function applyGradeData(p){
     baseLUT=null;$("baseinfo").style.display="none";
   }
   if(p.name){$("lutname").value=p.name;if(typeof updateRebate==="function")updateRebate();}
+  // Reconcile the Pipeline UI only after both the LUT stack and base LUT
+  // have been restored. The earlier sync inside applyGradeData ran before
+  // p.baseLUT was assigned, leaving the sidebar collapsed/stale on project load.
+  loadedLutsRender();
+  syncLoadedLutSection();
   rebuildCurves();render();
 }
 
@@ -3190,7 +3672,11 @@ async function looksLoad(){
       });
       if(lk.baked&&(!lk.baked.data||lk.baked.data.length<lk.baked.size**3*3))delete lk.baked;
     });
-    looks=looks.filter(lk=>lk.type!=="cube"||(lk.data&&lk.data.length>=lk.size**3*3));
+    looks=looks.filter(lk=>{
+      if(lk.type!=="cube")return true;
+      try{lk.data=validateLutTable(lk.size,lk.data,"Saved look "+(lk.name||"LUT"));return true;}
+      catch(err){console.warn("Skipping invalid saved LUT:",lk.name,err);return false;}
+    });
     looks.forEach(lk=>{lk.active=!!lk.active;lk.strength=Math.max(0,Math.min(100,Number.isFinite(+lk.strength)?+lk.strength:100));});
   }catch(e){looks=[];}
 }
@@ -3226,7 +3712,7 @@ function looksRender(){
     const swd=document.createElement("span");swd.className="lswatch";
     let cols;try{cols=computeLookSwatch(lk);}catch(e){cols=new Array(6).fill("#3a3a3a");}
     cols.forEach(col=>{const i2=document.createElement("i");i2.style.background=col;swd.appendChild(i2);});
-    const nm=document.createElement("span");nm.className="lname";nm.textContent=lk.name;nm.title="Load "+lk.name;
+    const nm=document.createElement("span");nm.className="lname";nm.textContent=lk.name;nm.title="Apply "+(lk.type==="grade"?"saved Grade ":"Cube LUT ")+lk.name+" to the Pipeline";
     const ty=document.createElement("span");ty.className="ltype";ty.textContent=lk.type==="cube"?"cube "+lk.size+"\u00B3":"grade";
     nm.addEventListener("click",()=>{
       // A saved grade is a complete editor snapshot: restore its state and LUT
@@ -3234,12 +3720,22 @@ function looksRender(){
       if(lk.type==="grade")applyLook(lk);else loadLook(lk);
       $("looksDD").classList.remove("open");
     });
-    const del=document.createElement("button");del.type="button";del.className="ldel";del.textContent="\u00D7";del.title="Delete "+lk.name+" permanently";
+    const del=document.createElement("button");del.type="button";del.className="ldel remove-control";del.textContent="\u00D7";del.title="Delete saved "+(lk.type==="grade"?"Grade ":"Cube LUT ")+lk.name+" permanently from My LUTs";
     del.addEventListener("click",e=>{e.stopPropagation();const i=looks.indexOf(lk);if(i<0)return;looks.splice(i,1);looksPersist();looksRender();});
     row.append(swd,nm,ty,del);list.appendChild(row);
   });
 }
 const SWATCH_IN=[[0.27,0.27,0.27],[0.65,0.65,0.65],[0.88,0.67,0.41],[0.69,0.21,0.24],[0.27,0.58,0.29],[0.31,0.36,0.65]];
+function validateLutTable(size,data,label="LUT"){
+  const n=Number(size);
+  if(!Number.isInteger(n)||n<2||n>129)throw new Error(label+" has an unsupported 3D size.");
+  if(!data||typeof data.length!=="number")throw new Error(label+" has no sample data.");
+  const expected=n*n*n*3;
+  if(data.length!==expected)throw new Error(label+" has an invalid sample count (expected "+expected+", got "+data.length+").");
+  const out=data instanceof Float32Array?data:Float32Array.from(data);
+  for(let i=0;i<out.length;i++)if(!Number.isFinite(out[i]))throw new Error(label+" contains a non-finite sample at index "+i+".");
+  return out;
+}
 function sampleLutArr(data,N,r,g,b){
   const m=N-1,rf=clamp(r)*m,gf=clamp(g)*m,bf=clamp(b)*m;
   const r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(r0+1,m),g1=Math.min(g0+1,m),b1=Math.min(b0+1,m);
@@ -3256,6 +3752,14 @@ function sampleLutArr(data,N,r,g,b){
 }
 function compileGradeLook(lk){
   if(lk.compiled)return lk.compiled;
+  // Saved Grades carry a self-contained baked transform. Prefer it over
+  // recompiling editor controls: the baked data includes the Grade's original
+  // base LUT and internal LUT stack, without importing those layers globally.
+  if(lk.baked&&lk.baked.data&&lk.baked.size){
+    const data=validateLutTable(lk.baked.size,lk.baked.data,"Saved Grade "+(lk.name||""));
+    lk.compiled={size:+lk.baked.size,data};
+    return lk.compiled;
+  }
   const snap=buildGradeData({light:true}),savedBase=baseLUT,savedBaseOn=baseOn,
         savedGains=normalisationGains,savedApplyingLookStack=applyingLookStack;
   const N=25,data=new Float32Array(N*N*N*3);
@@ -3291,6 +3795,22 @@ function applyActiveLooks(r,g,b){
 }
 function loadedLutsRender(){
   const list=$("loadedLuts");list.innerHTML="";
+
+  // The base LUT is a separate upstream processing stage (baseLUT/baseOn), not an
+  // entry in loadedLuts[]. Render it here as an explicit first row in the Pipeline.
+  if(baseLUT){
+    const row=document.createElement("div");row.className="loaded-lut base-lut-row";
+    const top=document.createElement("div");top.className="loaded-lut-top";
+    const active=document.createElement("label");active.className="lactive";active.title="Enable or bypass the upstream Base LUT";
+    const check=$("baseEnable");check.checked=!!baseOn;active.appendChild(check);
+    const name=document.createElement("span");name.className="lname";
+    name.textContent="Base: "+(baseLUT.name||"Base LUT")+(baseLUT.size?" ("+baseLUT.size+"³)":"");
+    name.title="Upstream Base LUT: "+name.textContent;
+    const remove=$("baseclear");remove.type="button";remove.textContent="×";remove.title="Remove base LUT";remove.className="ldel remove-control";
+    row.classList.toggle("inactive",!baseOn);
+    top.append(active,name,remove);row.appendChild(top);list.appendChild(row);
+  }
+
   loadedLuts.forEach(lk=>{
     const row=document.createElement("div");row.className="loaded-lut";
     row.dataset.lutName=lk.name||"";
@@ -3299,20 +3819,21 @@ function loadedLutsRender(){
     // Drag handle keeps sliders, checkboxes and remove buttons usable without
     // accidentally starting a drag. Stack order here is processing order.
     const handle=document.createElement("span");
-    handle.className="luthandle";handle.textContent="⋮";handle.title="Drag to reorder LUTs";
-    handle.setAttribute("role","button");handle.setAttribute("aria-label","Drag to reorder "+(lk.name||"LUT"));
+    handle.className="luthandle";handle.textContent="⋮";handle.title="Drag to reorder this pipeline layer; processing order follows the list";
+    handle.setAttribute("role","button");handle.setAttribute("aria-label","Drag to reorder "+(lk.type==="grade"?"Grade ":"LUT ")+(lk.name||""));
     handle.draggable=true;
 
-    const active=document.createElement("label");active.className="lactive";active.title="Enable in LUT stack";
+    const active=document.createElement("label");active.className="lactive";active.title=lk.type==="grade"?"Enable or bypass this saved Grade layer":"Enable or bypass this Cube LUT layer";
     const check=document.createElement("input");check.type="checkbox";check.checked=lk.active;active.appendChild(check);
-    const name=document.createElement("span");name.className="lname";name.textContent=lk.name;name.title=lk.name;
-    const strengthNum=document.createElement("input");strengthNum.className="lstrength-num";strengthNum.type="number";strengthNum.min="0";strengthNum.max="100";strengthNum.step="1";strengthNum.value=lk.strength;strengthNum.setAttribute("aria-label","LUT strength (0–100)");
-    const strength=document.createElement("input");strength.className="lstrength";strength.type="range";strength.min="0";strength.max="100";strength.step="1";strength.value=lk.strength;strength.title=lk.strength+"% strength";
-    const del=document.createElement("button");del.type="button";del.className="ldel";del.textContent="\u00D7";del.title="Remove loaded LUT";
+    const name=document.createElement("span");name.className="lname";
+    name.textContent=(lk.type==="grade"?"Grade: ":"")+lk.name;name.title=(lk.type==="grade"?"Saved Grade layer · ":"Cube LUT layer · ")+lk.name+". Use the intensity control to blend this layer.";
+    const strengthNum=document.createElement("input");strengthNum.className="lstrength-num";strengthNum.type="number";strengthNum.min="0";strengthNum.max="100";strengthNum.step="1";strengthNum.value=lk.strength;strengthNum.setAttribute("aria-label",(lk.type==="grade"?"Grade":"LUT")+" intensity (0–100)");strengthNum.title="Set layer intensity from 0 to 100 percent";
+    const strength=document.createElement("input");strength.className="lstrength";strength.type="range";strength.min="0";strength.max="100";strength.step="1";strength.value=lk.strength;strength.title="Set layer intensity from 0 to 100 percent; current value: "+lk.strength+"%";
+    const del=document.createElement("button");del.type="button";del.className="ldel remove-control";del.textContent="\u00D7";del.title=lk.type==="grade"?"Remove only this saved Grade layer from the Pipeline":"Remove only this Cube LUT layer from the Pipeline";del.setAttribute("aria-label",del.title);
     check.addEventListener("change",()=>{lk.active=check.checked;loadedLutsRender();render();pushHistory();});
     const setStrength=value=>{
       const v=Math.max(0,Math.min(100,Number.isFinite(+value)?Math.round(+value):0));
-      lk.strength=v;strength.value=v;strengthNum.value=v;strength.title=v+"% strength";strengthNum.title=v+"% strength";render();
+      lk.strength=v;strength.value=v;strengthNum.value=v;strength.title="Set layer intensity from 0 to 100 percent; current value: "+v+"%";strengthNum.title="Set layer intensity from 0 to 100 percent; current value: "+v+"%";render();
     };
     strengthNum.disabled=!lk.active;strength.disabled=!lk.active;
     strengthNum.addEventListener("input",()=>{if(strengthNum.value==="")return;setStrength(strengthNum.value);});
@@ -3365,12 +3886,35 @@ function loadedLutsRender(){
   });
 }
 function loadLook(lk){
-  if(loadedLuts.some(loaded=>loaded.source===lk))return;
-  loadedLuts.push({slotId:"loaded-lut-"+(loadedLutSerial++),source:lk,type:lk.type,name:lk.name,size:lk.size,data:lk.data,active:true,strength:100});
-  syncLoadedLutSection();
-  loadedLutsRender();
+  // A selectable .cube look must become a concrete processing-stack entry.
+  // Keep the data validation here so a malformed/stale dropdown item cannot
+  // silently render in the preview without a corresponding sidebar row.
+  if(!lk || lk.type!=="cube" || !Number.isFinite(+lk.size) || +lk.size<2 ||
+     !lk.data || lk.data.length < (+lk.size)**3*3){
+    fail("This LUT cannot be loaded: its 3D table is missing or incomplete. Re-import the .cube file.");
+    return;
+  }
+  let validatedData;
+  try{validatedData=validateLutTable(lk.size,lk.data,"Selected LUT");}
+  catch(err){fail("This LUT cannot be loaded: "+err.message);return;}
+  let entry=loadedLuts.find(loaded=>loaded.source===lk ||
+    (loaded.type==="cube" && loaded.name===lk.name && loaded.size===lk.size && loaded.data===lk.data));
+  const isNew=!entry,wasActive=!!(entry&&entry.active);
+  if(!entry){
+    entry={slotId:"loaded-lut-"+(loadedLutSerial++),source:lk,type:"cube",name:lk.name||"Untitled LUT",
+      size:+lk.size,data:validatedData,active:true,strength:100};
+    loadedLuts.push(entry);
+  }else{
+    // Re-selecting an existing dropdown item reactivates its existing stack
+    // entry rather than creating a duplicate or leaving it hidden/inactive.
+    entry.active=true;
+  }
+  // Render the image and sidebar from the same committed stack state. Render
+  // first because some preview paths reconcile UI state during rendering.
   render();
-  pushHistory();
+  loadedLutsRender();
+  syncLoadedLutSection();
+  if(isNew || !wasActive)pushHistory();
 }
 function computeLookSwatch(lk){
   // The swatch for a saved grade represents the complete preview transform,
@@ -3398,17 +3942,32 @@ function computeLookSwatch(lk){
 }
 function applyLook(lk){
   if(lk.type==="grade"){
-    // Restore embedded LUT stage data as well as the UI state. This makes a
-    // saved grade self-contained even when it is reopened in a fresh session.
-    applyGradeData({...lk.data,loadedLutData:lk.loadedLutData||undefined});
-    if(cur>=0)updateNormalisationGains(images[cur].data);
-    pushHistory();
+    // A saved Grade is a self-contained, reversible stack layer. Its baked
+    // transform contains the original base LUT and nested LUT stack, so loading
+    // it must not overwrite the editor state or mutate the live LUT stack.
+    let baked;
+    try{baked=compileGradeLook(lk);}
+    catch(err){fail("This Grade cannot be loaded: "+err.message);return;}
+    const existing=loadedLuts.find(item=>item.type==="grade"&&item.source===lk);
+    if(existing){
+      const wasActive=existing.active;
+      existing.active=true;
+      if(wasActive)return;
+    }else{
+      loadedLuts.push({
+        slotId:"loaded-grade-"+(loadedLutSerial++),source:lk,type:"grade",
+        name:lk.name||"Untitled Grade",data:lk.data,baked:{size:baked.size,data:baked.data},
+        active:true,strength:100
+      });
+    }
+    loadedLutsRender();syncLoadedLutSection();render();pushHistory();
   }else{
     applyGradeData({app:"LutMaster",state:{},curves:{},name:lk.name.replace(/\.cube$/i,"")});
-    baseLUT={size:lk.size,data:Float32Array.from(lk.data),name:lk.name};
+    baseLUT={size:lk.size,data:validateLutTable(lk.size,lk.data,"Selected base LUT"),name:lk.name};
     baseOn=true;$("baseEnable").checked=true;
     $("basename").textContent=lk.name+" ("+lk.size+"\u00B3)";
     $("baseinfo").style.display="block";
+    loadedLutsRender();
     syncLoadedLutSection();
     render();pushHistory();
   }
@@ -3441,12 +4000,9 @@ $("saveLook").addEventListener("click",async e=>{
     fail("Not saved \u2014 a LUT named \u201C"+name+"\u201D already exists.");
     return;
   }
-  const previousGains=[...normalisationGains];
   try{
-    // Capture the exact transform currently shown in the preview. The state
-    // snapshot remains editable, while the baked cube is self-contained for
-    // export and survives removal of the original loaded LUTs.
-    updateNormalisationGains(cur>=0?images[cur].data:null);
+    // Save reusable grade data without baking image-adaptive normalisation;
+    // its baked cube is therefore independent of the currently selected photo.
     const data=buildGradeData();
     const N=+$("lutsize").value;
     const bakedData=buildCurrentGradeCubeData(N);
@@ -3458,8 +4014,6 @@ $("saveLook").addEventListener("click",async e=>{
   }catch(err){
     fail("Couldn't save the complete look: "+(err&&err.message?err.message:"unknown error"));
     return;
-  }finally{
-    if(cur>=0)updateNormalisationGains(images[cur].data);else normalisationGains=previousGains;
   }
   looksPersist();looksRender();
   $("looksDD").classList.add("open");
@@ -3488,8 +4042,8 @@ function parseCubeText(text){
     for(let b=0;b<size;b++)for(let g=0;g<size;g++)for(let r=0;r<size;r++)out.push(f(r/32,0),f(g/32,1),f(b/32,2));
     vals=out;dmin=[0,0,0];dmax=[1,1,1];
   }
-  if(!size||size<2||size>129||vals.length<size*size*size*3)throw new Error("not a valid 3D cube file");
-  vals.length=size*size*size*3;
+  if(!size||size<2||size>129||vals.length!==size*size*size*3)throw new Error("not a valid 3D cube file: incomplete or unsupported 3D table");
+  validateLutTable(size,vals,"Imported .cube LUT");
   if(dmin.some(v=>v!==0)||dmax.some(v=>v!==1)){      // remap non-default input domains onto 0..1
     const out=[];
     for(let b=0;b<size;b++)for(let g=0;g<size;g++)for(let r=0;r<size;r++){
@@ -3596,7 +4150,7 @@ function syncLoadedLutSection(){
   const hasLut=!!baseLUT||loadedLuts.length>0;
   loadedLutSection.classList.toggle("closed",!hasLut);
 }
-// Default sidebar layout: Loaded LUTs collapsed; My LUTs and Automated
+// Default sidebar layout: Pipeline collapsed; My LUTs and Automated
 // Corrections expanded; every subsequent grading section collapsed.
 sidebarSections.forEach((sec,index)=>sec.classList.toggle("closed",index===0||index>=3));
 syncLoadedLutSection();
@@ -3645,9 +4199,11 @@ $("projfile").addEventListener("change",e=>{
 function removeImage(idx){
   if(idx<0||idx>=images.length)return;
   images[idx].wrap.remove();
+  images[idx].hiresSource=null;
   images.splice(idx,1);
   if(images.length===0){
-    cur=-1;lastOut=null;
+    cur=-1;lastOut=null;currentPreviewLut=null;currentPreviewLutSize=0;
+    clearHiresTileCache();updatePreviewQualityButton();
     $("filmframe").style.display="none";
     $("stagebar").style.display="none";
     $("thumbs").style.display="none";
@@ -3925,11 +4481,13 @@ $("saveallphotos").addEventListener("click",async()=>{
 /* ================= LUT export ================= */
 function buildCurrentGradeCubeData(N){
   const data=new Float32Array(N*N*N*3);
-  const previousApplyingLookStack=applyingLookStack;
+  const previousApplyingLookStack=applyingLookStack,previousGains=normalisationGains;
   try{
-    // Match the preview/photo pipeline exactly: base LUT, loaded LUTs in list
-    // order with their blend strengths, then the active adjustment controls.
+    // A reusable .cube must encode only user-defined transforms, never the
+    // currently selected photograph's image-adaptive channel normalisation.
+    // Per-photo exports still calculate their own gains in buildPhotoExportLut.
     applyingLookStack=false;
+    normalisationGains=[1,1,1];
     let i=0;
     for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
       const o=grade(r/(N-1),g/(N-1),b/(N-1));
@@ -3938,6 +4496,7 @@ function buildCurrentGradeCubeData(N){
     return data;
   }finally{
     applyingLookStack=previousApplyingLookStack;
+    normalisationGains=previousGains;
   }
 }
 function buildCurrentGradeCubeValues(N){
@@ -3954,6 +4513,7 @@ function currentGradeCubeMetadata(){
     String(lk.name||"unnamed").replace(/[\r\n]/g," ")+" ("+lk.strength+"%)"
   ).join(" -> "));
   rows.push("Current enabled adjustment settings baked into LUT values");
+  if(state.enabled.colour&&state.colorNorm>0)rows.push("Image-adaptive channel normalisation is excluded from reusable LUT exports; it remains active for per-photo preview/export.");
   return rows.map(row=>"# "+row+"\n").join("");
 }
 $("export").addEventListener("click",()=>{
@@ -3962,7 +4522,6 @@ $("export").addEventListener("click",()=>{
   const psTag=$("lumixStyle").value;
   const psLine=psTag?`#LUMIXPHOTOSTYLE ${psTag}\n`:"";
   const head=`# Created with LutMaster\n${currentGradeCubeMetadata()}TITLE "${safeTitle}"\n${psLine}LUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
-  if(cur>=0)updateNormalisationGains(images[cur].data);
   const lines=buildCurrentGradeCubeValues(N);
   const name=($("lutname").value||"my_grade").replace(/[^\w-]+/g,"_")+".cube";
   download(name,head+lines.join("\n")+"\n","text/plain");
@@ -4260,7 +4819,11 @@ renderCubeAnalysis();
 function serialiseLutStack(){
   return loadedLuts.map(lk=>{
     const lut=lk.type==="cube"?{size:lk.size,data:lk.data}:compileGradeLook(lk);
-    return{id:lk.slotId,name:lk.name,active:!!lk.active,strength:+lk.strength,size:lut.size,packed:packLutValues(lut.data)};
+    return{
+      id:lk.slotId,name:lk.name,type:lk.type==="grade"?"grade":"cube",
+      gradeData:lk.type==="grade"?lk.data:undefined,
+      active:!!lk.active,strength:+lk.strength,size:lut.size,packed:packLutValues(lut.data)
+    };
   });
 }
 /* ---- analysis behind the Exposure / Recover / Colour / White bal. optimisations ----
