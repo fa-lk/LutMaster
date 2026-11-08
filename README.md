@@ -1,5 +1,6 @@
 # LutMaster
-<img width="1439" height="836" alt="image" src="https://github.com/user-attachments/assets/6fa6c0e5-a614-481e-8c1c-662359f7e90d" />
+<img width="1439" height="833" alt="image" src="https://github.com/user-attachments/assets/2010b86d-93a9-4bcd-9285-1d9d654b510c" />
+
 
 ## Quick start
 Download `lutMaster.html` and open it in your browser. That's it.
