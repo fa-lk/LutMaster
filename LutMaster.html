@@ -119,6 +119,10 @@
   section h2{font:600 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:14px;padding-bottom:2px}
   section h2::before{content:"";display:inline-block;width:5px;height:5px;background:var(--orange);border-radius:1px;margin-right:8px;vertical-align:middle}
   .row{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.harmony-intensity-control{width:100%;box-sizing:border-box}
+.harmony-intensity-control input[type="range"]{min-width:0;width:100%}
+.harmony-intensity-control output{flex:0 0 42px;text-align:right}
+
   .row:last-of-type{margin-bottom:2px}
   .row label{flex:0 0 92px;font-size:12px;color:var(--dim);letter-spacing:.01em}
   .row input[type=range]{flex:1 1 0;min-width:0;height:18px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
@@ -540,10 +544,10 @@
       <button class="btn" type="button" data-color-harmony="line" title="Apply one shared hue to shadows, midtones and highlights, with a different saturation strength for each range. Click again to restore the previous wheel positions.">Line</button>
       <button class="btn" type="button" data-color-harmony="tri" title="Build a triadic grade with three hues distributed around the colour wheel; the dominant tonal range in the photo anchors the arrangement. Click again to restore the previous wheel positions.">Triangle</button>
     </div>
-    <div class="harmony-intensity-control" style="display:flex;align-items:center;gap:10px;margin-top:9px">
-      <label for="colorHarmonyIntensity" class="tiny" style="margin:0;white-space:nowrap" title="Blend strength of the selected automatic colour harmony. 0% restores the original wheel positions; 100% applies the full calculated wheel offsets. Double-click to reset to 40%."Grading intensity</label>
-      <input id="colorHarmonyIntensity" type="range" min="0" max="100" step="1" value="40" style="flex:1;min-width:60px" aria-label="Color harmony grading intensity" title="Adjust the strength of the selected harmony. 0% restores the wheel positions from before the harmony; 100% uses the full calculated effect. Double-click to reset to 40%."
-      <output id="colorHarmonyIntensityValue" for="colorHarmonyIntensity" class="tiny" style="margin:0;min-width:34px;text-align:right">40%</output>
+    <div class="row harmony-intensity-control">
+      <label for="colorHarmonyIntensity" title="Blend strength of the selected automatic colour harmony. 0% restores the original wheel positions; 100% applies the full calculated wheel offsets. Double-click the slider or value to reset to 40%;">Grading intensity</label>
+      <input id="colorHarmonyIntensity" type="range" min="0" max="100" step="1" value="40" aria-label="Color harmony grading intensity" title="Adjust the strength of the selected harmony. Double-click to reset to 40%.">
+      <output id="colorHarmonyIntensityValue" class="num" for="colorHarmonyIntensity" title="Current grading intensity. Double-click to reset to 40%;">40%</output>
     </div>
     <p class="tiny">Analyses shadows, midtones and highlights independently. The dominant tonal range anchors the selected harmony; existing scene colours influence the other wheels. Neutral pixels are protected during grading.</p>
   </div>
