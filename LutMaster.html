@@ -47,7 +47,7 @@
   #helpBtn{width:28px;height:28px;flex:0 0 28px;padding:0;border-radius:50%;font:600 14px var(--mono);letter-spacing:0;color:var(--orange-hi);border-color:var(--line-hi)}
   #helpBtn:hover{color:var(--text);border-color:var(--orange)}
   #previewQualityControl{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font:10px var(--mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
-  #previewQualityBtn{min-width:48px;height:28px;padding:0 8px;border:1px solid var(--line-hi);border-radius:3px;background:var(--panel2);color:var(--dim);font:600 10px var(--mono);cursor:pointer}
+  #previewQualityBtn{min-width:0;height:28px;padding:0 10px;border:1px solid var(--line-hi);border-radius:3px;background:var(--panel2);color:var(--dim);font:600 10px var(--mono);cursor:pointer}
   #previewQualityBtn[aria-pressed="true"]{border-color:var(--orange);color:var(--orange-hi);background:var(--orange-dim)}
   #previewQualityBtn:disabled{opacity:.4;cursor:default}
   #previewQualityBtn:focus-visible{outline:2px solid var(--orange-hi);outline-offset:2px}
@@ -148,6 +148,8 @@
   .chtabs{margin-bottom:10px}
   .chtabs button.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
   .curve-tools{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .curve-point-move-tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;flex:0 0 100%;width:100%}
+  .curve-point-move-tools .btn{width:100%;min-width:0;padding:7px 2px;text-align:center}
   .auto-correction-groups{display:flex;flex-direction:column;gap:11px;margin:10px 0}
   .auto-correction-block{display:flex;flex-direction:column;gap:5px;min-width:0}
   .auto-correction-heading{font:10px var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase;padding-bottom:3px;border-bottom:1px solid var(--line)}
@@ -155,7 +157,7 @@
   .auto-correction-groups .btn{width:100%;min-width:0;min-height:34px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
   .auto-correction-groups .btn.on,.auto-grade-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3);box-shadow:inset 0 0 0 1px var(--orange)}
   .curve-tools span{font:10px var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
-  .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
+  .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}\n  #curvePointStatus{font:10px var(--mono);color:var(--dim);min-width:90px}\n  #curvePointTools button:disabled{opacity:.35;cursor:not-allowed}
   #curves{width:100%;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:crosshair;touch-action:none}
   .tiny{color:var(--faint);font-size:11px;margin-top:8px;line-height:1.5}
   #looksDD{position:relative;margin-top:10px}
@@ -250,10 +252,14 @@
   #exportPack{width:100%;margin-top:8px;background:none;border:1px solid var(--line);color:var(--dim);padding:8px;border-radius:3px;cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em}
   #exportPack:hover{border-color:var(--orange);color:var(--text)}
   /* --- colour-balance wheels --- */
-  .cbwheels{display:flex;gap:6px;justify-content:space-between;margin:2px 0 6px}
-  .cbwheel-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
-  .cbwheel{width:96px;height:96px;aspect-ratio:1/1;border:1px solid var(--line);border-radius:50%;cursor:crosshair;touch-action:none;background:#0a0a0a;display:block}
-  .cbwheel-label{font:9px var(--mono);color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+  .cbwheels{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin:4px 0 8px;width:100%;min-width:0}
+  .cbwheel-wrap{display:flex;flex-direction:column;align-items:stretch;gap:6px;flex:none;width:100%;min-width:0}
+  .cbwheel{width:100%;height:auto;aspect-ratio:1/1;max-width:none;border:1px solid var(--line);border-radius:50%;cursor:crosshair;touch-action:none;background:#0a0a0a;display:block}
+  .cbwheel-label{font:11px var(--mono);color:var(--dim);letter-spacing:.03em;text-transform:uppercase;text-align:center}
+  .cbwheel-nudges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;max-width:none}
+  .cbwheel-nudges button{min-width:0;padding:7px 6px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r-sm);color:var(--text);font:11px var(--mono);letter-spacing:.03em;cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
+  .cbwheel-nudges button:hover{border-color:var(--line-hi);background:var(--panel3)}
+  .cbwheel-nudges button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring);border-color:var(--orange)}
   /* --- cube analysis (heat-slice + histograms) --- */
   #cubePanelWrap{margin-top:4px}
   #cubePanelWrap .panel-title{font:600 10px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--orange);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
@@ -325,9 +331,11 @@
     .row input[type=range]::-moz-range-track{height:5px}
 
     /* three colour wheels side by side don't fit: stack them */
-    .cbwheels{flex-direction:column;align-items:center;gap:14px}
-    .cbwheel-wrap{flex:none;width:100%}
-    .cbwheel{width:150px;height:150px}
+    .cbwheels{flex-direction:column;align-items:stretch;gap:14px;width:100%}
+    .cbwheel-wrap{flex:none;width:100%;align-items:stretch}
+    .cbwheel{width:100%;height:auto}
+    .cbwheel-nudges{width:100%;max-width:none}
+    .cbwheel-nudges button{padding:9px 4px;font-size:11px}
 
     /* buttons and chips: fewer per row, bigger targets */
     .chtabs{gap:8px}
@@ -352,7 +360,8 @@
   /* very small phones */
   @media (max-width:380px){
     header h1{font-size:17px}
-    .cbwheel{width:130px;height:130px}
+    .cbwheel{width:100%;height:auto}
+    .cbwheel-nudges{width:100%;max-width:none}
     .row .num{flex:0 0 56px;min-width:56px}
   }
   #supportLink{margin-left:10px;padding:5px 12px;border:1px solid var(--line);border-radius:3px;
@@ -426,8 +435,7 @@
 <span class="spacer"></span>
 <button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" id="helpBtn" title="Quick help" type="button">?</button>
 <label id="previewQualityControl" title="Standard preview adapts up to 2×; Full uses original image resolution as far as the display and zoom allow.">
-  <span>Preview</span>
-  <button aria-pressed="false" id="previewQualityBtn" type="button" title="Toggle between standard adaptive preview and full-resolution preview">STD</button>
+  <button aria-pressed="false" id="previewQualityBtn" type="button" title="Toggle between standard adaptive preview and full-resolution preview">Std Resolution / Full Resolution</button>
 </label>
 <button disabled="" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">↶ Undo</button>
 <button disabled="" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)">↷ Redo</button>
@@ -512,7 +520,7 @@
   </div>
 
   <div class="auto-correction-block" aria-label="Automatic tonal grading">
-    <div class="auto-correction-heading">Automatic tonal grading</div>
+    <div class="auto-correction-heading">Tune Luminance</div>
     <div class="auto-correction-group auto-grade-tools">
       <button class="btn" id="autoGradeBtn" type="button" disabled aria-pressed="false" title="Automatically optimize global tonal parameters from the whole image">Auto Grade</button>
       <button class="btn" id="autoGradeSubjectBtn" type="button" disabled aria-pressed="false" title="Draw around a subject; preserve scene brightness while increasing subject contrast">Auto Grade – Subject</button>
@@ -522,6 +530,22 @@
       <button class="btn" id="subjectGradeApply" type="button" disabled title="Apply the subject-based correction to the current grade">Apply</button>
       <button class="btn" id="subjectGradeCancel" type="button" title="Cancel subject selection without applying the correction">Cancel</button>
     </div>
+  </div>
+
+  <div class="auto-correction-block" aria-label="Tune Colors">
+    <div class="auto-correction-heading">Tune Colors</div>
+    <div class="auto-correction-group auto-grade-tools">
+      <button class="btn" type="button" data-color-harmony="three" title="Build an analogous grade: related hues across shadows, midtones and highlights, guided by the photo’s existing colours. Click again to restore the wheel positions from before this harmony was applied.">Similar</button>
+      <button class="btn" type="button" data-color-harmony="y" title="Build a split-complementary grade: one tonal range anchors the hue; the other two use neighbouring hues on the opposite side of the colour wheel. Click again to restore the previous wheel positions.">Y-Complementary</button>
+      <button class="btn" type="button" data-color-harmony="line" title="Apply one shared hue to shadows, midtones and highlights, with a different saturation strength for each range. Click again to restore the previous wheel positions.">Line</button>
+      <button class="btn" type="button" data-color-harmony="tri" title="Build a triadic grade with three hues distributed around the colour wheel; the dominant tonal range in the photo anchors the arrangement. Click again to restore the previous wheel positions.">Triangle</button>
+    </div>
+    <div class="harmony-intensity-control" style="display:flex;align-items:center;gap:10px;margin-top:9px">
+      <label for="colorHarmonyIntensity" class="tiny" style="margin:0;white-space:nowrap" title="Blend strength of the selected automatic colour harmony. 0% restores the original wheel positions; 100% applies the full calculated wheel offsets. Double-click to reset to 40%."Grading intensity</label>
+      <input id="colorHarmonyIntensity" type="range" min="0" max="100" step="1" value="40" style="flex:1;min-width:60px" aria-label="Color harmony grading intensity" title="Adjust the strength of the selected harmony. 0% restores the wheel positions from before the harmony; 100% uses the full calculated effect. Double-click to reset to 40%."
+      <output id="colorHarmonyIntensityValue" for="colorHarmonyIntensity" class="tiny" style="margin:0;min-width:34px;text-align:right">40%</output>
+    </div>
+    <p class="tiny">Analyses shadows, midtones and highlights independently. The dominant tonal range anchors the selected harmony; existing scene colours influence the other wheels. Neutral pixels are protected during grading.</p>
   </div>
 
   <div class="auto-correction-block" aria-label="Master RGB curve">
@@ -593,7 +617,19 @@
 <button data-ch="b" title="Blue">Blue</button>
 </div>
 <canvas height="210" id="curves" title="Edit the active tone curve by adding or dragging control points" width="300"></canvas>
-<p class="tiny">Click to add a point, drag to shape, double-click a point to remove it.</p>
+<div class="curve-tools" id="curvePointTools">
+  <button class="btn" id="curveImagePick" type="button" aria-pressed="false" title="Click a pixel in the image to add a point on the active curve">⌖ Add point from image</button>
+  <span id="curvePointStatus">No point selected</span>
+  <div class="curve-point-move-tools">
+    <button class="btn" id="curveMoveLeft" type="button" title="Move selected point horizontally to the left">←</button>
+    <button class="btn" id="curveMoveRight" type="button" title="Move selected point horizontally to the right">→</button>
+    <button class="btn" id="curveMoveDown" type="button" title="Move selected point vertically down">↓</button>
+    <button class="btn" id="curveMoveUp" type="button" title="Move selected point vertically up">↑</button>
+    <button class="btn" id="curveMoveDiagBack" type="button" title="Move selected point along the original curve towards lower input values">↙</button>
+    <button class="btn" id="curveMoveDiagForward" type="button" title="Move selected point along the original curve towards higher input values">↗</button>
+  </div>
+</div>
+<p class="tiny">Click to add a point, drag to shape, double-click a point to remove it. Image picker uses the sampled pixel value as input and the current curve output as the point's output.</p>
 </section>
 
 <section class="closed">
@@ -623,13 +659,15 @@
 <p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
 </section>
 <section class="closed">
-<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Color Balance" checked="" data-enable="colorBalance" title="Enable or disable Color Balance" type="checkbox"/></label>Color balance <button class="reset" id="cbReset" title="Reset colour balance wheels">reset</button></h2>
+<h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Color Grading" checked="" data-enable="colorBalance" title="Enable or disable Color Grading" type="checkbox"/></label>Color grading <button class="reset" id="cbReset" title="Reset all three colour wheels to neutral and restore Blending to 50 and Balance to 0.">reset</button></h2>
 <div class="cbwheels">
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbSh" title="Drag to tint shadow tones" width="96"></canvas><div class="cbwheel-label">Shadows</div></div>
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbMd" title="Drag to tint midtones" width="96"></canvas><div class="cbwheel-label">Midtones</div></div>
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="96" id="cbHi" title="Drag to tint highlight tones" width="96"></canvas><div class="cbwheel-label">Highlights</div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbSh" title="Shadows colour wheel. Drag the marker to set shadow hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Shadows</div><div class="cbwheel-nudges" data-wheel="shadows"><button type="button" data-move="hue-down" title="Rotate this wheel’s hue 5° counter-clockwise without changing saturation.">↶ Hue</button><button type="button" data-move="sat-up" title="Increase this wheel’s saturation by a small step; hue stays unchanged.">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate this wheel’s hue 5° clockwise without changing saturation.">Hue ↷</button><button type="button" data-move="sat-down" title="Decrease this wheel’s saturation by a small step; hue stays unchanged.">－ Sat</button></div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbMd" title="Midtones colour wheel. Drag the marker to set midtone hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Midtones</div><div class="cbwheel-nudges" data-wheel="midtones"><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">↶ Hue</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate hue clockwise">Hue ↷</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbHi" title="Highlights colour wheel. Drag the marker to set highlight hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Highlights</div><div class="cbwheel-nudges" data-wheel="highlights"><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">↶ Hue</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate hue clockwise">Hue ↷</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
 </div>
-<p class="tiny">Drag inside a wheel to tint that region. Center = no change. Double-click a wheel to reset just that wheel.</p>
+<div class="row"><label>Blending</label><input id="cbBlending" max="100" min="0" title="Control how much the shadow, midtone and highlight grading ranges overlap. Lower values separate the ranges; higher values create smoother transitions." type="range" value="50"/><input class="num" title="Adjust overlap between tonal ranges." type="number" value="50"/></div>
+<div class="row"><label>Balance</label><input id="cbBalance" max="100" min="-100" title="Shift color grading emphasis toward shadows (negative) or highlights (positive)." type="range" value="0"/><input class="num" title="Shift the overall colour-grading emphasis: negative values favour shadows, positive values favour highlights, and 0 is neutral." type="number" value="0"/></div>
+<p class="tiny">Blending controls overlap between tinted tonal ranges. Balance shifts the grade's emphasis toward shadows or highlights. Drag inside a wheel to tint that region; center = no change.</p>
 </section>
 <section class="closed">
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Split Toning" checked="" data-enable="splitToning" title="Enable or disable Split Toning" type="checkbox"/></label>Split toning <button class="reset" id="splitReset" title="Reset split toning adjustments">reset</button></h2>
@@ -815,8 +853,8 @@ document.addEventListener("keydown",e=>{
 /* ================= state ================= */
 const sliders=["exposure","contrast","gamma","fade","highlights","shadows","blacks",
   "temp","tint","sat","vib","skin","colorNorm","shAmt","hiAmt",
-  "secHueC","secRange","secSoft","secHue","secSat","secLum","strength"];
-const DEF={secRange:40,secSoft:50,strength:100};
+  "secHueC","secRange","secSoft","secHue","secSat","secLum","strength","cbBlending","cbBalance"];
+const DEF={secRange:40,secSoft:50,strength:100,cbBlending:50,cbBalance:0};
 const SECTION_DEFAULTS={tone:true,colour:true,curves:true,hueShift:true,hueSat:true,lumaSat:true,secondary:true,colorBalance:true,splitToning:true};
 const state={};
 sliders.forEach(s=>state[s]=DEF[s]||0);
@@ -921,7 +959,70 @@ function analyseAutoCurve(src,baseLut=null){
     hist[luma]++;total++;
   }
   if(!total)return null;
-  return{low:curvePercentile(hist,total,.01),high:curvePercentile(hist,total,.99),median:curvePercentile(hist,total,.5)};
+
+  // Find the most populated *luminance band*, not merely the median or
+  // percentile endpoints. Smooth the histogram to avoid choosing a single
+  // noisy bin, then measure the peak's full width at half maximum.
+  const smooth=new Float64Array(256),radius=7;
+  for(let i=0;i<256;i++){
+    let sum=0,weight=0;
+    for(let k=-radius;k<=radius;k++){
+      const j=i+k;if(j<0||j>255)continue;
+      const w=radius+1-Math.abs(k);sum+=hist[j]*w;weight+=w;
+    }
+    smooth[i]=sum/weight;
+  }
+  let peak=0;
+  for(let i=1;i<256;i++)if(smooth[i]>smooth[peak])peak=i;
+  const half=smooth[peak]*.5;
+  let left=peak,right=peak;
+  while(left>0&&smooth[left-1]>=half)left--;
+  while(right<255&&smooth[right+1]>=half)right++;
+  const center=peak/255;
+  const sigma=Math.max(.045,Math.min(.24,Math.max(peak-left,right-peak)/255/1.177));
+  const p01=curvePercentile(hist,total,.01),p02=curvePercentile(hist,total,.02);
+  const p08=curvePercentile(hist,total,.08),p20=curvePercentile(hist,total,.20);
+  const p35=curvePercentile(hist,total,.35),p40=curvePercentile(hist,total,.40);
+  let darkPixels=0;for(let i=0;i<=64;i++)darkPixels+=hist[i];
+  const darkShare=darkPixels/total;
+  const shadowSpan=Math.max(.055,p40-p02);
+  // Increase recovery when a meaningful share of the image is genuinely dark;
+  // reduce it when the lower tonal distribution is already lifted.
+  const shadowLiftStrength=clamp(.16 + (0.30-p20)*1.65 + (darkShare-.22)*.30,.12,1);
+  return{
+    low:p01,
+    high:curvePercentile(hist,total,.99),
+    median:curvePercentile(hist,total,.5),
+    shadowBlack:p02,shadowP08:p08,shadowP20:p20,shadowP35:p35,shadowP40:p40,
+    shadowSpan,darkShare,shadowLiftStrength,
+    // Midtone statistics: robust quantile window plus a smoothed histogram
+    // peak. The peak is trusted only when it lies inside the central 20–80%.
+    midLow:curvePercentile(hist,total,.20),
+    midHigh:curvePercentile(hist,total,.80),
+    midCenter:clamp(.65*curvePercentile(hist,total,.50)+.35*center),
+    midSigma:Math.max(.085,Math.min(.23,(curvePercentile(hist,total,.80)-curvePercentile(hist,total,.20))*.42)),
+    midLiftStrength:clamp(.28+.62*(1-clamp((curvePercentile(hist,total,.50)-.38)/.42)),.22,.90),
+    contrastRatio:curvePercentile(hist,total,.99)-p01,
+    filmStrength:.42+.58*(1-clamp(((curvePercentile(hist,total,.99)-curvePercentile(hist,total,.01))-.38)/.55)),
+    toeStrength:.035,
+    shoulderStrength:.075,
+    dominantCenter:center,
+    dominantSigma:sigma,
+    dominantShare:smooth[peak]/total,
+    dynamicStrength:.62,
+    contrastStrength:clamp((.88-(curvePercentile(hist,total,.99)-curvePercentile(hist,total,.01)))*.92,.08,.58),
+    // Highlight distribution for an image-adaptive shoulder. P82 defines the
+    // onset; P99.5 estimates the occupied highlight ceiling. A dense upper
+    // tail receives a little more compression, while sparse specular peaks
+    // are treated conservatively.
+    shoulderStart:curvePercentile(hist,total,.82),
+    shoulderP90:curvePercentile(hist,total,.90),
+    shoulderP95:curvePercentile(hist,total,.95),
+    shoulderP99:curvePercentile(hist,total,.99),
+    shoulderP995:curvePercentile(hist,total,.995),
+    shoulderShare:smooth.slice(210).reduce((a,v)=>a+v,0)/total,
+    shoulderStrength:clamp(.045+(curvePercentile(hist,total,.995)-curvePercentile(hist,total,.82))*.22, .045,.105)
+  };
 }
 // Automatic grading is materialised into the visible controls/curves. These
 // helpers only maintain those controls; grade() never applies a hidden auto pass.
@@ -1132,6 +1233,8 @@ Object.entries(independentCorrectionButtons).forEach(([key,button])=>button.addE
   }
   state.autoCorrections[key]=next;
   syncIndependentCorrectionButtons();
+  const targetId={highlight:"highlights",shadow:"shadows",skin:"huecv",lumaSat:"lscv"}[key];
+  expandSidebarSectionForElement($(targetId));
   render();
   pushHistory();
 }));
@@ -1221,9 +1324,15 @@ function grade(r,g,b){
             ||cbState.highlights.x||cbState.highlights.y;
   if(state.enabled.colorBalance&&cbAny){
     const lcb=0.2126*r+0.7152*g+0.0722*b;
-    const shCbMask=1-sstep(0.15,0.5,lcb);
-    const mdCbMask=Math.max(0,1-Math.abs(lcb-0.5)*2);
-    const hiCbMask=sstep(0.5,0.85,lcb);
+    // Blending widens/narrows the transition between tonal ranges.
+    // Positive balance shifts the transition toward shadows/highlights.
+    const blend=clamp((state.cbBlending??50)/100);
+    const balance=Math.max(-100,Math.min(100,state.cbBalance||0))/100;
+    const pivot=clamp(0.5-balance*0.22,0.18,0.82);
+    const halfWidth=0.055+blend*0.20;
+    const shCbMask=1-sstep(pivot-halfWidth,pivot+halfWidth,lcb);
+    const mdCbMask=Math.max(0,1-Math.abs(lcb-pivot)/Math.max(0.12,halfWidth*1.65));
+    const hiCbMask=sstep(pivot-halfWidth,pivot+halfWidth,lcb);
     const regions=[
       {mask:shCbMask,st:cbState.shadows},
       {mask:mdCbMask,st:cbState.midtones},
@@ -1234,10 +1343,13 @@ function grade(r,g,b){
       const dx=reg.st.x,dy=reg.st.y;
       const dist=Math.sqrt(dx*dx+dy*dy);
       if(dist<0.001)continue;
-      const hue=((Math.atan2(dy,dx)*180/Math.PI)+360)%360;
+      const hue=((Math.atan2(-dy,dx)*180/Math.PI)+360)%360;
       const sat=Math.min(1,dist);
       const[tr,tg,tb]=hsl2rgb(hue,sat,0.5);
-      const intensity=0.4*reg.mask;
+      const blackProtection=sstep(0.018,0.16,lcb);
+      const pixelChroma=(Math.max(r,g,b)-Math.min(r,g,b))/Math.max(.035,Math.max(r,g,b));
+      const neutralProtection=sstep(.018,.105,pixelChroma);
+      const intensity=0.56*reg.mask*blackProtection*neutralProtection;
       dR+=(tr-0.5)*intensity;
       dG+=(tg-0.5)*intensity;
       dB+=(tb-0.5)*intensity;
@@ -1538,7 +1650,7 @@ function applyTileClippingWarnings(imageData){
 }
 function updatePreviewQualityButton(){
   const btn=$("previewQualityBtn");
-  btn.textContent=previewQuality.full?"FULL":"STD";
+  btn.textContent=previewQuality.full?"Full Resolution":"Std Resolution";
   btn.setAttribute("aria-pressed",previewQuality.full?"true":"false");
   btn.disabled=cur<0;
   btn.title=previewQuality.full
@@ -1889,9 +2001,80 @@ function drawCurves(){
   for(const p of curves[curveCh]){
     cc.fillStyle=chColour[curveCh];cc.beginPath();cc.arc(cx2px(p.x),cy2px(p.y),4.5,0,7);cc.fill();
     cc.strokeStyle="#15130f";cc.lineWidth=1.5;cc.stroke();
+    if(p===selectedCurvePoint){cc.strokeStyle="#f6a352";cc.lineWidth=2;cc.beginPath();cc.arc(cx2px(p.x),cy2px(p.y),7.2,0,Math.PI*2);cc.stroke();}
   }
 }
 let dragPt=null;
+let selectedCurvePoint=null,selectedCurveOriginal=null,curveImagePickMode=false;
+const curvePointStatus=$("curvePointStatus"),curveImagePickBtn=$("curveImagePick");
+function curveValueAt(points,x){
+  const lut=buildCurveLUT(points);
+  const i=clamp(Math.round(clamp(x)*255),0,255);
+  return lut[i];
+}
+function curveOriginalSnapshot(){
+  return curves[curveCh].map(p=>({x:p.x,y:p.y}));
+}
+function syncCurvePointTools(){
+  const has=!!selectedCurvePoint&&curves[curveCh].includes(selectedCurvePoint);
+  curvePointStatus.textContent=has?`Point ${selectedCurvePoint.x.toFixed(3)}, ${selectedCurvePoint.y.toFixed(3)}`:"No point selected";
+  ["curveMoveLeft","curveMoveRight","curveMoveDown","curveMoveUp","curveMoveDiagBack","curveMoveDiagForward"].forEach(id=>$(id).disabled=!has);
+  curveImagePickBtn.classList.toggle("on",curveImagePickMode);
+  curveImagePickBtn.setAttribute("aria-pressed",curveImagePickMode?"true":"false");
+}
+function selectCurvePoint(p,original=null){
+  selectedCurvePoint=p;
+  selectedCurveOriginal=original||curveOriginalSnapshot();
+  syncCurvePointTools();drawCurves();
+}
+function curvePointNudge(kind,dir){
+  const p=selectedCurvePoint,pts=curves[curveCh];
+  if(!p||!pts.includes(p))return;
+  if(curveCh==="m")markAutoCurveAsManual();
+  const step=.01;
+  const isEnd=p===pts.reduce((a,b)=>a.x<b.x?a:b)||p===pts.reduce((a,b)=>a.x>b.x?a:b);
+  const original=selectedCurveOriginal||curveOriginalSnapshot();
+  if(kind==="x"||kind==="path"){
+    if(isEnd&&kind==="x")return;
+    const others=pts.filter(q=>q!==p);
+    const lo=isEnd?0:Math.max(0,...others.filter(q=>q.x<p.x).map(q=>q.x))+.005;
+    const hi=isEnd?1:Math.min(1,...others.filter(q=>q.x>p.x).map(q=>q.x))-.005;
+    p.x=Math.max(lo,Math.min(hi,p.x+dir*step));
+    if(kind==="path")p.y=curveValueAt(original,p.x);
+  }else if(kind==="y"){
+    p.y=clamp(p.y+dir*step);
+  }
+  rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();
+}
+function addCurvePointFromImage(e){
+  if(cur<0||!images[cur]||!images[cur].data)return false;
+  const point=previewPoint(e),src=images[cur].data;
+  const x=Math.round(point.x/view.offsetWidth*(src.width-1));
+  const y=Math.round(point.y/view.offsetHeight*(src.height-1));
+  const d=src.data;let r=0,g=0,b=0,n=0;
+  for(let yy=y-2;yy<=y+2;yy++)for(let xx=x-2;xx<=x+2;xx++){
+    if(xx<0||xx>=src.width||yy<0||yy>=src.height)continue;
+    const i=(yy*src.width+xx)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;
+  }
+  if(!n)return false;
+  const sample={r:r/n/255,g:g/n/255,b:b/n/255};
+  sample.m=.2126*sample.r+.7152*sample.g+.0722*sample.b;
+  const cx=clamp(sample[curveCh]);
+  const original=curveOriginalSnapshot();
+  const pts=curves[curveCh];
+  // Keep input values unique and ordered; if a point is already close, select it.
+  let p=pts.reduce((best,q)=>Math.abs(q.x-cx)<Math.abs((best||{x:Infinity}).x-cx)?q:best,null);
+  if(p&&Math.abs(p.x-cx)<.006){
+    selectCurvePoint(p,original);
+  }else{
+    p={x:cx,y:curveValueAt(original,cx)};
+    pts.push(p);pts.sort((a,b)=>a.x-b.x);
+    if(curveCh==="m")markAutoCurveAsManual();
+    rebuildCurves();render();selectCurvePoint(p,original);pushHistory();
+  }
+  curveImagePickMode=false;syncCurvePointTools();
+  return true;
+}
 const curvePos=e=>{const r=ccv.getBoundingClientRect();return[(e.clientX-r.left)*ccv.width/r.width,(e.clientY-r.top)*ccv.height/r.height];};
 function nearestPoint(px,py){
   let best=null,bd=144;
@@ -1914,8 +2097,10 @@ function zoomCurveAt(px,py,factor){
 }
 function beginCurveEditAt(px,py){
   if(curveCh==="m")markAutoCurveAsManual();
+  const original=curveOriginalSnapshot();
   let p=nearestPoint(px,py);
   if(!p){p={x:px2cx(px),y:px2cy(py)};curves[curveCh].push(p);}
+  selectCurvePoint(p,original);
   dragPt=p;rebuildCurves();render();
 }
 function moveCurveEditTo(px,py){
@@ -1973,38 +2158,113 @@ window.addEventListener("pointerup",()=>{if(dragPt){dragPt=null;pushHistory();}e
 ccv.addEventListener("dblclick",e=>{
   if(curveCh==="m")markAutoCurveAsManual();
   const[px,py]=curvePos(e),p=nearestPoint(px,py),pts=curves[curveCh];
-  if(p&&pts.length>2){curves[curveCh]=pts.filter(q=>q!==p);rebuildCurves();render();pushHistory();}
+  if(p&&pts.length>2){curves[curveCh]=pts.filter(q=>q!==p);if(selectedCurvePoint===p){selectedCurvePoint=null;selectedCurveOriginal=null;}rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();}
 });
 ccv.addEventListener("wheel",zoomCurves,{passive:false});
 document.querySelectorAll(".chtabs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".chtabs button").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on");curveCh=b.dataset.ch;drawCurves();
+  b.classList.add("on");curveCh=b.dataset.ch;selectedCurvePoint=null;selectedCurveOriginal=null;curveImagePickMode=false;drawCurves();syncCurvePointTools();
 }));
-$("curveReset").addEventListener("click",()=>{if(curveCh==="m")markAutoCurveAsManual();curves[curveCh]=defCurve();rebuildCurves();render();pushHistory();});
+$("curveImagePick").addEventListener("click",()=>{
+  curveImagePickMode=!curveImagePickMode;syncCurvePointTools();
+});
+$("curveMoveLeft").addEventListener("click",()=>curvePointNudge("x",-1));
+$("curveMoveRight").addEventListener("click",()=>curvePointNudge("x",1));
+$("curveMoveDown").addEventListener("click",()=>curvePointNudge("y",-1));
+$("curveMoveUp").addEventListener("click",()=>curvePointNudge("y",1));
+$("curveMoveDiagBack").addEventListener("click",()=>curvePointNudge("path",-1));
+$("curveMoveDiagForward").addEventListener("click",()=>curvePointNudge("path",1));
+syncCurvePointTools();
+$("curveReset").addEventListener("click",()=>{if(curveCh==="m")markAutoCurveAsManual();curves[curveCh]=defCurve();selectedCurvePoint=null;selectedCurveOriginal=null;rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();});
 function autoCurveTransform(y,key){
   const d=state.curveAutoData[key]||{};
   if(key==="dynamic"){
-    const low=Number.isFinite(d.low)?d.low:0,high=Number.isFinite(d.high)?d.high:1;
-    return clamp((y-low)/Math.max(.08,high-low));
+    // Expand contrast around the image's most populated luminance band while
+    // gently compressing the surrounding tones. Unlike percentile stretching,
+    // this preserves black/white endpoints and avoids global exposure shifts.
+    const center=Number.isFinite(d.dominantCenter)?clamp(d.dominantCenter):.5;
+    const sigma=Math.max(.045,Math.min(.24,Number.isFinite(d.dominantSigma)?d.dominantSigma:.12));
+    const strength=Math.max(0,Math.min(.9,Number.isFinite(d.dynamicStrength)?d.dynamicStrength:.62));
+    const z=(y-center)/sigma;
+    const envelope=Math.exp(-.5*z*z);
+    return clamp(y+strength*(y-center)*envelope);
   }
   if(key==="contrast"){
-    const pivot=Number.isFinite(d.median)?d.median:.5;
-    return clamp(y+.34*(y-pivot)*(1-Math.abs(2*y-1)));
+    // Adaptive S-curve over the useful image range. Flat images receive a
+    // stronger curve; already contrast-rich images receive a restrained one.
+    // The 1st/99th percentile endpoints remain fixed, avoiding global stretch
+    // and preserving the existing black/white point placement.
+    const low=Number.isFinite(d.low)?clamp(d.low):0;
+    const high=Number.isFinite(d.high)?clamp(d.high):1;
+    const span=Math.max(.08,high-low);
+    if(y<=low||y>=high)return y;
+    const x=clamp((y-low)/span);
+    const pivot=clamp((Number.isFinite(d.median)?d.median:(low+high)*.5-low)/span,.25,.75);
+    const strength=Math.max(0,Math.min(.65,Number.isFinite(d.contrastStrength)?d.contrastStrength:.3));
+    const shape=(x-pivot)*(1-Math.abs(2*x-1));
+    return clamp(low+span*(x+strength*shape));
   }
-  if(key==="film")return clamp(.035+.93*y+.16*(y-.5)*(1-Math.abs(2*y-1)));
+  if(key==="film"){
+    // Adaptive film-response: a restrained toe, gentle midtone density and
+    // highlight shoulder, with strength derived from the source tonal range.
+    const low=Number.isFinite(d.low)?clamp(d.low):0;
+    const high=Number.isFinite(d.high)?clamp(d.high):1;
+    const span=Math.max(.08,high-low);
+    const contrast=Number.isFinite(d.contrastRatio)?d.contrastRatio:span;
+    const strength=Math.max(.35,Math.min(1,Number.isFinite(d.filmStrength)?d.filmStrength:
+      (.42+.58*(1-clamp((contrast-.38)/.55)))));
+    const toe=Number.isFinite(d.toeStrength)?d.toeStrength:.035;
+    const shoulder=Number.isFinite(d.shoulderStrength)?d.shoulderStrength:.075;
+    // Toe and shoulder are localized and return smoothly to the identity curve.
+    const toeEnv=Math.exp(-Math.pow(y/.16,2));
+    const shoulderEnv=Math.exp(-Math.pow((1-y)/.19,2));
+    const toeLift=toe*strength*toeEnv*(1-y);
+    const shoulderRoll=shoulder*strength*shoulderEnv*y;
+    const midShape=.035*strength*Math.sin(Math.PI*y);
+    return clamp(y+toeLift-shoulderRoll+midShape);
+  }
   if(key==="shadowLift"){
-    // Localized toe lift: zero at black/white endpoints, strongest in deep shadows.
-    const amount=.105, toe=Math.max(0,1-Math.exp(-y/.018));
-    return clamp(y+amount*toe*(1-y)*Math.exp(-y/.19));
+    // Histogram-adaptive shadow recovery. The deepest black remains anchored;
+    // lift rises smoothly just above black and fades before the midtones.
+    const black=Number.isFinite(d.shadowBlack)?clamp(d.shadowBlack):.01;
+    const span=Math.max(.055,Number.isFinite(d.shadowSpan)?d.shadowSpan:.20);
+    const strength=Math.max(.12,Math.min(1,Number.isFinite(d.shadowLiftStrength)?d.shadowLiftStrength:.5));
+    const width=Math.max(.09,Math.min(.34,span*1.45));
+    const distance=Math.max(0,y-black);
+    const toeRamp=1-Math.exp(-distance/.018);
+    const envelope=Math.exp(-.5*Math.pow(distance/width,2));
+    const lift=.135*strength*toeRamp*envelope*(1-y);
+    return clamp(y+lift);
   }
   if(key==="midLift"){
-    // Gamma-like midtone lift with exact endpoint preservation.
-    return clamp(y+.085*Math.sin(Math.PI*y));
+    // Histogram-adaptive midtone lift. A Gaussian envelope targets the actual
+    // central tonal mass; smooth gates keep shadows and highlights largely intact.
+    const center=Number.isFinite(d.midCenter)?clamp(d.midCenter):.5;
+    const sigma=Math.max(.085,Math.min(.23,Number.isFinite(d.midSigma)?d.midSigma:.15));
+    const strength=Math.max(.15,Math.min(1,Number.isFinite(d.midLiftStrength)?d.midLiftStrength:.55));
+    const low=Number.isFinite(d.midLow)?clamp(d.midLow):.2;
+    const high=Number.isFinite(d.midHigh)?clamp(d.midHigh):.8;
+    const z=(y-center)/sigma;
+    const bell=Math.exp(-.5*z*z);
+    const gateIn=1/(1+Math.exp(-Math.max(-40,Math.min(40,(y-low)/.035))));
+    const gateOut=1/(1+Math.exp(-Math.max(-40,Math.min(40,(high-y)/.035))));
+    const amount=.105*strength*bell*gateIn*gateOut;
+    return clamp(y+amount*(1-y));
   }
   if(key==="curveShoulder"){
-    // Gentle upper-mid compression; returns to the exact white endpoint.
-    const u=clamp((y-.58)/.42);
-    return clamp(y-.16*u*u*(1-u));
+    // Adaptive highlight roll-off. The onset follows the image's P82 level;
+    // compression is scaled by highlight spread and density. The black point
+    // and exact white endpoint remain unchanged.
+    const start=clamp(Number.isFinite(d.shoulderStart)?d.shoulderStart:.72,.58,.90);
+    const strength=clamp(Number.isFinite(d.shoulderStrength)?d.shoulderStrength:.065,.035,.12);
+    if(y<=start||y>=.9995)return y;
+    const t=clamp((y-start)/(1-start));
+    const ramp=t*t*(3-2*t);
+    const tail=clamp((y-start)/Math.max(.08,1-start));
+    const density=clamp((Number.isFinite(d.shoulderShare)?d.shoulderShare:0)*18,0,1);
+    const adaptiveStrength=strength*(.82+.18*density);
+    const compression=adaptiveStrength*ramp*tail*(1-y);
+    return clamp(y-compression);
   }
   return y;
 }
@@ -2046,42 +2306,77 @@ function rebuildVisibleAutoCurve(){
   const candidates=[];
   if(active.includes("dynamic")){
     const d=state.curveAutoData.dynamic||{};
-    const low=Number.isFinite(d.low)?clamp(d.low):0,high=Number.isFinite(d.high)?clamp(d.high):1;
-    const span=Math.max(.08,high-low),margin=Math.min(span*.16,Math.max(.035,span*.08));
-    candidates.push(
-      {x:findXForY(low),priority:3},
-      {x:findXForY(low+margin),priority:2},
-      {x:findXForY(high-margin),priority:2},
-      {x:findXForY(high),priority:3}
-    );
+    const center=Number.isFinite(d.dominantCenter)?clamp(d.dominantCenter):.5;
+    const sigma=Math.max(.045,Math.min(.24,Number.isFinite(d.dominantSigma)?d.dominantSigma:.12));
+    // Add control points around the active band so the visible editable curve
+    // follows the same localized contrast transform as the analytical LUT.
+    [-2.4,-1.5,-.75,0,.75,1.5,2.4].forEach((m,i)=>{
+      const y=clamp(center+m*sigma);
+      candidates.push({x:findXForY(y),priority:(i===3?4:(Math.abs(m)<=1.5?3:1))});
+    });
   }
   if(active.includes("contrast")){
     const d=state.curveAutoData.contrast||{};
-    candidates.push(
-      {x:findXForY(.25),priority:2},
-      {x:findXForY(Number.isFinite(d.median)?d.median:.5),priority:4},
-      {x:findXForY(.75),priority:2}
-    );
+    const low=Number.isFinite(d.low)?clamp(d.low):0;
+    const high=Number.isFinite(d.high)?clamp(d.high):1;
+    const span=Math.max(.08,high-low);
+    const median=Number.isFinite(d.median)?clamp(d.median):low+span*.5;
+    [low,low+span*.25,median,low+span*.75,high].forEach((y,i)=>{
+      candidates.push({x:findXForY(y),priority:i===2?4:(i===0||i===4?1:3)});
+    });
   }
-  if(active.includes("film"))candidates.push(
-    {x:findXForY(.25),priority:1},{x:findXForY(.5),priority:2},{x:findXForY(.75),priority:1}
-  );
-  if(active.includes("shadowLift"))candidates.push(
-    {x:findXForY(.035),priority:4},{x:findXForY(.16),priority:2}
-  );
-  if(active.includes("midLift"))candidates.push(
-    {x:findXForY(.5),priority:4},{x:findXForY(.72),priority:1}
-  );
-  if(active.includes("curveShoulder"))candidates.push(
-    {x:findXForY(.68),priority:2},{x:findXForY(.88),priority:4}
-  );
+  if(active.includes("film")){
+    const d=state.curveAutoData.film||{};
+    const low=Number.isFinite(d.low)?clamp(d.low):0;
+    const high=Number.isFinite(d.high)?clamp(d.high):1;
+    const span=Math.max(.08,high-low);
+    // Place editable anchors relative to actual image quantiles, not fixed
+    // code values; add toe/shoulder anchors only when those regions exist.
+    [low,low+span*.12,low+span*.35,low+span*.58,low+span*.82,high].forEach((y,i)=>{
+      candidates.push({x:findXForY(y),priority:(i===1||i===4?3:(i===2||i===3?2:1))});
+    });
+    candidates.push({x:findXForY(.08),priority:2},{x:findXForY(.92),priority:2});
+  }
+  if(active.includes("shadowLift")){
+    const d=state.curveAutoData.shadowLift||{};
+    const black=Number.isFinite(d.shadowBlack)?clamp(d.shadowBlack):.01;
+    const span=Math.max(.055,Number.isFinite(d.shadowSpan)?d.shadowSpan:.20);
+    [black,black+span*.12,black+span*.35,black+span*.7,black+span*1.2].forEach((y,i)=>{
+      candidates.push({x:findXForY(y),priority:(i===1||i===2?4:(i===3?2:1))});
+    });
+  }
+  if(active.includes("midLift")){
+    const d=state.curveAutoData.midLift||{};
+    const center=Number.isFinite(d.midCenter)?clamp(d.midCenter):.5;
+    const sigma=Math.max(.085,Math.min(.23,Number.isFinite(d.midSigma)?d.midSigma:.15));
+    const low=Number.isFinite(d.midLow)?clamp(d.midLow):.2;
+    const high=Number.isFinite(d.midHigh)?clamp(d.midHigh):.8;
+    [Math.max(low,center-1.7*sigma),center-.7*sigma,center,center+.7*sigma,Math.min(high,center+1.7*sigma)].forEach((y,i)=>{
+      candidates.push({x:findXForY(clamp(y)),priority:i===2?4:(i===1||i===3?3:1)});
+    });
+  }
+  if(active.includes("curveShoulder")){
+    const d=state.curveAutoData.curveShoulder||{};
+    const start=clamp(Number.isFinite(d.shoulderStart)?d.shoulderStart:.72,.58,.90);
+    const p90=Number.isFinite(d.shoulderP90)?clamp(d.shoulderP90):Math.min(.96,start+.12);
+    const p95=Number.isFinite(d.shoulderP95)?clamp(d.shoulderP95):Math.min(.98,start+.20);
+    const p99=Number.isFinite(d.shoulderP99)?clamp(d.shoulderP99):Math.min(.995,start+.28);
+    [start,Math.max(start+.025,p90),Math.max(p90+.015,p95),Math.max(p95+.01,p99)]
+      .map(y=>clamp(y,start,.995))
+      .forEach((y,i)=>candidates.push({x:findXForY(y),priority:i===1||i===2?3:2}));
+  }
   const protectedXs=base.filter(p=>p.x>0&&p.x<1).map(p=>p.x);
   const anchors=selectWellSpacedCurveAnchors(candidates,protectedXs,.085);
   const xs=[...new Set([...protectedXs,...anchors,0,1])].sort((a,b)=>a-b);
   curves.m=xs.map(x=>{
-    let y=sourceLut[Math.round(x*255)];
-    for(const key of active)y=autoCurveTransform(y,key);
-    return{x,y};
+    const y0=sourceLut[Math.round(x*255)];
+    // Evaluate each auto curve against the same baseline. Average their
+    // deltas instead of sequentially feeding one transform into the next:
+    // result is click-order independent and limits cumulative tone shifts.
+    let delta=0;
+    for(const key of active)delta+=autoCurveTransform(y0,key)-y0;
+    const coordination=1/Math.sqrt(active.length);
+    return{x,y:clamp(y0+delta*coordination)};
   });
   rebuildCurves();
   drawCurves();
@@ -2331,7 +2626,7 @@ function applyTonalAutoGrade(points=null,isSubject=false){
   autoGradeBaselineCurve=baseline;autoGradeLastCurve=cloneCurve(curves.m);autoGradeImageIndex=cur;autoGradeAppliedMode=isSubject?'subject':'global';
   render();pushHistory();return true;
 }
-$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false);setAutoGradeMode(null);if(ok){$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
+$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
 $('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode==='global')resetAutoGrade('global');setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
 function smoothSubjectPolygon(points,steps=4){
   if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y}));
@@ -2348,7 +2643,7 @@ function smoothSubjectPolygon(points,steps=4){
   }
   return out;
 }
-$('subjectGradeApply').addEventListener('click',()=>{if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y)}));const ok=applyTonalAutoGrade(pts,true);setAutoGradeMode(null);if(ok){$('autoGradeSubjectBtn').classList.add('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','true');$('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');}});
+$('subjectGradeApply').addEventListener('click',()=>{if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y)}));const ok=applyTonalAutoGrade(pts,true);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeSubjectBtn').classList.add('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','true');$('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');}});
 $('subjectGradeCancel').addEventListener('click',()=>setAutoGradeMode(null));
 document.addEventListener('keydown',e=>{if(subjectGradeMode&&e.key==='Enter'){e.preventDefault();$('subjectGradeApply').click();}if(subjectGradeMode&&e.key==='Escape'){e.preventDefault();setAutoGradeMode(null);}});
 function drawSubjectSelection(){if(!subjectGradeMode||subjectGradePoints.length===0)return;const pathPts=subjectGradeClosed?smoothSubjectPolygon(subjectGradePoints):subjectGradePoints;ctx.save();ctx.strokeStyle='#ff9d36';ctx.fillStyle='rgba(255,157,54,.12)';ctx.lineWidth=Math.max(1,view.width/900);ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(subjectGradeClosed?[]:[6,4]);ctx.beginPath();pathPts.forEach((p,i)=>{const x=p.x*view.width,y=p.y*view.height;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});if(subjectGradeClosed&&pathPts.length>=3){ctx.closePath();ctx.fill();}ctx.stroke();ctx.restore();}
@@ -2381,6 +2676,8 @@ Object.entries(autoCurveButtons).forEach(([key,button])=>button.addEventListener
   }
   if(AUTO_CURVE_KEYS.includes(key))rebuildVisibleAutoCurve();
   if(key==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
+  const targetId={dynamic:"curves",contrast:"curves",film:"curves",shadowLift:"curves",midLift:"curves",curveShoulder:"curves",exposure:"exposure",recover:"highlights",colour:"vib",wb:"temp"}[key];
+  expandSidebarSectionForElement($(targetId));
   syncAutoCurveButtons();render();pushHistory();
 }));
 syncAutoCurveButtons();
@@ -2466,6 +2763,251 @@ $("lsReset").addEventListener("click",()=>{
   syncIndependentCorrectionButtons();render();pushHistory();
 });
 
+/* ================= automatic color harmony ================= */
+function analyzeImageColorTones(imageData){
+  if(!imageData||!imageData.data)throw new Error("Open an image before tuning colors.");
+  const d=imageData.data,w=imageData.width,h=imageData.height;
+  const keys=["shadows","midtones","highlights"];
+  const bins=Object.fromEntries(keys.map(k=>[k,{hue:new Float64Array(36),sat:0,pixels:0,chromatic:0,luma:0,neutral:0}]));
+  let total=0,globalSat=0;
+  const stride=Math.max(1,Math.floor(Math.sqrt((w*h)/300000)));
+  for(let y=0;y<h;y+=stride)for(let x=0;x<w;x+=stride){
+    const i=(y*w+x)*4,a=d[i+3]/255;if(a<.5)continue;
+    const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+    const [hue,sat,lum]=rgb2hsl(r,g,b);
+    const key=lum<.34?"shadows":lum>.68?"highlights":"midtones",z=bins[key];
+    const weight=a*Math.pow(Math.max(0,sat),1.65);
+    const bin=Math.floor(hue/10)%36;
+    z.hue[bin]+=weight;z.sat+=sat*a;z.pixels+=a;z.chromatic+=weight;z.luma+=lum*a;
+    if(sat<.075)z.neutral+=a;
+    total+=a;globalSat+=sat*a;
+  }
+  if(!total)throw new Error("No usable image pixels found.");
+  const wrap=h=>(h%360+360)%360;
+  const tones={};
+  for(const key of keys){
+    const z=bins[key],sat=z.pixels?z.sat/z.pixels:0;
+    // Identify several meaningful chromatic clusters. A single dominant hue
+    // must not dictate the whole grade (e.g. foliage-heavy photographs).
+    const peaks=[];
+    for(let i=0;i<36;i++){
+      const v=z.hue[i],prev=z.hue[(i+35)%36],next=z.hue[(i+1)%36];
+      if(v>=prev&&v>=next&&v>0)peaks.push({i,weight:v});
+    }
+    peaks.sort((a,b)=>b.weight-a.weight);
+    const selected=peaks.slice(0,3);
+    let hx=0,hy=0,clusterWeight=0;
+    for(const peak of selected){
+      for(let off=-1;off<=1;off++){
+        const idx=(peak.i+off+36)%36,weight=z.hue[idx]/(1+Math.abs(off)*.7);
+        const angle=(idx+.5)*10*Math.PI/180;
+        hx+=Math.cos(angle)*weight;hy+=Math.sin(angle)*weight;clusterWeight+=weight;
+      }
+    }
+    const hue=clusterWeight>1e-8?wrap(Math.atan2(hy,hx)*180/Math.PI):0;
+    const coherence=clusterWeight>1e-8?Math.hypot(hx,hy)/clusterWeight:0;
+    const chromaConfidence=clamp((sat-.025)/.25,0,1);
+    const coverage=clusterWeight/Math.max(z.chromatic,1e-8);
+    const confidence=clamp(chromaConfidence*Math.sqrt(Math.max(0,coherence*coverage)),0,1);
+    const clusters=selected.map(peak=>{
+      let vx=0,vy=0,weight=0;
+      for(let off=-1;off<=1;off++){
+        const idx=(peak.i+off+36)%36,w=z.hue[idx]/(1+Math.abs(off)*.7);
+        const angle=(idx+.5)*10*Math.PI/180;
+        vx+=Math.cos(angle)*w;vy+=Math.sin(angle)*w;weight+=w;
+      }
+      return{hue:wrap(Math.atan2(vy,vx)*180/Math.PI),weight:weight/Math.max(z.chromatic,1e-8)};
+    }).filter(c=>c.weight>.015);
+    tones[key]={hue,sat,population:z.pixels/total,luma:z.pixels?z.luma/z.pixels:.5,
+      confidence,coherence,neutralShare:z.pixels?z.neutral/z.pixels:0,clusterCoverage:coverage,clusters};
+  }
+  // Choose the anchor from reliable chromatic information, not raw area.
+  const dominant=keys.map(k=>({key:k,score:tones[k].population*(.12+.88*tones[k].confidence)*
+      (.35+.65*tones[k].clusterCoverage)})).sort((a,b)=>b.score-a.score)[0].key;
+  return{tones,dominant,meanSat:globalSat/total};
+}
+let activeColorHarmony=null;
+let colorHarmonyBaseline=null;
+const colorHarmonyButtons=[...document.querySelectorAll("[data-color-harmony]")];
+function cloneColorWheels(){return Object.fromEntries(["shadows","midtones","highlights"].map(k=>[k,{x:cbState[k].x,y:cbState[k].y}]));}
+function restoreColorWheels(snapshot){
+  if(!snapshot)return;
+  for(const region of ["shadows","midtones","highlights"]){
+    cbState[region]={x:snapshot[region].x,y:snapshot[region].y};
+    const id={shadows:"cbSh",midtones:"cbMd",highlights:"cbHi"}[region];
+    drawColorWheel($(id),cbState[region].x,cbState[region].y);
+  }
+}
+function syncColorHarmonyButtons(){
+  colorHarmonyButtons.forEach(btn=>{
+    const on=btn.dataset.colorHarmony===activeColorHarmony;
+    btn.classList.toggle("on",on);
+    btn.setAttribute("aria-pressed",on?"true":"false");
+  });
+  syncColorHarmonyIntensityEnabled();
+}
+function clearColorHarmonySelection(){activeColorHarmony=null;colorHarmonyBaseline=null;syncColorHarmonyButtons();}
+const colorHarmonyIntensity=$("colorHarmonyIntensity");
+const colorHarmonyIntensityValue=$("colorHarmonyIntensityValue");
+const colorHarmonyIntensityControl=colorHarmonyIntensity.closest(".harmony-intensity-control");
+let colorHarmonyStrength=40;
+function syncColorHarmonyIntensity(){
+  colorHarmonyStrength=Math.max(0,Math.min(100,+colorHarmonyIntensity.value||0));
+  colorHarmonyIntensityValue.value=colorHarmonyStrength+"%";
+  colorHarmonyIntensityValue.textContent=colorHarmonyStrength+"%";
+}
+function syncColorHarmonyIntensityEnabled(){
+  const enabled=!!activeColorHarmony;
+  colorHarmonyIntensity.disabled=!enabled;
+  colorHarmonyIntensityControl.style.opacity=enabled?"1":".42";
+  colorHarmonyIntensityControl.style.filter=enabled?"none":"grayscale(1)";
+  colorHarmonyIntensityControl.setAttribute("aria-disabled",enabled?"false":"true");
+}
+syncColorHarmonyIntensity();
+function applyAutomaticColorHarmony(shape,options={}){
+  const record=options.record!==false;
+  if(cur<0||!images[cur]||!images[cur].data){fail("Open a photo before tuning colors.");return;}
+  if(!["three","y","line","tri"].includes(shape))return;
+  if(activeColorHarmony===shape&&!options.force){
+    restoreColorWheels(colorHarmonyBaseline);
+    clearColorHarmonySelection();render();if(record)pushHistory();return;
+  }
+  let analysis;
+  try{analysis=analyzeImageColorTones(images[cur].data);}catch(err){fail(err.message);return;}
+  if(!colorHarmonyBaseline)colorHarmonyBaseline=cloneColorWheels();
+  else restoreColorWheels(colorHarmonyBaseline);
+
+  const regions=["shadows","midtones","highlights"];
+  const wrap=h=>(h%360+360)%360;
+  const delta=(a,b)=>((a-b+540)%360)-180;
+  const mixHue=(a,b,t)=>wrap(a+delta(b,a)*t);
+  const intensity=colorHarmonyStrength/100;
+  if(intensity>0){
+    const anchorRegion=analysis.dominant;
+    const anchorHue=analysis.tones[anchorRegion].hue;
+    const others=regions.filter(r=>r!==anchorRegion);
+    const target={};
+    const bestObserved=(region,ideal,limit)=>{
+      const tone=analysis.tones[region];
+      const candidates=(tone.clusters&&tone.clusters.length?tone.clusters:[{hue:tone.hue,weight:.1}])
+        .map(c=>({hue:c.hue,weight:c.weight,dist:Math.abs(delta(c.hue,ideal))}))
+        // Prefer nearby observed hues, but do not reject all clusters merely
+        // because a tonal range has no colour close to the ideal geometry.
+        .sort((a,b)=>(a.dist-Math.min(.35,a.weight)*28)-(b.dist-Math.min(.35,b.weight)*28));
+      if(candidates.length){
+        const c=candidates[0];
+        const proximity=clamp(1-c.dist/Math.max(limit,1),0,1);
+        const dataWeight=clamp(.30+.34*tone.confidence+.22*c.weight+.12*proximity,.30,.82);
+        return mixHue(ideal,c.hue,dataWeight);
+      }
+      // If a tonal band is nearly neutral, derive a stable hue from the
+      // anchor rather than using an undefined/zero hue estimate.
+      return mixHue(ideal,analysis.tones[analysis.dominant].hue,.16);
+    };
+    if(shape==="line"){
+      // One shared hue across all tonal ranges; image data controls its
+      // strength separately through each range's chroma and confidence.
+      regions.forEach(r=>target[r]=anchorHue);
+    }else if(shape==="three"){
+      // Similar: observed hues are selected inside a compact analogous arc.
+      const offsets={shadows:-34,midtones:0,highlights:34};
+      const anchorOffset=offsets[anchorRegion];
+      regions.forEach(region=>{
+        const ideal=wrap(anchorHue+offsets[region]-anchorOffset);
+        target[region]=region===anchorRegion?anchorHue:bestObserved(region,ideal,58);
+      });
+    }else if(shape==="y"){
+      // Y: anchor is the stem; the other two observed colours occupy a
+      // neighbouring opposite-side sector.
+      target[anchorRegion]=anchorHue;
+      const idealA=wrap(anchorHue+154),idealB=wrap(anchorHue+188);
+      target[others[0]]=bestObserved(others[0],idealA,62);
+      target[others[1]]=bestObserved(others[1],idealB,62);
+      const sep=Math.abs(delta(target[others[0]],target[others[1]]));
+      if(sep<22||sep>58)target[others[1]]=mixHue(target[others[0]],idealB,.62);
+    }else if(shape==="tri"){
+      // Triangle: use real scene hues near the remaining 120-degree corners.
+      target[anchorRegion]=anchorHue;
+      target[others[0]]=bestObserved(others[0],wrap(anchorHue+120),58);
+      target[others[1]]=bestObserved(others[1],wrap(anchorHue+240),58);
+      if(Math.abs(delta(target[others[0]],anchorHue))<78)
+        target[others[0]]=mixHue(anchorHue,wrap(anchorHue+120),.72);
+      if(Math.abs(delta(target[others[1]],anchorHue))<78)
+        target[others[1]]=mixHue(anchorHue,wrap(anchorHue+240),.72);
+      if(Math.abs(delta(target[others[0]],target[others[1]]))<82)
+        target[others[1]]=mixHue(target[others[1]],wrap(anchorHue+240),.65);
+    }
+
+    const radii={
+      line:{shadows:.48,midtones:.37,highlights:.27},
+      three:{shadows:.43,midtones:.38,highlights:.34},
+      y:{shadows:.42,midtones:.38,highlights:.42},
+      tri:{shadows:.40,midtones:.40,highlights:.40}
+    }[shape];
+    for(const region of regions){
+      const tone=analysis.tones[region],base=colorHarmonyBaseline[region];
+      const confidence=.78+.22*clamp(tone.confidence,0,1);
+      const chromaFactor=.88+.12*clamp((tone.sat-.012)/.12,0,1);
+      const tonalFactor=region==="shadows"?.94:(region==="highlights"?.97:1);
+      // Every wheel receives a useful non-zero grade. Neutral protection is
+      // intentionally handled per pixel in grade(), not by collapsing the
+      // wheel vector here when a tonal band contains little chroma.
+      const radius=clamp(radii[region]*confidence*chromaFactor*tonalFactor,.24,.68);
+      const angle=target[region]*Math.PI/180;
+      const gx=Math.cos(angle)*radius,gy=Math.sin(angle)*radius;
+      let nextX=base.x+(gx-base.x)*intensity;
+      let nextY=base.y+(gy-base.y)*intensity;
+      // Hard guarantee: every selected harmony assigns a non-zero vector to
+      // every tonal wheel. Interpolation against a previous/manual position
+      // can otherwise cancel the generated vector almost exactly.
+      const minWheelRadius=.22*intensity;
+      const nextRadius=Math.hypot(nextX,nextY);
+      if(nextRadius<minWheelRadius){
+        const targetRadius=Math.max(radius,minWheelRadius);
+        nextX=Math.cos(angle)*targetRadius;
+        nextY=Math.sin(angle)*targetRadius;
+      }
+      cbState[region]={
+        x:clamp(nextX,-1,1),
+        y:clamp(nextY,-1,1)
+      };
+    }
+    // Defensive invariant for all four harmony modes.
+    for(const region of regions){
+      const p=cbState[region],m=Math.hypot(p.x,p.y);
+      if(m<.22*intensity){
+        const a=target[region]*Math.PI/180;
+        const r=.22*intensity;
+        p.x=Math.cos(a)*r;p.y=Math.sin(a)*r;
+      }
+    }
+  }else restoreColorWheels(colorHarmonyBaseline);
+  activeColorHarmony=shape;syncColorHarmonyButtons();
+  expandSidebarSectionForElement($("cbSh"));
+  regions.forEach((region,index)=>drawColorWheel($(["cbSh","cbMd","cbHi"][index]),cbState[region].x,cbState[region].y));
+  render();if(record)pushHistory();
+}
+colorHarmonyIntensity.addEventListener("input",()=>{
+  syncColorHarmonyIntensity();
+  if(activeColorHarmony)applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
+});
+colorHarmonyIntensity.addEventListener("change",()=>{if(activeColorHarmony)pushHistory();});
+// Double-click the intensity control (or its label/value) to restore the default.
+function resetColorHarmonyIntensity(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  colorHarmonyIntensity.value="40";
+  syncColorHarmonyIntensity();
+  if(activeColorHarmony){
+    applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
+    pushHistory();
+  }
+}
+colorHarmonyIntensity.addEventListener("dblclick",resetColorHarmonyIntensity);
+colorHarmonyIntensityControl.querySelector("label")?.addEventListener("dblclick",resetColorHarmonyIntensity);
+colorHarmonyIntensityValue.addEventListener("dblclick",resetColorHarmonyIntensity);
+colorHarmonyButtons.forEach(btn=>btn.addEventListener("click",()=>applyAutomaticColorHarmony(btn.dataset.colorHarmony)));
+syncColorHarmonyButtons();
+
 /* ================= colour balance wheels ================= */
 function drawColorWheel(canvas,sx,sy){
   const c=canvas.getContext("2d");
@@ -2493,6 +3035,7 @@ function drawColorWheel(canvas,sx,sy){
     }
   }
   c.putImageData(img,0,0);
+  // Wheel boundary and fixed centre reference.
   c.strokeStyle="#454c43";
   c.lineWidth=1;
   c.beginPath();
@@ -2504,23 +3047,54 @@ function drawColorWheel(canvas,sx,sy){
   c.moveTo(cx-5,cy);c.lineTo(cx+5,cy);
   c.moveTo(cx,cy-5);c.lineTo(cx,cy+5);
   c.stroke();
-  if(Math.abs(sx)>0.001||Math.abs(sy)>0.001){
-    const ix=cx+sx*r;
-    const iy=cy-sy*r;
-    c.fillStyle="#fff";
-    c.strokeStyle="#000";
-    c.lineWidth=1.5;
-    c.beginPath();
-    c.arc(ix,iy,6,0,Math.PI*2);
-    c.fill();
-    c.stroke();
-  }
+
+  // Selected point is always visible, including at the neutral centre.
+  const sxClamped=Math.max(-1,Math.min(1,sx));
+  const syClamped=Math.max(-1,Math.min(1,sy));
+  const mag=Math.min(1,Math.hypot(sxClamped,syClamped));
+  const angle=Math.atan2(syClamped,sxClamped);
+  const ix=cx+Math.cos(angle)*mag*r;
+  const iy=cy-Math.sin(angle)*mag*r;
+
+  // White radial guide and concentric guide ring both pass through the point.
+  c.save();
+  c.strokeStyle="rgba(255,255,255,0.78)";
+  c.lineWidth=1;
+  c.setLineDash([3,3]);
+  c.beginPath();c.moveTo(cx,cy);c.lineTo(ix,iy);c.stroke();
+  c.setLineDash([]);
+  c.strokeStyle="rgba(255,255,255,0.58)";
+  c.beginPath();c.arc(cx,cy,mag*r,0,Math.PI*2);c.stroke();
+  c.restore();
+
+  // Fill marker with the wheel colour at the selected hue/saturation.
+  const hue=((Math.atan2(-syClamped,sxClamped)*180/Math.PI)+360)%360;
+  const [pr,pg,pb]=hsl2rgb(hue,mag,0.5);
+  c.fillStyle=`rgb(${Math.round(pr*255)},${Math.round(pg*255)},${Math.round(pb*255)})`;
+  c.strokeStyle="#fff";
+  c.lineWidth=2.25;
+  c.beginPath();
+  c.arc(ix,iy,6.5,0,Math.PI*2);
+  c.fill();
+  c.stroke();
+}
+function resizeColorWheelCanvas(canvas,region){
+  const rect=canvas.getBoundingClientRect();
+  if(!rect.width)return;
+  const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1));
+  const pixels=Math.max(1,Math.round(rect.width*dpr));
+  if(canvas.width===pixels&&canvas.height===pixels)return;
+  canvas.width=pixels;
+  canvas.height=pixels;
+  const point=cbState[region];
+  drawColorWheel(canvas,point.x,point.y);
 }
 function setupColorWheel(canvasId,region){
   const canvas=$(canvasId);
   const radius=Math.min(canvas.width,canvas.height)/2-2;
   let dragging=false;
   const updateFromEvent=e=>{
+    clearColorHarmonySelection();
     const rect=canvas.getBoundingClientRect();
     const px=(e.clientX-rect.left)/rect.width*canvas.width;
     const py=(e.clientY-rect.top)/rect.height*canvas.height;
@@ -2555,22 +3129,53 @@ function setupColorWheel(canvasId,region){
   };
   canvas.addEventListener("pointerup",release);
   canvas.addEventListener("pointercancel",release);
-  canvas.addEventListener("dblclick",()=>{
+  canvas.addEventListener("dblclick",e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    dragging=false;
+    clearColorHarmonySelection();
     cbState[region]={x:0,y:0};
     drawColorWheel(canvas,0,0);
     render();
     pushHistory();
   });
-  drawColorWheel(canvas,cbState[region].x,cbState[region].y);
+  resizeColorWheelCanvas(canvas,region);
+  if(typeof ResizeObserver!=="undefined"){
+    const observer=new ResizeObserver(()=>resizeColorWheelCanvas(canvas,region));
+    observer.observe(canvas);
+  }else{
+    window.addEventListener("resize",()=>resizeColorWheelCanvas(canvas,region),{passive:true});
+  }
 }
 setupColorWheel("cbSh","shadows");
 setupColorWheel("cbMd","midtones");
 setupColorWheel("cbHi","highlights");
+// Fine controls: tangential movement changes hue; radial movement changes saturation.
+document.querySelectorAll(".cbwheel-nudges").forEach(group=>{
+  group.addEventListener("click",e=>{
+    const button=e.target.closest("button[data-move]");if(!button)return;
+    const region=group.dataset.wheel,move=button.dataset.move;
+    const p=cbState[region];
+    let hue=Math.atan2(p.y,p.x),sat=Math.hypot(p.x,p.y);
+    if(move==="hue-up")hue+=5*Math.PI/180;
+    else if(move==="hue-down")hue-=5*Math.PI/180;
+    else if(move==="sat-up")sat=Math.min(1,sat+0.04);
+    else if(move==="sat-down")sat=Math.max(0,sat-0.04);
+    clearColorHarmonySelection();
+    p.x=Math.cos(hue)*sat;p.y=Math.sin(hue)*sat;
+    const id={shadows:"cbSh",midtones:"cbMd",highlights:"cbHi"}[region];
+    drawColorWheel($(id),p.x,p.y);render();pushHistory();
+  });
+});
 $("cbReset").addEventListener("click",e=>{
   e.stopPropagation();
+  clearColorHarmonySelection();
   cbState.shadows={x:0,y:0};
   cbState.midtones={x:0,y:0};
   cbState.highlights={x:0,y:0};
+  state.cbBlending=50;state.cbBalance=0;
+  $("cbBlending").value=50;$("cbBlending").parentElement.querySelector(".num").value=50;
+  $("cbBalance").value=0;$("cbBalance").parentElement.querySelector(".num").value=0;
   drawColorWheel($("cbSh"),0,0);
   drawColorWheel($("cbMd"),0,0);
   drawColorWheel($("cbHi"),0,0);
@@ -2623,7 +3228,7 @@ $("shCol").addEventListener("input",e=>{state.shCol=hex2rgb(e.target.value);rend
 $("shCol").addEventListener("change",pushHistory);
 $("hiCol").addEventListener("input",e=>{state.hiCol=hex2rgb(e.target.value);render();});
 $("hiCol").addEventListener("change",pushHistory);
-$("logMode").addEventListener("click",()=>{state.logMode=!state.logMode;render();pushHistory();});
+$("logMode").addEventListener("click",()=>{state.logMode=!state.logMode;expandSidebarSectionForElement($("logMode"));render();pushHistory();});
 document.querySelectorAll("[data-enable]").forEach(input=>{
   input.addEventListener("change",()=>{
     state.enabled[input.dataset.enable]=input.checked;
@@ -2810,6 +3415,10 @@ view.addEventListener("pointerdown",e=>{
     const p=previewPoint(e);
     subjectGradePoints=[{x:p.x/view.offsetWidth,y:p.y/view.offsetHeight}];
     $('subjectGradeApply').disabled=true;render();return;
+  }
+  if(curveImagePickMode&&e.button===0){
+    e.preventDefault();
+    if(addCurvePointFromImage(e))return;
   }
   if(handlePick(e))return;
   if(e.pointerType==="mouse"&&e.button===0&&previewZoom.scale>1&&!$("wipeOn").checked){
@@ -3422,6 +4031,7 @@ function buildGradeData(opts){
       highlights:{x:cbState.highlights.x,y:cbState.highlights.y}
     },
     baseOn:baseOn,
+    colorHarmonyIntensity:colorHarmonyStrength,
     baseLUT:(opts&&opts.light)?undefined:(baseLUT?{size:baseLUT.size,data:Array.from(baseLUT.data),name:baseLUT.name}:null)
   };
 }
@@ -3443,6 +4053,10 @@ function applyDataSilent(p){
     const data=state.autoCorrectionData&&state.autoCorrectionData[key];
     if(state.autoCorrections[key]&&data&&!data.controlDelta)applyCorrectionToControls(key,data,true);
   });
+  if(Number.isFinite(+p.colorHarmonyIntensity)){
+    colorHarmonyIntensity.value=Math.max(0,Math.min(100,+p.colorHarmonyIntensity));
+    syncColorHarmonyIntensity();
+  }
   if(p.cbState){
     if(p.cbState.shadows)   cbState.shadows   ={x:p.cbState.shadows.x||0,   y:p.cbState.shadows.y||0};
     if(p.cbState.midtones)  cbState.midtones  ={x:p.cbState.midtones.x||0,  y:p.cbState.midtones.y||0};
@@ -3537,6 +4151,10 @@ function applyGradeData(p){
     const data=state.autoCorrectionData&&state.autoCorrectionData[key];
     if(state.autoCorrections[key]&&data&&!data.controlDelta)applyCorrectionToControls(key,data,true);
   });
+  if(Number.isFinite(+p.colorHarmonyIntensity)){
+    colorHarmonyIntensity.value=Math.max(0,Math.min(100,+p.colorHarmonyIntensity));
+    syncColorHarmonyIntensity();
+  }
   if(p.cbState){
     cbState.shadows   =p.cbState.shadows   ?{x:p.cbState.shadows.x   ||0,y:p.cbState.shadows.y   ||0}:{x:0,y:0};
     cbState.midtones  =p.cbState.midtones  ?{x:p.cbState.midtones.x  ||0,y:p.cbState.midtones.y  ||0}:{x:0,y:0};
@@ -4104,6 +4722,11 @@ $("toneReset").addEventListener("click",e=>{
     if(state.autoCorrectionData[key])state.autoCorrectionData[key].controlDelta=null;
   });
   ["exposure","recover"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});
+  const hadAutoCurve=AUTO_CURVE_KEYS.some(k=>state.curveAuto[k]);
+  AUTO_CURVE_KEYS.forEach(key=>state.curveAuto[key]=false);
+  if(Array.isArray(state.curveAutoData.baseCurve))curves.m=state.curveAutoData.baseCurve.map(q=>({x:q.x,y:q.y}));
+  state.curveAutoData.baseCurve=null;
+  if(hadAutoCurve){rebuildCurves();drawCurves();}
   syncAutoCurveButtons();syncIndependentCorrectionButtons();
   pushHistory();
 });
@@ -4135,6 +4758,9 @@ $("resetAll").addEventListener("click",()=>{
   hueShift.fill(0);hueSat.fill(0);lumaSat.fill(0);
   cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};
   drawColorWheel($("cbSh"),0,0);drawColorWheel($("cbMd"),0,0);drawColorWheel($("cbHi"),0,0);
+  // Reset Tune Colors state as well as the wheel coordinates.
+  activeColorHarmony=null;colorHarmonyBaseline=null;
+  colorHarmonyIntensity.value="40";syncColorHarmonyIntensity();syncColorHarmonyButtons();
   baseLUT=null;baseOn=true;$("baseEnable").checked=true;$("baseinfo").style.display="none";
   loadedLuts.forEach(lk=>lk.active=false);loadedLutsRender();
   if(typeof updateSecSwatch==="function")updateSecSwatch();
@@ -4149,6 +4775,10 @@ function syncLoadedLutSection(){
   if(!loadedLutSection)return;
   const hasLut=!!baseLUT||loadedLuts.length>0;
   loadedLutSection.classList.toggle("closed",!hasLut);
+}
+function expandSidebarSectionForElement(element){
+  const section=element&&element.closest?element.closest("aside section"):null;
+  if(section)section.classList.remove("closed");
 }
 // Default sidebar layout: Pipeline collapsed; My LUTs and Automated
 // Corrections expanded; every subsequent grading section collapsed.
@@ -4830,47 +5460,200 @@ function serialiseLutStack(){
    Works on the photo after base LUT and loaded LUTs. Results are written directly into
    the visible grading sliders; grade() consumes those controls without an auto layer. */
 const AUTO_KEYS=["exposure","recover","colour","wb"];
+function srgbToLinear(v){
+  v=clamp(v);
+  return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4);
+}
 function gradeSamples(){
-  const d=images[cur].data.data,L=[],C=[];
-  for(let i=0;i<d.length;i+=32){
-    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
-    if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
-    if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
-    if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
-    L.push(.2126*r+.7152*g+.0722*b);C.push(Math.max(r,g,b)-Math.min(r,g,b));
+  const image=images[cur],d=image.data.data,L=[],C=[],rgb=[];
+  // Spatially stratified sampling avoids the fixed every-eighth-pixel pattern,
+  // which can alias with repeating textures, screens or fine architectural detail.
+  const width=image.data.width||image.width||Math.floor(Math.sqrt(d.length/4));
+  const height=image.data.height||image.height||Math.ceil((d.length/4)/width);
+  const step=Math.max(1,Math.ceil(Math.sqrt((width*height)/30000)));
+  for(let gy=0;gy<height;gy+=step){
+    for(let gx=0;gx<width;gx+=step){
+      const tx=Math.floor(gx/step),ty=Math.floor(gy/step);
+      const ox=Math.min(step-1,Math.floor((((tx*17+ty*29+11)%31)/31)*step));
+      const oy=Math.min(step-1,Math.floor((((tx*23+ty*13+7)%29)/29)*step));
+      const x=Math.min(width-1,gx+ox),y=Math.min(height-1,gy+oy);
+      const i=(y*width+x)*4;if(i+2>=d.length)continue;
+      let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+      if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+      if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
+      if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
+      // Match grade(): image-adaptive RGB normalisation is applied after LUTs.
+      r=clamp(r*normalisationGains[0]);g=clamp(g*normalisationGains[1]);b=clamp(b*normalisationGains[2]);
+      L.push(.2126*r+.7152*g+.0722*b);C.push(Math.max(r,g,b)-Math.min(r,g,b));
+      rgb.push([r,g,b]);
+    }
   }
-  return{L:Float32Array.from(L),C:Float32Array.from(C)};
+  return{L:Float32Array.from(L),C:Float32Array.from(C),rgb};
 }
 const pctl=(a,q)=>Float32Array.from(a).sort()[Math.min(a.length-1,Math.floor(q*a.length))];
 const fracOf=(a,fn)=>{let n=0;for(const v of a)if(fn(v))n++;return n/a.length;};
 function computeAutoAdj(key){
   const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
-  if(key==="wb"){
-    const d=images[cur].data.data;let sr=0,sg=0,sb=0,n=0;
-    for(let i=0;i<d.length;i+=16){
-      const mx=Math.max(d[i],d[i+1],d[i+2]);
-      if(mx>=250||mx<12)continue;                    // ignore clipped and near-black pixels
-      sr+=d[i];sg+=d[i+1];sb+=d[i+2];n++;
-    }
-    if(!n)return null;
-    let c=[sr/n/255,sg/n/255,sb/n/255];
-    if(state.logMode)c=c.map(vlog2rec709);
-    if(baseLUT&&baseOn)c=sampleBase(c[0],c[1],c[2]);
-    if(!applyingLookStack)c=applyActiveLooks(c[0],c[1],c[2]);
-    const t=(c[2]-c[0])/2,ti=((c[0]+t+c[2]-t)/2-c[1])/1.5;
-    return{temp:cl(t*300,-100,100),tint:cl(ti*300,-100,100)};
-  }
   const sm=gradeSamples(),L=sm.L,C=sm.C;
-  if(key==="exposure")return{exposure:cl(100*Math.log2(.46/Math.max(pctl(L,.5),.03)),-60,60)};
-  if(key==="recover"){
-    // Exposure is already materialised in the visible slider; never add a hidden offset.
-    const gain=Math.pow(2,state.exposure/100);
-    const hi=fracOf(L,v=>v*gain>.9),lo=fracOf(L,v=>v*gain<.1),p1=pctl(L,.01)*gain;
-    return{highlights:-Math.min(70,hi*350),shadows:Math.min(70,lo*300),blacks:p1>.05?-Math.min(40,(p1-.05)*250):0};
+  if(key==="wb"){
+    if(!sm.rgb||!sm.rgb.length)return null;
+    const candidates=[];
+    for(const encoded of sm.rgb){
+      const r=srgbToLinear(encoded[0]),g=srgbToLinear(encoded[1]),b=srgbToLinear(encoded[2]);
+      const y=.2126*r+.7152*g+.0722*b;
+      if(y<.035||y>.78)continue;
+      const mean=(r+g+b)/3;
+      if(mean<1e-5)continue;
+      // Reject chromatic objects using linear-channel chromaticity distance.
+      const neutrality=Math.sqrt(((r/mean-1)**2+(g/mean-1)**2+(b/mean-1)**2)/3);
+      if(neutrality>.19)continue;
+      candidates.push({r,g,b,y,neutrality});
+    }
+    const candidateShare=candidates.length/sm.rgb.length;
+    if(candidates.length<Math.max(30,sm.rgb.length*.015))return{temp:0,tint:0,
+      wbAnalysis:{confidence:0,candidateShare,neutralSamples:candidates.length}};
+    const median=values=>{
+      values.sort((a,b)=>a-b);
+      return values[Math.floor((values.length-1)*.5)];
+    };
+    // Median log-chromaticity ratios are robust to luminance variation and
+    // avoid combining unrelated channel medians into a synthetic RGB triplet.
+    const rg=median(candidates.map(p=>Math.log(Math.max(p.r,1e-6)/Math.max(p.g,1e-6))));
+    const bg=median(candidates.map(p=>Math.log(Math.max(p.b,1e-6)/Math.max(p.g,1e-6))));
+    const neutralityMedian=median(candidates.map(p=>p.neutrality));
+    const confidence=cl((candidateShare-.015)/.18,0,1)*
+      cl((.19-neutralityMedian)/.14,.15,1)*
+      cl(candidates.length/220,.2,1);
+    const confidenceScale=.85*confidence;
+    return{
+      temp:cl((bg-rg)*115*confidenceScale,-100,100),
+      tint:cl((rg+bg)*72*confidenceScale,-100,100),
+      wbAnalysis:{confidence,candidateShare,neutralityMedian,neutralSamples:candidates.length}
+    };
   }
-  let mc=0;for(const v of C)mc+=v;mc/=C.length;      // colour
-  const vib=cl((.22-mc)*260,-20,50);
-  return{vib,sat:mc<.10?8:0,skin:vib>10?35:0};
+  if(key==="exposure"){
+    if(!L.length)return null;
+    // Sort once: all scene statistics below are taken from the same sample set.
+    const sorted=Array.from(L).sort((a,b)=>a-b);
+    const q=p=>sorted[Math.min(sorted.length-1,Math.floor(p*(sorted.length-1)))];
+    const currentGain=Math.pow(2,state.exposure/100);
+    const p10=q(.10)*currentGain,p50=q(.50)*currentGain,p90=q(.90)*currentGain;
+    const p95=q(.95)*currentGain,p99=q(.99)*currentGain;
+    const highKey=p50>.56&&p10>.27;
+    const lowKey=p50<.31&&p90<.72;
+    // Preserve intentional high-/low-key scenes instead of forcing every
+    // image toward one universal median brightness.
+    const target=highKey?.57:(lowKey?.34:.46);
+    const rawEV=Math.log2(target/Math.max(p50,.025));
+    // Protect the upper tonal tail. P99 is used rather than the absolute
+    // maximum so isolated specular highlights do not dictate global exposure.
+    const highlightHeadroom=p99>.001?Math.log2(.985/p99):1.2;
+    const upperEV=cl( Math.min(1.2,highlightHeadroom),-1.2,1.2);
+    const lowerEV=-1.2;
+    const confidence=cl((p90-p10)/.42,.35,1);
+    const limitedEV=cl(rawEV,lowerEV,upperEV);
+    return{exposure:cl(limitedEV*(.72+.28*confidence)*100,-120,120),
+      exposureAnalysis:{p10,p50,p90,p95,p99,target,highKey,lowKey,highlightHeadroom}};
+  }
+  if(key==="recover"){
+    // Exposure is already materialised in the visible slider; analyse the
+    // post-exposure distribution exactly once to avoid hidden EV offsets.
+    const gain=Math.pow(2,state.exposure/100);
+    const sorted=Array.from(L,v=>v*gain).sort((a,b)=>a-b);
+    if(!sorted.length)return null;
+    const q=p=>sorted[Math.min(sorted.length-1,Math.floor(p*(sorted.length-1)))];
+    const p01=q(.01),p05=q(.05),p10=q(.10);
+    const p90=q(.90),p95=q(.95),p99=q(.99),p995=q(.995);
+    const frac=(test)=>{let n=0;for(const v of sorted)if(test(v))n++;return n/sorted.length;};
+    const nearWhite=frac(v=>v>=.985),nearBlack=frac(v=>v<=.015);
+    const highlightTail=Math.max(0,p995-p90);
+    const shadowSpread=Math.max(.015,p10-p01);
+    // Continuous severity scores: isolated clipped/specular pixels have less
+    // influence than a broad, compressed highlight or shadow distribution.
+    const highlightSeverity=clamp((p95-.72)/.25,0,1)*.55+
+      clamp((p99-.86)/.13,0,1)*.30+
+      clamp((nearWhite-.002)/.08,0,1)*.15;
+    const shadowSeverity=clamp((.28-p10)/.26,0,1)*.55+
+      clamp((.16-p05)/.15,0,1)*.30+
+      clamp((nearBlack-.002)/.12,0,1)*.15;
+    // Do not mistake already clipped source values for recoverable detail.
+    // The controls reveal remaining tonal separation; they cannot reconstruct
+    // information absent from the source pixels.
+    const highlightRecoverability=clamp((1-nearWhite/.12),.15,1);
+    const shadowRecoverability=clamp((1-nearBlack/.18),.15,1);
+    // Coordinate slider recovery with active curve-based recovery/roll-off.
+    const hiOverlap=(state.curveAuto.film?1:0)+(state.curveAuto.curveShoulder?1:0);
+    const shOverlap=(state.curveAuto.shadowLift?1:0)+(state.curveAuto.midLift?1:0);
+    const highlights=-clamp(70*highlightSeverity*highlightRecoverability/(1+.65*hiOverlap),0,70);
+    const shadows=clamp(65*shadowSeverity*shadowRecoverability/(1+.75*shOverlap),0,65);
+    // Lower blacks only when the black floor is elevated across a meaningful
+    // part of the image; ignore a small number of bright/dark outliers.
+    const blackFloor=clamp((p01-.018)/.12,0,1);
+    const blackArea=clamp((nearBlack-.002)/.08,0,1);
+    const blacks=-clamp(32*blackFloor*(.65+.35*blackArea)/(1+.45*shOverlap),0,32);
+    return{highlights,shadows,blacks,
+      recoverAnalysis:{p01,p05,p10,p90,p95,p99,p995,nearWhite,nearBlack,
+        highlightTail,shadowSpread,highlightSeverity,shadowSeverity,
+        highlightRecoverability,shadowRecoverability}};
+  }
+  // Perceptual colour analysis in OKLCh. RGB samples have already passed
+  // through the active base/loaded LUT pipeline; convert those display-linear
+  // values to OKLab before estimating chroma and hue.
+  const oklab=(r,g,b)=>{
+    r=srgbToLinear(r);g=srgbToLinear(g);b=srgbToLinear(b);
+    const l=Math.cbrt(.4122214708*r+.5363325363*g+.0514459929*b);
+    const m=Math.cbrt(.2119034982*r+.6806995451*g+.1073969566*b);
+    const ss=Math.cbrt(.0883024619*r+.2817188376*g+.6299787005*b);
+    return{
+      L:.2104542553*l+.793617785*m-.0040720468*ss,
+      a:1.9779984951*l-2.428592205*m+.4505937099*ss,
+      b:.0259040371*l+.7827717662*m-.808675766*ss
+    };
+  };
+  const chroma=[],skinCandidates=[];
+  for(let i=0;i<L.length;i++){
+    const c=C[i];
+    // Reconstruct RGB is not possible from L/C alone; use source samples
+    // again at the same spatially stratified positions for hue and OKLab.
+    // The sample cache is populated by gradeSamples when available.
+    const rgb=sm.rgb&&sm.rgb[i];
+    if(!rgb)continue;
+    const lab=oklab(rgb[0],rgb[1],rgb[2]);
+    const ch=Math.hypot(lab.a,lab.b);
+    chroma.push(ch);
+    const hue=(Math.atan2(lab.b,lab.a)*180/Math.PI+360)%360;
+    if(lab.L>.36&&lab.L<.86&&ch>.045&&ch<.19&&
+       ((hue>=22&&hue<=72)||(hue>=345&&hue<360))){
+      skinCandidates.push({L:lab.L,C:ch,hue});
+    }
+  }
+  if(!chroma.length){
+    const mc=C.length?C.reduce((a,v)=>a+v,0)/C.length:0;
+    return{vib:cl((.22-mc)*260,-20,50),sat:mc<.10?8:0,skin:0};
+  }
+  chroma.sort((a,b)=>a-b);
+  const quantile=p=>chroma[Math.min(chroma.length-1,Math.floor(p*(chroma.length-1)))];
+  const c25=quantile(.25),c50=quantile(.50),c75=quantile(.75);
+  const neutralShare=chroma.filter(v=>v<.025).length/chroma.length;
+  const highChromaShare=chroma.filter(v=>v>.18).length/chroma.length;
+  const vib=cl((.105-c50)*360,-18,42);
+  const sat=cl((.075-c75)*110,-8,12)*(1-highChromaShare);
+  const skinShare=skinCandidates.length/chroma.length;
+  // Skin protection is enabled only when a meaningful, coherent warm-hue
+  // population exists; it is deliberately not inferred from the vibrance value.
+  const skinHueMedian=skinCandidates.length
+    ?skinCandidates.map(v=>v.hue).sort((a,b)=>a-b)[Math.floor(skinCandidates.length/2)]:0;
+  const hueRad=skinCandidates.map(v=>v.hue*Math.PI/180);
+  const hueConcentration=hueRad.length?Math.hypot(
+    hueRad.reduce((a,v)=>a+Math.cos(v),0)/hueRad.length,
+    hueRad.reduce((a,v)=>a+Math.sin(v),0)/hueRad.length):0;
+  const skinConfidence=cl((skinShare-.035)/.18,0,1)*
+    cl((skinCandidates.length>30?1:skinCandidates.length/30),0,1)*
+    cl((hueConcentration-.35)/.55,0,1)*
+    (skinHueMedian>=22&&skinHueMedian<=72?1:.5);
+  const skin=skinConfidence>.55?cl(18*skinConfidence,0,18):0;
+  return{vib,sat,skin,
+    colourAnalysis:{c25,c50,c75,neutralShare,highChromaShare,skinShare,skinConfidence}};
 }
 function migrateLegacyAutoAdjustments(){
   state.curveAutoData=state.curveAutoData||{};
