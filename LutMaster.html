@@ -46,6 +46,9 @@
   header button:disabled{opacity:.4;cursor:default}
   #helpBtn{width:28px;height:28px;flex:0 0 28px;padding:0;border-radius:50%;font:600 14px var(--mono);letter-spacing:0;color:var(--orange-hi);border-color:var(--line-hi)}
   #helpBtn:hover{color:var(--text);border-color:var(--orange)}
+  #fullscreenBtn{width:28px;height:28px;flex:0 0 28px;padding:0;border-radius:50%;font:600 16px var(--mono);letter-spacing:0;color:var(--orange-hi);border-color:var(--line-hi)}
+  #fullscreenBtn:hover{color:var(--text);border-color:var(--orange)}
+  #fullscreenBtn:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
   #previewQualityControl{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font:10px var(--mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
   #previewQualityBtn{min-width:0;height:28px;padding:0 10px;border:1px solid var(--line-hi);border-radius:3px;background:var(--panel2);color:var(--dim);font:600 10px var(--mono);cursor:pointer}
   #previewQualityBtn[aria-pressed="true"]{border-color:var(--orange);color:var(--orange-hi);background:var(--orange-dim)}
@@ -258,6 +261,11 @@
   /* --- colour-balance wheels --- */
   .cbwheels{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin:4px 0 8px;width:100%;min-width:0}
   .cbwheel-wrap{display:flex;flex-direction:column;align-items:stretch;gap:6px;flex:none;width:100%;min-width:0}
+  .cbwheel-wrap{position:relative}
+  .cb-hover-marker{position:absolute;left:50%;top:50%;width:12px;height:12px;
+    border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1.5px rgba(0,0,0,.9),0 0 5px rgba(0,0,0,.8);
+    transform:translate(-50%,-50%);pointer-events:none;z-index:3;display:none}
+
   .cbwheel{width:100%;height:auto;aspect-ratio:1/1;max-width:none;border:1px solid var(--line);border-radius:50%;cursor:crosshair;touch-action:none;background:#0a0a0a;display:block}
   .cbwheel-label{font:11px var(--mono);color:var(--dim);letter-spacing:.03em;text-transform:uppercase;text-align:center}
   .cbwheel-nudges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;max-width:none}
@@ -438,6 +446,7 @@
 <p>Create your Style on all Devices</p>
 <span class="spacer"></span>
 <button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" id="helpBtn" title="Quick help" type="button">?</button>
+<button aria-label="Enter fullscreen" id="fullscreenBtn" title="Enter fullscreen mode" type="button">⛶</button>
 <label id="previewQualityControl" title="Standard preview adapts up to 2×; Full uses original image resolution as far as the display and zoom allow.">
   <button aria-pressed="false" id="previewQualityBtn" type="button" title="Toggle between standard adaptive preview and full-resolution preview">Std Resolution / Full Resolution</button>
 </label>
@@ -665,9 +674,9 @@
 <section class="closed">
 <h2 class="has-enable"><label class="section-enable"><input aria-label="Enable Color Grading" checked="" data-enable="colorBalance" title="Enable or disable Color Grading" type="checkbox"/></label>Color grading <button class="reset" id="cbReset" title="Reset all three colour wheels to neutral and restore Blending to 50 and Balance to 0.">reset</button></h2>
 <div class="cbwheels">
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbSh" title="Shadows colour wheel. Drag the marker to set shadow hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Shadows</div><div class="cbwheel-nudges" data-wheel="shadows"><button type="button" data-move="hue-down" title="Rotate this wheel’s hue 5° counter-clockwise without changing saturation.">↶ Hue</button><button type="button" data-move="sat-up" title="Increase this wheel’s saturation by a small step; hue stays unchanged.">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate this wheel’s hue 5° clockwise without changing saturation.">Hue ↷</button><button type="button" data-move="sat-down" title="Decrease this wheel’s saturation by a small step; hue stays unchanged.">－ Sat</button></div></div>
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbMd" title="Midtones colour wheel. Drag the marker to set midtone hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Midtones</div><div class="cbwheel-nudges" data-wheel="midtones"><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">↶ Hue</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate hue clockwise">Hue ↷</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
-<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbHi" title="Highlights colour wheel. Drag the marker to set highlight hue and saturation. Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Highlights</div><div class="cbwheel-nudges" data-wheel="highlights"><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">↶ Hue</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="hue-up" title="Rotate hue clockwise">Hue ↷</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbSh" title="Shadows colour wheel. Drag to set shadow hue and saturation (maximum 50%). Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Shadows</div><div class="cbwheel-nudges" data-wheel="shadows"><button type="button" data-move="hue-up" title="Rotate this wheel’s hue 5° counter-clockwise without changing saturation.">↶ Hue</button><button type="button" data-move="hue-down" title="Rotate this wheel’s hue 5° clockwise without changing saturation.">Hue ↷</button><button type="button" data-move="sat-up" title="Increase this wheel’s saturation by a small step; hue stays unchanged.">＋ Sat</button><button type="button" data-move="sat-down" title="Decrease this wheel’s saturation by a small step; hue stays unchanged.">－ Sat</button></div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbMd" title="Midtones colour wheel. Drag to set midtone hue and saturation (maximum 50%). Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Midtones</div><div class="cbwheel-nudges" data-wheel="midtones"><button type="button" data-move="hue-up" title="Rotate hue clockwise">↶ Hue</button><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">Hue ↷</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
+<div class="cbwheel-wrap"><canvas class="cbwheel" height="192" id="cbHi" title="Highlights colour wheel. Drag to set highlight hue and saturation (maximum 50%). Double-click to reset this wheel to neutral." width="192"></canvas><div class="cbwheel-label">Highlights</div><div class="cbwheel-nudges" data-wheel="highlights"><button type="button" data-move="hue-up" title="Rotate hue clockwise">↶ Hue</button><button type="button" data-move="hue-down" title="Rotate hue counter-clockwise">Hue ↷</button><button type="button" data-move="sat-up" title="Move point radially outward; increase saturation">＋ Sat</button><button type="button" data-move="sat-down" title="Move point radially inward; decrease saturation">－ Sat</button></div></div>
 </div>
 <div class="row"><label>Blending</label><input id="cbBlending" max="100" min="0" title="Control how much the shadow, midtone and highlight grading ranges overlap. Lower values separate the ranges; higher values create smoother transitions." type="range" value="50"/><input class="num" title="Adjust overlap between tonal ranges." type="number" value="50"/></div>
 <div class="row"><label>Balance</label><input id="cbBalance" max="100" min="-100" title="Shift color grading emphasis toward shadows (negative) or highlights (positive)." type="range" value="0"/><input class="num" title="Shift the overall colour-grading emphasis: negative values favour shadows, positive values favour highlights, and 0 is neutral." type="number" value="0"/></div>
@@ -845,6 +854,39 @@ function closeHelp(){
   $("helpBtn").focus();
 }
 $("helpBtn").addEventListener("click",openHelp);
+/* ================= fullscreen toggle ================= */
+const fullscreenBtn=$("fullscreenBtn");
+function isFullscreen(){
+  return !!(document.fullscreenElement||document.webkitFullscreenElement);
+}
+function syncFullscreenButton(){
+  const active=isFullscreen();
+  fullscreenBtn.textContent=active?"⛶":"⛶";
+  fullscreenBtn.setAttribute("aria-label",active?"Exit fullscreen":"Enter fullscreen");
+  fullscreenBtn.setAttribute("aria-pressed",active?"true":"false");
+  fullscreenBtn.title=active?"Exit fullscreen mode (Esc)":"Enter fullscreen mode";
+}
+async function toggleFullscreen(){
+  try{
+    if(isFullscreen()){
+      if(document.exitFullscreen) await document.exitFullscreen();
+      else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }else{
+      const target=document.documentElement;
+      if(target.requestFullscreen) await target.requestFullscreen();
+      else if(target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+      else throw new Error("Fullscreen is not supported by this browser.");
+    }
+  }catch(err){
+    console.warn("Fullscreen toggle failed:",err);
+    fullscreenBtn.title="Fullscreen is unavailable or was denied by the browser";
+  }
+  syncFullscreenButton();
+}
+fullscreenBtn.addEventListener("click",toggleFullscreen);
+document.addEventListener("fullscreenchange",syncFullscreenButton);
+document.addEventListener("webkitfullscreenchange",syncFullscreenButton);
+syncFullscreenButton();
 $("helpClose").addEventListener("click",closeHelp);
 helpModal.addEventListener("click",e=>{if(e.target===helpModal)closeHelp();});
 helpDialog.addEventListener("click",e=>e.stopPropagation());
@@ -1347,8 +1389,9 @@ function grade(r,g,b){
       const dx=reg.st.x,dy=reg.st.y;
       const dist=Math.sqrt(dx*dx+dy*dy);
       if(dist<0.001)continue;
-      const hue=((Math.atan2(-dy,dx)*180/Math.PI)+360)%360;
-      const sat=Math.min(1,dist);
+      // cbState stores Cartesian coordinates (positive Y upwards).
+      const hue=((Math.atan2(dy,dx)*180/Math.PI)+360)%360;
+      const sat=Math.min(1,dist)*0.5;
       const[tr,tg,tb]=hsl2rgb(hue,sat,0.5);
       const blackProtection=sstep(0.018,0.16,lcb);
       const pixelChroma=(Math.max(r,g,b)-Math.min(r,g,b))/Math.max(.035,Math.max(r,g,b));
@@ -2886,7 +2929,7 @@ function applyAutomaticColorHarmony(shape,options={}){
   const delta=(a,b)=>((a-b+540)%360)-180;
   const mixHue=(a,b,t)=>wrap(a+delta(b,a)*t);
   const intensity=colorHarmonyStrength/100;
-  if(intensity>0){
+  {
     const anchorRegion=analysis.dominant;
     const anchorHue=analysis.tones[anchorRegion].hue;
     const others=regions.filter(r=>r!==anchorRegion);
@@ -2942,50 +2985,20 @@ function applyAutomaticColorHarmony(shape,options={}){
         target[others[1]]=mixHue(target[others[1]],wrap(anchorHue+240),.65);
     }
 
-    const radii={
-      line:{shadows:.48,midtones:.37,highlights:.27},
-      three:{shadows:.43,midtones:.38,highlights:.34},
-      y:{shadows:.42,midtones:.38,highlights:.42},
-      tri:{shadows:.40,midtones:.40,highlights:.40}
-    }[shape];
+    // Use the complete normalized wheel radius (0..1). Shadows are
+    // deliberately less saturated than midtones and highlights.
+    // Harmony buttons determine hue directions only. The intensity slider
+    // alone controls saturation over the full manually reachable wheel range.
+    // Shadows are intentionally limited to 50% of the other tonal ranges.
     for(const region of regions){
-      const tone=analysis.tones[region],base=colorHarmonyBaseline[region];
-      const confidence=.78+.22*clamp(tone.confidence,0,1);
-      const chromaFactor=.88+.12*clamp((tone.sat-.012)/.12,0,1);
-      const tonalFactor=region==="shadows"?.94:(region==="highlights"?.97:1);
-      // Every wheel receives a useful non-zero grade. Neutral protection is
-      // intentionally handled per pixel in grade(), not by collapsing the
-      // wheel vector here when a tonal band contains little chroma.
-      const radius=clamp(radii[region]*confidence*chromaFactor*tonalFactor,.24,.68);
+      const radius=intensity*(region==="shadows"?.5:1);
       const angle=target[region]*Math.PI/180;
-      const gx=Math.cos(angle)*radius,gy=Math.sin(angle)*radius;
-      let nextX=base.x+(gx-base.x)*intensity;
-      let nextY=base.y+(gy-base.y)*intensity;
-      // Hard guarantee: every selected harmony assigns a non-zero vector to
-      // every tonal wheel. Interpolation against a previous/manual position
-      // can otherwise cancel the generated vector almost exactly.
-      const minWheelRadius=.22*intensity;
-      const nextRadius=Math.hypot(nextX,nextY);
-      if(nextRadius<minWheelRadius){
-        const targetRadius=Math.max(radius,minWheelRadius);
-        nextX=Math.cos(angle)*targetRadius;
-        nextY=Math.sin(angle)*targetRadius;
-      }
       cbState[region]={
-        x:clamp(nextX,-1,1),
-        y:clamp(nextY,-1,1)
+        x:Math.cos(angle)*radius,
+        y:Math.sin(angle)*radius
       };
     }
-    // Defensive invariant for all four harmony modes.
-    for(const region of regions){
-      const p=cbState[region],m=Math.hypot(p.x,p.y);
-      if(m<.22*intensity){
-        const a=target[region]*Math.PI/180;
-        const r=.22*intensity;
-        p.x=Math.cos(a)*r;p.y=Math.sin(a)*r;
-      }
-    }
-  }else restoreColorWheels(colorHarmonyBaseline);
+  }
   activeColorHarmony=shape;syncColorHarmonyButtons();
   expandSidebarSectionForElement($("cbSh"));
   regions.forEach((region,index)=>drawColorWheel($(["cbSh","cbMd","cbHi"][index]),cbState[region].x,cbState[region].y));
@@ -3027,7 +3040,7 @@ function drawColorWheel(canvas,sx,sy){
       const i=(py*W+px)*4;
       if(dist<=1){
         const angle=((Math.atan2(-dy,dx)*180/Math.PI)+360)%360;
-        const sat=dist;
+        const sat=dist*0.5;
         const[rr,gg,bb]=hsl2rgb(angle,sat,0.5);
         img.data[i]=rr*255;
         img.data[i+1]=gg*255;
@@ -3071,9 +3084,11 @@ function drawColorWheel(canvas,sx,sy){
   c.beginPath();c.arc(cx,cy,mag*r,0,Math.PI*2);c.stroke();
   c.restore();
 
-  // Fill marker with the wheel colour at the selected hue/saturation.
-  const hue=((Math.atan2(-syClamped,sxClamped)*180/Math.PI)+360)%360;
-  const [pr,pg,pb]=hsl2rgb(hue,mag,0.5);
+  // State coordinates use Cartesian Y (positive upwards), matching drag input
+  // and the wheel pixels' atan2(-canvasY, X) hue convention.
+  // Keep marker colour and grading hue extraction on this same orientation.
+  const hue=((Math.atan2(syClamped,sxClamped)*180/Math.PI)+360)%360;
+  const [pr,pg,pb]=hsl2rgb(hue,mag*0.5,0.5);
   c.fillStyle=`rgb(${Math.round(pr*255)},${Math.round(pg*255)},${Math.round(pb*255)})`;
   c.strokeStyle="#fff";
   c.lineWidth=2.25;
@@ -3093,8 +3108,61 @@ function resizeColorWheelCanvas(canvas,region){
   const point=cbState[region];
   drawColorWheel(canvas,point.x,point.y);
 }
+const colorWheelHoverMarkers={};
+const colorWheelCanvases={};
+function canvasForColorWheel(region){return colorWheelCanvases[region];}
+function ensureColorWheelHoverMarker(canvas,region){
+  const wrap=canvas.parentElement;
+  let marker=wrap.querySelector(".cb-hover-marker");
+  if(!marker){
+    marker=document.createElement("div");
+    marker.className="cb-hover-marker";
+    marker.setAttribute("aria-hidden","true");
+    wrap.appendChild(marker);
+  }
+  colorWheelHoverMarkers[region]=marker;
+}
+function clearColorWheelHover(){
+  Object.values(colorWheelHoverMarkers).forEach(marker=>{marker.style.display="none";});
+}
+function updateColorWheelHover(r,g,b){
+  const [h,sat,light]=rgb2hsl(r,g,b);
+  const luma=.2126*r+.7152*g+.0722*b;
+  const blend=clamp((state.cbBlending??50)/100);
+  const balance=Math.max(-100,Math.min(100,state.cbBalance||0))/100;
+  const pivot=clamp(.5-balance*.22,.18,.82);
+  const halfWidth=.055+blend*.20;
+  const sstep=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t);};
+  const masks={
+    shadows:1-sstep(pivot-halfWidth,pivot+halfWidth,luma),
+    midtones:Math.max(0,1-Math.abs(luma-pivot)/Math.max(.12,halfWidth*1.65)),
+    highlights:sstep(pivot-halfWidth,pivot+halfWidth,luma)
+  };
+  const region=Object.keys(masks).reduce((best,key)=>masks[key]>masks[best]?key:best,"shadows");
+  const marker=colorWheelHoverMarkers[region];
+  if(!marker)return;
+  clearColorWheelHover();
+  // Map the sampled pixel to the wheel's HSL saturation scale (0..50%).
+  // Keep the complete marker inside the circular wheel, including its border.
+  const rect=canvasForColorWheel(region).getBoundingClientRect();
+  const canvas=canvasForColorWheel(region);
+  const markerRadius=(marker.offsetWidth||16)/2;
+  const wheelRadius=Math.max(0,Math.min(rect.width,rect.height)/2-markerRadius-1);
+  const radius=Math.min(1,sat/.5);
+  const cx=canvas.offsetLeft+rect.width/2;
+  const cy=canvas.offsetTop+rect.height/2;
+  const x=cx+Math.cos(h*Math.PI/180)*radius*wheelRadius;
+  const y=cy-Math.sin(h*Math.PI/180)*radius*wheelRadius;
+  marker.style.left=x+"px";
+  marker.style.top=y+"px";
+  // Use the exact 5×5 mean RGB as the marker fill, not a hue approximation.
+  marker.style.backgroundColor=`rgb(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)})`;
+  marker.style.display="block";
+}
 function setupColorWheel(canvasId,region){
   const canvas=$(canvasId);
+  colorWheelCanvases[region]=canvas;
+  ensureColorWheelHoverMarker(canvas,region);
   const radius=Math.min(canvas.width,canvas.height)/2-2;
   let dragging=false;
   const updateFromEvent=e=>{
@@ -3161,6 +3229,8 @@ document.querySelectorAll(".cbwheel-nudges").forEach(group=>{
     const region=group.dataset.wheel,move=button.dataset.move;
     const p=cbState[region];
     let hue=Math.atan2(p.y,p.x),sat=Math.hypot(p.x,p.y);
+    // All wheels use the same Cartesian hue direction:
+    // hue-up is counter-clockwise; hue-down is clockwise.
     if(move==="hue-up")hue+=5*Math.PI/180;
     else if(move==="hue-down")hue-=5*Math.PI/180;
     else if(move==="sat-up")sat=Math.min(1,sat+0.04);
@@ -3488,6 +3558,7 @@ view.addEventListener("pointermove",e=>{
   }
   hoverCurveValues={r:r/n/255,g:g/n/255,b:b/n/255};
   hoverCurveValues.m=.2126*hoverCurveValues.r+.7152*hoverCurveValues.g+.0722*hoverCurveValues.b;
+  updateColorWheelHover(hoverCurveValues.r,hoverCurveValues.g,hoverCurveValues.b);
   drawCurves();
   const pi=$("pixinfo");
   if(pi&&lastOut&&cx>=0&&cx<src.width&&cy>=0&&cy<src.height){
@@ -3497,7 +3568,7 @@ view.addEventListener("pointermove",e=>{
 });
 view.addEventListener("pointerleave",()=>{
   if(!hoverCurveValues)return;
-  hoverCurveValues=null;drawCurves();
+  hoverCurveValues=null;clearColorWheelHover();drawCurves();
   const pi=$("pixinfo");if(pi)pi.textContent="";
 });
 viewwrap.addEventListener("wheel",e=>{
