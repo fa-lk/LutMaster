@@ -126,7 +126,7 @@
   #wipeline{position:absolute;top:0;bottom:0;width:2px;background:var(--orange-hi);display:none;pointer-events:none}
   #wipeline::after{content:"◂ original · graded ▸";position:absolute;top:6px;left:6px;font:9px var(--mono);letter-spacing:.08em;color:var(--orange-hi);white-space:nowrap;background:rgba(12,11,8,.75);padding:3px 6px;border-radius:2px}
   #curveSampleOverlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;transform-origin:top left;z-index:8;overflow:hidden}
-  #curveSampleCircle{position:absolute;left:0;top:0;width:5px;height:5px;box-sizing:border-box;border:1px solid rgba(255,190,105,.95);border-radius:50%;background:rgba(255,190,105,.10);box-shadow:0 0 0 1px rgba(0,0,0,.58);transform:translate(-50%,-50%)}
+  #curveSampleCircle{position:absolute;left:0;top:0;width:10px;height:10px;box-sizing:border-box;border:1px solid rgba(255,190,105,.95);border-radius:50%;background:rgba(255,190,105,.10);box-shadow:0 0 0 1px rgba(0,0,0,.58);transform:translate(-50%,-50%)}
   #stagebar{display:none;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:center}
   #stagebar button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em;transition:background .12s,border-color .12s,color .12s}
   #stagebar button:hover{color:var(--text);border-color:var(--line-hi);background:var(--panel3)}
@@ -1810,22 +1810,28 @@ function cacheHiresTile(key,canvas){
   }
 }
 function previewNeedsHires(){
-  if(cur<0||!images[cur]?.hiresSource)return false;
-  return !showOriginal&&!subjectGradeMode&&(previewQuality.full||previewZoom.scale>=1.35);
+  if(cur<0||!images[cur]?.hiresSource||subjectGradeMode)return false;
+  // Full Resolution also uses native-source tiles while temporarily viewing
+  // the original. Standard mode keeps its previous adaptive-preview behaviour.
+  return previewQuality.full||(!showOriginal&&previewZoom.scale>=1.35);
 }
 function scheduleHiresTiles(){
   if(!hiresLayer||cur<0){clearBackgroundProgress("hires");return;}
   clearTimeout(hiresRenderTimer);
   const token=++hiresRenderToken;
   clearBackgroundProgress("hires");
-  if(!previewNeedsHires()||!currentPreviewLut){
+  const originalCanRender=previewQuality.full&&showOriginal&&!$("wipeOn").checked&&!!images[cur]?.hiresSource;
+  if(!previewNeedsHires()||(!currentPreviewLut&&!originalCanRender)){
     for(const node of [...hiresLayer.children])if(node.dataset.clipOverlay!=="true")node.remove();
     return;
   }
   hiresRenderTimer=setTimeout(()=>renderVisibleHiresTiles(token),90);
 }
 async function renderVisibleHiresTiles(token){
-  const im=images[cur];if(!im?.hiresSource||!currentPreviewLut||token!==hiresRenderToken)return;
+  const im=images[cur];
+  const originalTiles=showOriginal&&!$("wipeOn").checked;
+  if(!im?.hiresSource||(!originalTiles&&!currentPreviewLut)||token!==hiresRenderToken)return;
+  const tileMode=originalTiles?"original":"graded";
   const source=im.hiresSource,ow=im.originalWidth,oh=im.originalHeight;
   const baseW=view.offsetWidth,baseH=view.offsetHeight;
   if(!ow||!oh||!baseW||!baseH)return;
@@ -1847,8 +1853,11 @@ async function renderVisibleHiresTiles(token){
   const sy1=Math.min(oh,Math.ceil(y1/baseH*oh/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
   const needed=[];
   for(let sy=sy0;sy<sy1;sy+=HIRES_TILE_SIZE)for(let sx=sx0;sx<sx1;sx+=HIRES_TILE_SIZE)needed.push({sx,sy,sw:Math.min(HIRES_TILE_SIZE,ow-sx),sh:Math.min(HIRES_TILE_SIZE,oh-sy)});
-  let completedTiles=0;if(needed.length)setBackgroundProgress("hires","Rendering detail preview",0);
-  const wanted=new Set(needed.map(t=>`${im.uid}:${previewGradeRevision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`));
+  let completedTiles=0;
+  const progressLabel=originalTiles?"Rendering original at full resolution":"Rendering detail preview";
+  if(needed.length)setBackgroundProgress("hires",progressLabel,0);
+  const cacheRevision=originalTiles?0:previewGradeRevision;
+  const wanted=new Set(needed.map(t=>`${im.uid}:${tileMode}:${cacheRevision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`));
   // Detach off-screen tiles but retain them in the bounded LRU cache.
   for(const node of [...hiresLayer.children]){
     if(node.dataset.clipOverlay==="true")continue;
@@ -1857,7 +1866,7 @@ async function renderVisibleHiresTiles(token){
   const plut=currentPreviewLut,N=currentPreviewLutSize,revision=previewGradeRevision;
   for(const t of needed){
     if(token!==hiresRenderToken||cur<0||images[cur]!==im||revision!==previewGradeRevision)return;
-    const key=`${im.uid}:${revision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`;
+    const key=`${im.uid}:${tileMode}:${cacheRevision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`;
     let item=hiresTileCache.get(key);
     if(item){
       item.used=performance.now();
@@ -1871,9 +1880,14 @@ async function renderVisibleHiresTiles(token){
       if(!tc)continue;
       tc.imageSmoothingEnabled=true;tc.drawImage(source,t.sx,t.sy,t.sw,t.sh,0,0,dw,dh);
       const pixels=tc.getImageData(0,0,dw,dh);
-      const gradedTile=await applyHiresTileLut(pixels,plut,N,revision);
-      if(token!==hiresRenderToken||revision!==previewGradeRevision)return;
-      tc.putImageData(applyTileClippingWarnings(gradedTile),0,0);
+      let displayTile=pixels;
+      if(!originalTiles){
+        displayTile=await applyHiresTileLut(pixels,plut,N,revision);
+        if(token!==hiresRenderToken||revision!==previewGradeRevision)return;
+        displayTile=applyTileClippingWarnings(displayTile);
+      }else if(token!==hiresRenderToken||revision!==previewGradeRevision)return;
+      // Original tiles deliberately bypass the grading LUT and clipping overlay.
+      tc.putImageData(displayTile,0,0);
       tile.style.left=(t.sx/ow*baseW)+"px";
       tile.style.top=(t.sy/oh*baseH)+"px";
       tile.style.width=(t.sw/ow*baseW)+"px";
@@ -1886,7 +1900,7 @@ async function renderVisibleHiresTiles(token){
       break;
     }
     // Yield between tiles to keep gestures and controls responsive.
-    completedTiles++;setBackgroundProgress("hires","Rendering detail preview",completedTiles/needed.length*100);
+    completedTiles++;setBackgroundProgress("hires",progressLabel,completedTiles/needed.length*100);
     await new Promise(resolve=>setTimeout(resolve,0));
   }
   clearBackgroundProgress("hires");
@@ -2044,6 +2058,7 @@ function refreshUIAfterLoad(){
   requestAnimationFrame(fitPreviewToStage);
 }
 function selectImage(i){
+  showOriginal=false;
   cur=i;
   clearHiresTileCache();
   updatePreviewQualityButton();
@@ -2283,7 +2298,8 @@ function commitPreviewOutput(out,plut,N,revision,clipBuffer=null,histogramBuffer
   currentPreviewLut=plut;currentPreviewLutSize=N;previewGradeRevision=revision;
   hiresTileCache.clear();hiresLayer.replaceChildren();
   const showClipLayer=!!clipBuffer&&$("clipOn").checked;
-  hiresLayer.style.display=showOriginal&&!$("wipeOn").checked&&!showClipLayer?"none":"block";
+  const showOriginalHires=previewQuality.full&&showOriginal&&!$("wipeOn").checked&&!!images[cur]?.hiresSource;
+  hiresLayer.style.display=showOriginal&&!$("wipeOn").checked&&!showClipLayer&&!showOriginalHires?"none":"block";
   hiresLayer.style.clipPath=$("wipeOn").checked?`inset(0 0 0 ${wipeX*100}%)`:"none";
   if($("clipOn").checked&&clipBuffer&&hiresLayer.style.display!=="none"){
     const clipCanvas=document.createElement("canvas");clipCanvas.width=out.width;clipCanvas.height=out.height;
@@ -2306,6 +2322,38 @@ function commitPreviewOutput(out,plut,N,revision,clipBuffer=null,histogramBuffer
   try{drawSubjectSelection();}catch(err){console.error("subject selection overlay:",err);}
   scheduleHiresTiles();
 }
+function setOriginalPreview(active){
+  const next=!!active;
+  if(cur<0||!images[cur]||showOriginal===next)return;
+  showOriginal=next;
+  const im=images[cur],wipe=$("wipeOn").checked;
+  if(next&&!wipe){
+    ctx.putImageData(im.data,0,0);
+  }else if(lastOut){
+    ctx.putImageData(lastOut,0,0);
+    if(wipe){
+      const px=Math.round(wipeX*im.data.width);
+      if(px>0)ctx.putImageData(im.data,0,0,0,0,px,im.data.height);
+    }
+    const hasClipOverlay=[...hiresLayer.children].some(node=>node.dataset.clipOverlay==="true");
+    if($("clipOn").checked&&!hasClipOverlay){
+      try{drawClipping(lastOut,wipeX,wipe);}catch(err){console.error("clipping overlay:",err);}
+    }
+  }else{
+    render();
+    return;
+  }
+  // Remove stale tiles from the previous display mode immediately. The bounded
+  // tile cache is retained, so cached source/graded tiles can be reattached.
+  for(const node of [...hiresLayer.children])if(node.dataset.clipOverlay!=="true")node.remove();
+  const hasClipOverlay=[...hiresLayer.children].some(node=>node.dataset.clipOverlay==="true")&&$("clipOn").checked;
+  const showOriginalHires=previewQuality.full&&next&&!wipe&&!!im.hiresSource;
+  hiresLayer.style.display=next&&!wipe&&!hasClipOverlay&&!showOriginalHires?"none":"block";
+  hiresLayer.style.clipPath=wipe?`inset(0 0 0 ${wipeX*100}%)`:"none";
+  positionWipe();
+  scheduleHiresTiles();
+}
+
 function enqueueHarmony(shape,options={}){
   if(cur<0||!images[cur])return;
   const intensity=clamp((+colorHarmonyIntensity.value||0)/100),preservation=clamp((+colorHuePreservation.value||0)/100);
@@ -2650,15 +2698,18 @@ function drawCurves(){
   }
 }
 let dragPt=null;
-let selectedCurvePoint=null,selectedCurveOriginal=null,curveImagePickMode=false;
+let selectedCurvePoint=null,selectedCurveOriginal=null,curveImagePickMode=false,pickMode=null;
 const curvePointStatus=$("curvePointStatus"),curveImagePickBtn=$("curveImagePick");
 const curveSampleOverlay=$("curveSampleOverlay"),curveSampleCircle=$("curveSampleCircle");
 let lastCurveSamplePointer=null;
 function updateCurveSampleOverlay(clientX=null,clientY=null){
   if(clientX!==null&&clientY!==null)lastCurveSamplePointer={x:clientX,y:clientY};
-  if(!curveSampleOverlay||!lastCurveSamplePointer||cur<0||!images[cur]||!images[cur].data){if(curveSampleOverlay)curveSampleOverlay.style.display="none";return;}
+  // The sample footprint is only shown while an image-sampling tool is active.
+  // Ordinary pointer hover still updates live curve values, but does not draw a cursor ring.
+  const sampleSelectionActive=curveImagePickMode||!!pickMode;
+  if(!curveSampleOverlay||!sampleSelectionActive||!lastCurveSamplePointer||cur<0||!images[cur]||!images[cur].data){if(curveSampleOverlay)curveSampleOverlay.style.display="none";return;}
   const src=images[cur].data,point=previewPoint({clientX:lastCurveSamplePointer.x,clientY:lastCurveSamplePointer.y});
-  const d=Math.max(1,5*view.offsetWidth/src.width),dh=Math.max(1,5*view.offsetHeight/src.height);
+  const d=Math.max(1,10*view.offsetWidth/src.width),dh=Math.max(1,10*view.offsetHeight/src.height);
   curveSampleCircle.style.width=d+"px";curveSampleCircle.style.height=dh+"px";
   curveSampleCircle.style.left=point.x+"px";curveSampleCircle.style.top=point.y+"px";
   curveSampleOverlay.style.display="block";
@@ -2701,22 +2752,31 @@ function curvePointNudge(kind,dir){
   }
   rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();
 }
+const IMAGE_SAMPLE_DIAMETER=10;
+function sampleCircularRGB(src,cx,cy,diameter=IMAGE_SAMPLE_DIAMETER){
+  const radius=diameter/2,extent=Math.ceil(radius),r2=radius*radius;
+  let sr=0,sg=0,sb=0,n=0,clipped=0;
+  for(let y=cy-extent;y<=cy+extent;y++){
+    if(y<0||y>=src.height)continue;
+    for(let x=cx-extent;x<=cx+extent;x++){
+      if(x<0||x>=src.width)continue;
+      const dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>r2)continue;
+      const i=(y*src.width+x)*4,r=src.data[i],g=src.data[i+1],b=src.data[i+2];
+      sr+=r;sg+=g;sb+=b;n++;
+      if(r>=254||g>=254||b>=254||(r<=2&&g<=2&&b<=2))clipped++;
+    }
+  }
+  return n?{r:sr/n/255,g:sg/n/255,b:sb/n/255,n,clipped:clipped/n}:{r:0,g:0,b:0,n:0,clipped:0};
+}
 function addCurvePointFromImage(e){
   if(cur<0||!images[cur]||!images[cur].data)return false;
   const point=previewPoint(e),src=images[cur].data;
   const x=Math.round(point.x/view.offsetWidth*(src.width-1));
   const y=Math.round(point.y/view.offsetHeight*(src.height-1));
-  const d=src.data;let r=0,g=0,b=0,n=0;
-  // Average a circular 5-source-pixel-diameter neighborhood centered on the cursor.
-  // The same circular footprint is used for the live graduation-curve hover sample.
-  // At image borders, average only pixels inside both the image and the circle.
-  for(let yy=y-2;yy<=y+2;yy++)for(let xx=x-2;xx<=x+2;xx++){
-    if(xx<0||xx>=src.width||yy<0||yy>=src.height)continue;
-    const dx=xx-x,dy=yy-y;if(dx*dx+dy*dy>6.25)continue;
-    const i=(yy*src.width+xx)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;
-  }
-  if(!n)return false;
-  const sample={r:r/n/255,g:g/n/255,b:b/n/255};
+  // Use the same circular 10-source-pixel footprint as the cursor indicator,
+  // eyedroppers and live graduation-curve hover sample.
+  const sample=sampleCircularRGB(src,x,y);
+  if(!sample.n)return false;
   sample.m=.2126*sample.r+.7152*sample.g+.0722*sample.b;
   const cx=clamp(sample[curveCh]);
   const original=curveOriginalSnapshot();
@@ -4647,12 +4707,12 @@ $("chartbtn1").addEventListener("click",makeTestChart);
 $("chartbtn2").addEventListener("click",makeTestChart);
 
 /* ================= eyedroppers ================= */
-let pickMode=null;
 function setPick(mode){
   pickMode=(pickMode===mode)?null:mode;
   view.classList.toggle("picking",!!pickMode);
   $("wbPick").classList.toggle("on",pickMode==="wb");
   $("secPick").classList.toggle("on",pickMode==="sec");
+  updateCurveSampleOverlay();
 }
 $("wbPick").addEventListener("click",()=>setPick("wb"));
 $("secPick").addEventListener("click",()=>setPick("sec"));
@@ -4660,25 +4720,13 @@ $("secPick").addEventListener("click",()=>setPick("sec"));
    sensor noise and JPEG blocking, which throws the white balance off. Standard
    eyedroppers behave the same way. Also reports whether the sample is usable:
    clipped or near-black patches carry no reliable colour information. */
-function samplePixel(e,radius){
+function samplePixel(e,diameter=IMAGE_SAMPLE_DIAMETER){
   const point=previewPoint(e),src=images[cur].data;
-  const R=(radius===undefined)?2:radius;   // 2 -> 5x5 patch
-  const cx=Math.max(0,Math.min(src.width-1,Math.round(point.x/view.offsetWidth*src.width)));
-  const cy=Math.max(0,Math.min(src.height-1,Math.round(point.y/view.offsetHeight*src.height)));
-  let sr=0,sg=0,sb=0,n=0,clipped=0;
-  for(let y=cy-R;y<=cy+R;y++){
-    if(y<0||y>=src.height)continue;
-    for(let x=cx-R;x<=cx+R;x++){
-      if(x<0||x>=src.width)continue;
-      const i=(y*src.width+x)*4;
-      const r8=src.data[i],g8=src.data[i+1],b8=src.data[i+2];
-      if(r8>=254||g8>=254||b8>=254||(r8<=2&&g8<=2&&b8<=2))clipped++;
-      sr+=r8;sg+=g8;sb+=b8;n++;
-    }
-  }
-  if(!n)return[0,0,0,{n:0,clipped:0,lum:0}];
-  let r=sr/n/255,g=sg/n/255,b=sb/n/255;
-  const info={n,clipped:clipped/n,lum:0.2126*r+0.7152*g+0.0722*b};
+  const cx=Math.max(0,Math.min(src.width-1,Math.round(point.x/view.offsetWidth*(src.width-1))));
+  const cy=Math.max(0,Math.min(src.height-1,Math.round(point.y/view.offsetHeight*(src.height-1))));
+  const sample=sampleCircularRGB(src,cx,cy,diameter);
+  let {r,g,b}=sample;
+  const info={n:sample.n,clipped:sample.clipped,lum:0.2126*r+0.7152*g+0.0722*b};
   if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
   if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
   if(!applyingLookStack)[r,g,b]=applyActiveLooks(r,g,b);
@@ -4753,7 +4801,7 @@ view.addEventListener("pointerdown",e=>{
   if(imageTouchPointers.size===2){
     e.preventDefault();imageGesture=imageGestureMetrics();
     imageGesture.scale=previewZoom.scale;imageGesture.panX=previewZoom.x;imageGesture.panY=previewZoom.y;
-    showOriginal=false;wipeDragging=false;render();
+    setOriginalPreview(false);wipeDragging=false;
   }
 },{passive:false});
 view.addEventListener("pointermove",e=>{
@@ -4791,13 +4839,13 @@ view.addEventListener("pointerdown",e=>{
     mousePan={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,
       originX:previewZoom.x,originY:previewZoom.y};
     try{view.setPointerCapture(e.pointerId);}catch(_){}
-    showOriginal=false;view.classList.add("panning");
+    setOriginalPreview(false);view.classList.add("panning");
     return;
   }
   if($("wipeOn").checked){
     wipeDragging=true;view.setPointerCapture(e.pointerId);
     const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
-  }else{showOriginal=true;render();}
+  }else{setOriginalPreview(true);}
 });
 view.addEventListener("pointermove",e=>{
   if(mousePan&&e.pointerId===mousePan.pointerId){
@@ -4843,14 +4891,11 @@ view.addEventListener("pointermove",e=>{
   updateCurveSampleOverlay(e.clientX,e.clientY);
   const point=previewPoint(e),src=images[cur].data;
   const cx=Math.round(point.x/view.offsetWidth*(src.width-1)),cy=Math.round(point.y/view.offsetHeight*(src.height-1));
-  let r=0,g=0,b=0,n=0;
-  // Match the add-point sampler: circular 5-source-pixel diameter.
-  for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++){
-    if(x<0||x>=src.width||y<0||y>=src.height)continue;
-    const dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>6.25)continue;
-    const i=(y*src.width+x)*4;r+=src.data[i];g+=src.data[i+1];b+=src.data[i+2];n++;
-  }
-  hoverCurveValues={r:r/n/255,g:g/n/255,b:b/n/255};
+  // Live curve hover uses the same circular 10-source-pixel sample footprint.
+  const sample=sampleCircularRGB(src,cx,cy);
+  const {r,g,b}=sample;
+  if(!sample.n)return;
+  hoverCurveValues={r,g,b};
   hoverCurveValues.m=.2126*hoverCurveValues.r+.7152*hoverCurveValues.g+.0722*hoverCurveValues.b;
   updateColorWheelHover(hoverCurveValues.r,hoverCurveValues.g,hoverCurveValues.b);
   drawCurves();
@@ -4895,7 +4940,7 @@ view.addEventListener("lostpointercapture",()=>{if(mousePan){mousePan=null;view.
 window.addEventListener("pointerup",e=>{
   finishMousePan(e);
   wipeDragging=false;
-  if(showOriginal){showOriginal=false;render();}
+  if(showOriginal)setOriginalPreview(false);
 });
 $("wipeOn").addEventListener("change",()=>{
   $("comparehint").textContent=$("wipeOn").checked?"Drag on the image to move the split":"Hold on the image to compare";
@@ -7117,7 +7162,7 @@ document.addEventListener("keydown",e=>{
   // Hold Space to inspect the unedited source. Keyup restores the graded preview.
   if(e.code==="Space"){
     e.preventDefault();
-    if(!showOriginal){showOriginal=true;render();}
+    if(!showOriginal)setOriginalPreview(true);
     return;
   }
 
@@ -7162,10 +7207,10 @@ document.addEventListener("keydown",e=>{
   }
 });
 document.addEventListener("keyup",e=>{
-  if(e.code==="Space"&&showOriginal){showOriginal=false;render();}
+  if(e.code==="Space"&&showOriginal)setOriginalPreview(false);
 });
 window.addEventListener("blur",()=>{
-  if(showOriginal){showOriginal=false;render();}
+  if(showOriginal)setOriginalPreview(false);
 });
 
 render();
