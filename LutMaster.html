@@ -4,11 +4,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LutMaster 138 — visual LUT designer</title>
+<title>LutMaster</title>
 <!-- LutMaster 138: worker-based grading, asynchronous colour harmony, priority-coalesced rendering and background progress. -->
 <!-- LutMaster 120: removed tonal-mask visualization and hardened shared-wheel marker visibility. -->
 <!-- LutMaster 127: Hue-vs-Hue and Hue-vs-Saturation handles use their live colour with a white outline. -->
-<!-- LutMaster 133: scene-adaptive harmony strength, chromatic per-region sampling, robust hue anchors, and alpha fallback. -->
+<!-- LutMaster 142: 5px circular image sampling for curve point insertion and live graduation-curve hover. -->
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&amp;family=Archivo:wght@400;500&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -72,17 +72,38 @@
   /* 2. Header utilities and modal overlays */
   #helpModal{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.68)}
   #helpModal.show{display:flex}
-  #helpModal .help-box{width:min(540px,calc(100vw - 28px));max-height:min(80vh,680px);overflow:auto;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:20px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
-  #helpModal .help-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+  #helpModal .help-box{width:min(900px,calc(100vw - 28px));height:min(760px,86vh);max-height:86vh;display:flex;flex-direction:column;overflow:hidden;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
+  #helpModal .help-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;flex:0 0 auto}
   #helpModal h3{font:600 13px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--orange);margin:0}
+  #helpModal .help-subtitle{margin-top:3px;color:var(--dim);font-size:11px}
   #helpModal .help-close{background:none;border:1px solid var(--line);border-radius:3px;color:var(--dim);font:18px/1 var(--mono);padding:5px 9px;cursor:pointer}
   #helpModal .help-close:hover{color:var(--text);border-color:var(--orange)}
-  #helpModal .help-group{padding:12px 0;border-top:1px solid var(--line)}
-  #helpModal h4{font:600 10px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--orange-hi);margin-bottom:7px}
-  #helpModal ul{padding-left:18px;color:var(--text);font-size:12px;line-height:1.55}
-  #helpModal li{padding:2px 0 2px 2px}
-  #helpModal li::marker{color:var(--orange)}
-  #helpModal kbd{font:10px var(--mono);color:var(--dim);background:var(--panel2);border:1px solid var(--line);border-radius:2px;padding:1px 4px}
+  #helpModal .help-layout{display:grid;grid-template-columns:190px minmax(0,1fr);gap:18px;flex:1;min-height:0;border-top:1px solid var(--line);padding-top:12px}
+  #helpModal .help-nav{display:flex;flex-direction:column;gap:4px;overflow:auto;padding-right:10px;border-right:1px solid var(--line)}
+  #helpModal .help-tab{display:flex;align-items:center;gap:9px;width:100%;padding:9px 8px;text-align:left;background:transparent;border:1px solid transparent;border-radius:3px;color:var(--dim);font:11px var(--body);cursor:pointer}
+  #helpModal .help-tab:hover{background:var(--panel2);color:var(--text)}
+  #helpModal .help-tab[aria-selected="true"]{background:var(--orange-dim);border-color:var(--orange);color:var(--text)}
+  #helpModal .help-tab .help-no{flex:0 0 19px;color:var(--orange-hi);font:10px var(--mono)}
+  #helpModal .help-tab:focus-visible{outline:2px solid var(--orange-hi);outline-offset:1px}
+  #helpModal .help-content{min-width:0;overflow:auto;padding:2px 8px 8px 0;overscroll-behavior:contain}
+  #helpModal .help-panel[hidden]{display:none}
+  #helpModal .help-panel h4{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--orange-hi);margin:0 0 10px}
+  #helpModal .help-panel p{color:var(--dim);font-size:12px;line-height:1.55;margin:0 0 10px}
+  #helpModal .help-panel ul{padding-left:17px;color:var(--text);font-size:12px;line-height:1.55}
+  #helpModal .help-panel li{padding:3px 0 3px 2px}
+  #helpModal .help-panel li::marker{color:var(--orange)}
+  #helpModal .help-panel strong{color:var(--text);font-weight:600}
+  #helpModal kbd{font:10px var(--mono);color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:2px;padding:1px 4px;white-space:nowrap}
+  #helpModal .help-note{margin-top:12px;padding:9px 10px;border-left:2px solid var(--orange);background:var(--panel2);color:var(--dim);font-size:11px;line-height:1.5}
+  @media(max-width:620px){
+    #helpModal{padding:8px}
+    #helpModal .help-box{width:calc(100vw - 16px);height:90vh;max-height:90vh;padding:13px}
+    #helpModal .help-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:10px}
+    #helpModal .help-nav{flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:0 0 7px;border-right:0;border-bottom:1px solid var(--line)}
+    #helpModal .help-tab{width:auto;flex:0 0 auto;white-space:nowrap;padding:7px 9px}
+    #helpModal .help-tab .help-no{flex-basis:auto}
+    #helpModal .help-content{padding-right:3px}
+  }
   main{flex:1;display:flex;min-height:0}
   #stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;gap:10px;min-width:0}
   #drop{border:1px dashed var(--line);border-radius:6px;padding:50px 40px;text-align:center;color:var(--dim);cursor:pointer;transition:.2s;max-width:480px}
@@ -104,6 +125,8 @@
   #hiresLayer canvas{position:absolute;display:block;pointer-events:none;image-rendering:auto}
   #wipeline{position:absolute;top:0;bottom:0;width:2px;background:var(--orange-hi);display:none;pointer-events:none}
   #wipeline::after{content:"◂ original · graded ▸";position:absolute;top:6px;left:6px;font:9px var(--mono);letter-spacing:.08em;color:var(--orange-hi);white-space:nowrap;background:rgba(12,11,8,.75);padding:3px 6px;border-radius:2px}
+  #curveSampleOverlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:none;transform-origin:top left;z-index:8;overflow:hidden}
+  #curveSampleCircle{position:absolute;left:0;top:0;width:5px;height:5px;box-sizing:border-box;border:1px solid rgba(255,190,105,.95);border-radius:50%;background:rgba(255,190,105,.10);box-shadow:0 0 0 1px rgba(0,0,0,.58);transform:translate(-50%,-50%)}
   #stagebar{display:none;gap:14px;align-items:center;color:var(--dim);font-size:12px;flex-wrap:wrap;justify-content:center}
   #stagebar button{background:var(--panel2);border:1px solid var(--line);color:var(--dim);padding:6px 12px;border-radius:var(--r-sm);cursor:pointer;font:11px var(--mono);text-transform:uppercase;letter-spacing:.06em;transition:background .12s,border-color .12s,color .12s}
   #stagebar button:hover{color:var(--text);border-color:var(--line-hi);background:var(--panel3)}
@@ -501,6 +524,7 @@
 <canvas id="view" title="Image preview; hold to compare with the original and drag to inspect the wipe"></canvas>
 <div aria-hidden="true" id="hiresLayer"></div>
 <div id="wipeline"></div>
+<div id="curveSampleOverlay" aria-hidden="true"><div id="curveSampleCircle"></div></div>
 </div>
 <div class="sprockets" style="margin-top:6px"></div>
 </div>
@@ -826,56 +850,143 @@
 </div>
 <div aria-hidden="true" id="helpModal">
 <div aria-labelledby="helpTitle" aria-modal="true" class="help-box" role="dialog" tabindex="-1">
-<div class="help-head">
-<h3 id="helpTitle">Quick help</h3>
-<button aria-label="Close help" class="help-close" id="helpClose" title="Close the quick help panel" type="button">×</button>
-</div>
-<section class="help-group">
-<h4>Images &amp; navigation</h4>
-<ul>
-<li><strong>Load photos:</strong> Drop image files into the workspace or click the empty area. Add more photos at any time; use the thumbnail strip to switch the active photo.</li>
-<li><strong>Compare:</strong> Press and hold the preview to temporarily show the unedited original. Use Split compare for a movable before/after divider.</li>
-<li><strong>Zoom &amp; pan (PC):</strong> Use the mouse wheel to zoom. When zoomed in, hold the left mouse button and drag to pan the image. The cursor changes to a grab hand. Double-click to fit the image in the available preview area. On touchscreens, use a two-finger pinch to zoom and drag to pan.</li>
-<li><strong>Preview quality:</strong> STD uses an adaptive preview for faster interaction. FULL renders from the original image resolution where display size and zoom permit; it can require more processing time and memory.</li>
-<li><strong>Scopes:</strong> Enable the histogram to inspect the graded image. Clipping warnings identify values at or beyond the output limits.</li>
-<li><strong>Shortcuts:</strong> <kbd>\</kbd> hold = original, <kbd>W</kbd> split compare, <kbd>J</kbd> clipping, <kbd>H</kbd> histogram, <kbd>[</kbd>/<kbd>]</kbd> previous/next photo, <kbd>0</kbd> fit.</li>
-</ul>
-</section>
-<section class="help-group">
-<h4>Pipeline &amp; saved Grades</h4>
-<ul>
-<li><strong>Pipeline:</strong> Shows the active Base LUT and every loaded Cube LUT or saved Grade layer. The list order is the processing order; drag the <kbd>⋮</kbd> handle to reorder layers.</li>
-<li><strong>Enable / bypass:</strong> Use a layer checkbox to bypass it without removing it. Use the <kbd>×</kbd> control to remove only that layer.</li>
-<li><strong>Intensity:</strong> Set each layer from 0–100%. At 0% the layer has no visible effect; at 100% its full transform is applied. Intermediate values blend the layer output with its input.</li>
-<li><strong>Base LUT:</strong> This is a separate upstream input transform. It is applied before the layers in the Pipeline and can be bypassed or removed independently.</li>
-<li><strong>Save Grade:</strong> Saves the current editor adjustments internally as a reusable Grade. It does not create a .cube file. Select a saved Grade under My LUTs to add it as a reversible layer in the Pipeline.</li>
-<li><strong>Cube LUT:</strong> Import a .cube file to add an external transform as a layer. Cube LUTs and saved Grades can be mixed in the same stack.</li>
-<li><strong>Undo:</strong> Layer additions, removals, intensity changes and reordering are part of the edit history. Reset all clears the current edit state.</li>
-</ul>
-</section>
-<section class="help-group">
-<h4>Adjustments &amp; curves</h4>
-<ul>
-<li><strong>Sections:</strong> Use each section's checkbox to bypass that adjustment family while retaining its settings. The reset button resets that section; Reset all clears the complete edit.</li>
-<li><strong>Sliders:</strong> Drag for continuous adjustment or enter a numeric value. Double-click a slider or setting to restore its default.</li>
-<li><strong>Tone curve:</strong> Select RGB or an individual channel. Click to add a control point, drag to move it, and double-click a point to remove it. Curve endpoints are fixed.</li>
-<li><strong>Hue curves:</strong> Drag the handles to change hue or saturation within the corresponding hue/luminance range.</li>
-<li><strong>Colour pickers:</strong> Activate the white-balance or secondary-colour picker, then click a suitable neutral or target area in the photo.</li>
-<li><strong>Automated corrections:</strong> Auto Grade estimates global tonal settings. Auto Grade – Subject lets you outline a subject before applying a localised tonal optimisation. Other automated controls estimate individual corrections from the active photo.</li>
-<li><strong>A/B slots:</strong> Store two adjustment states for comparison. Copy transfers the current slot's settings to the other slot.</li>
-</ul>
-</section>
-<section class="help-group">
-<h4>Export &amp; project files</h4>
-<ul>
-<li><strong>Save photo:</strong> Exports the active photo with the current pipeline and adjustments. Choose JPG quality or lossless PNG in the export dialog.</li>
-<li><strong>Save all photos:</strong> Applies the same current edit to every loaded photo and exports them as a batch.</li>
-<li><strong>Export LUT:</strong> Generates a .cube transform from the current grade. Choose the LUT size; larger cubes preserve finer interpolation but increase file size.</li>
-<li><strong>Export look pack:</strong> Exports saved looks as .cube files. This is separate from saving a Grade internally.</li>
-<li><strong>Save / load project:</strong> Stores or restores the editing state and layer stack. The project file stores the current editing state and pipeline configuration.</li>
-<li><strong>Local processing:</strong> Image editing and saved looks are handled in this browser; photos are not uploaded by the app.</li>
-</ul>
-</section>
+  <div class="help-head">
+    <div>
+      <h3 id="helpTitle">LutMaster Help</h3>
+      <p class="help-subtitle">Choose a chapter. Each guide explains what the controls do and when to use them.</p>
+    </div>
+    <button aria-label="Close help" class="help-close" id="helpClose" title="Close help" type="button">×</button>
+  </div>
+  <div class="help-layout">
+    <nav class="help-nav" role="tablist" aria-label="Help chapters">
+      <button class="help-tab" id="helpTabStart" type="button" role="tab" aria-selected="true" aria-controls="helpPanelStart"><span class="help-no">01</span> Photos &amp; preview</button>
+      <button class="help-tab" id="helpTabBasic" type="button" role="tab" aria-selected="false" aria-controls="helpPanelBasic"><span class="help-no">02</span> Basic adjustments</button>
+      <button class="help-tab" id="helpTabAuto" type="button" role="tab" aria-selected="false" aria-controls="helpPanelAuto"><span class="help-no">03</span> Auto corrections</button>
+      <button class="help-tab" id="helpTabCurves" type="button" role="tab" aria-selected="false" aria-controls="helpPanelCurves"><span class="help-no">04</span> Curves &amp; colour selection</button>
+      <button class="help-tab" id="helpTabGrade" type="button" role="tab" aria-selected="false" aria-controls="helpPanelGrade"><span class="help-no">05</span> Color grading</button>
+      <button class="help-tab" id="helpTabLooks" type="button" role="tab" aria-selected="false" aria-controls="helpPanelLooks"><span class="help-no">06</span> Looks &amp; pipeline</button>
+      <button class="help-tab" id="helpTabExport" type="button" role="tab" aria-selected="false" aria-controls="helpPanelExport"><span class="help-no">07</span> Export &amp; projects</button>
+      <button class="help-tab" id="helpTabKeys" type="button" role="tab" aria-selected="false" aria-controls="helpPanelKeys"><span class="help-no">08</span> Keyboard shortcuts</button>
+    </nav>
+    <div class="help-content">
+      <section class="help-panel" id="helpPanelStart" role="tabpanel" aria-labelledby="helpTabStart" tabindex="0">
+        <h4>Photos &amp; preview</h4>
+        <ul>
+          <li><strong>Add photos:</strong> Drop image files onto the empty workspace, or click it. Use <strong>Add photos</strong> to add more later. The built-in test chart is a sample image for trying the controls.</li>
+          <li><strong>Choose a photo:</strong> Click its thumbnail. <strong>Remove photo</strong> removes the selected photo from the workspace.</li>
+          <li><strong>Zoom and move:</strong> Use the mouse wheel to zoom, then drag the image to look around. On a touchscreen, pinch to zoom and drag with one finger. Double-click the image to fit it in the preview again.</li>
+          <li><strong>Before / after:</strong> Hold <kbd>Space</kbd> to see the original photo; release it to return to your edit. Press <kbd>S</kbd> for a movable split line between original and edited.</li>
+          <li><strong>Warnings and histogram:</strong> <kbd>C</kbd> marks areas pushed to pure black or white. <kbd>H</kbd> shows a graph of how much dark, bright and coloured information the photo contains.</li>
+          <li><strong>Preview quality:</strong> <strong>Std</strong> is faster while editing. <strong>Full</strong> uses the original image resolution where possible; it needs more memory and processing.</li>
+          <li><strong>Fullscreen:</strong> The ⛶ button expands LutMaster to fill the screen.</li>
+        </ul>
+        <div class="help-note">Your photos are processed in the browser. They are not uploaded by LutMaster.</div>
+      </section>
+
+      <section class="help-panel" id="helpPanelBasic" role="tabpanel" aria-labelledby="helpTabBasic" tabindex="0" hidden>
+        <h4>Basic adjustments</h4>
+        <p>Start with <strong>Tone</strong> for brightness and contrast, then use <strong>Colour</strong> to adjust the overall colour. Small changes are usually easier to control.</p>
+        <ul>
+          <li><strong>Section checkbox:</strong> Temporarily turns that whole section on or off. Your slider values stay there. <strong>Reset</strong> clears only that section; <strong>Reset all</strong> returns the current edit to its defaults. It does not delete the looks you have saved.</li>
+          <li><strong>Sliders and numbers:</strong> Drag a slider for a quick change, or type a number for precision. Double-click a value or slider to return it to its default.</li>
+          <li><strong>Exposure:</strong> Makes the whole photo lighter or darker.</li>
+          <li><strong>Contrast:</strong> Makes dark and bright parts further apart or closer together.</li>
+          <li><strong>Highlights / Shadows:</strong> Adjust the bright parts / dark parts without changing the whole image as much.</li>
+          <li><strong>Blacks:</strong> Changes the darkest tones. <strong>Gamma</strong> mainly changes the middle brightness. <strong>Fade blacks</strong> raises the darkest tones for a faded look.</li>
+          <li><strong>Temperature:</strong> Moves the image between cooler blue and warmer yellow. <strong>Tint</strong> moves between green and magenta.</li>
+          <li><strong>Saturation:</strong> Makes all colours stronger or weaker. <strong>Vibrance</strong> mainly boosts or reduces colours that are not already strong.</li>
+          <li><strong>Protect skin:</strong> Reduces the effect of the Colour adjustments on likely skin tones. <strong>Normalisation</strong> gently evens out colour-channel balance.</li>
+          <li><strong>A / B:</strong> Keep two edit versions for comparison. Switch with the A and B buttons (or arrow keys when no point is selected). <strong>copy →</strong> copies the current version into the other slot.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelAuto" role="tabpanel" aria-labelledby="helpTabAuto" tabindex="0" hidden>
+        <h4>Automatic corrections</h4>
+        <p>These buttons analyse the selected photo and suggest settings. They are starting points: check the result and adjust it yourself.</p>
+        <ul>
+          <li><strong>Auto Grade:</strong> Automatically adjusts the overall tone. Click it again to remove that automatic result.</li>
+          <li><strong>Auto Grade – Subject:</strong> Draw a closed line around the subject, double-click or press <kbd>Enter</kbd> to finish, then press <strong>Apply</strong>. LutMaster increases contrast on the subject while trying to keep the rest of the scene's brightness. <strong>Cancel</strong> discards the selection.</li>
+          <li><strong>Grade Colors:</strong> Analyses the photo and automatically adjusts the three Color Grading wheels and colour saturation by hue. Click it again to restore the settings from before the automatic grade.</li>
+          <li><strong>Grading intensity:</strong> Controls how strong Grade Colors is. <strong>Protect Hue</strong> reduces an unwanted overall colour shift. <strong>Protect Skin</strong> reduces the automatic wheel effect on skin-like colours.</li>
+          <li><strong>Exposure:</strong> Finds a starting overall brightness. <strong>Recover</strong> tries to bring back bright and dark detail.</li>
+          <li><strong>Shadow detail / Highlight roll-off:</strong> Opens up dark detail / softens very bright tones.</li>
+          <li><strong>Colour / White bal.:</strong> Estimates colour strength / removes an overall colour cast.</li>
+          <li><strong>Skin tone / Luma saturation:</strong> Gently adjusts likely skin colours / balances colour strength from shadows to highlights.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelCurves" role="tabpanel" aria-labelledby="helpTabCurves" tabindex="0" hidden>
+        <h4>Curves &amp; colour selection</h4>
+        <ul>
+          <li><strong>RGB / Red / Green / Blue curve:</strong> Choose RGB to change brightness, or a colour channel to change that colour. The left-to-right position is the original value; the up-and-down position is the result. Above the diagonal makes it brighter; below makes it darker.</li>
+          <li><strong>Add or move a point:</strong> Click the curve to add a point, then drag it. Double-click a point to remove it. The two end points stay fixed.</li>
+          <li><strong>Add point from image:</strong> Press <kbd>G</kbd> or click the button, then click the photo. The small circle shows the sampled area. The new point starts on the existing curve, so adding it alone does not change the picture.</li>
+          <li><strong>Hue vs Hue:</strong> Changes the actual colour of a colour range (for example, shift yellow leaves towards green).</li>
+          <li><strong>Hue vs Saturation:</strong> Makes a chosen colour stronger or weaker without changing the other colours as much.</li>
+          <li><strong>Luma vs Saturation:</strong> Changes colour strength according to brightness, from dark areas on the left to bright areas on the right.</li>
+          <li><strong>Secondary colour:</strong> Pick a target colour in the photo. <strong>Range</strong> decides which nearby colours are included; <strong>Softness</strong> makes the edge gentler. Then adjust its hue, saturation or luminance.</li>
+          <li><strong>White balance picker:</strong> Press <kbd>W</kbd> or click the picker, then click something that should be neutral grey or white. Press <kbd>W</kbd> again to turn the picker off.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelGrade" role="tabpanel" aria-labelledby="helpTabGrade" tabindex="0" hidden>
+        <h4>Color grading</h4>
+        <ul>
+          <li><strong>Color wheel:</strong> Adds a colour tint to <strong>Shadows</strong> (dark areas), <strong>Mids</strong> (middle tones) or <strong>Highlights</strong> (bright areas). Drag a marker to change that range. The centre means no tint.</li>
+          <li><strong>Select a range:</strong> Tap a marker to select it for touch controls; tap it again to leave edit mode. You can also drag any marker directly without selecting it first.</li>
+          <li><strong>Arrow keys:</strong> When a wheel marker is selected, the arrow keys move it. Left/right changes its horizontal position; up/down changes its vertical position.</li>
+          <li><strong>Hue / Sat buttons:</strong> Rotate the selected colour or increase/decrease its strength in small steps.</li>
+          <li><strong>Blending:</strong> Controls how smoothly the Shadows, Mids and Highlights ranges overlap. Lower values separate them; higher values make the transition smoother.</li>
+          <li><strong>Balance:</strong> Shifts the overall grading emphasis towards shadows (negative) or highlights (positive).</li>
+          <li><strong>Split toning:</strong> Adds one chosen colour to dark areas and another to bright areas. Pick the two colours and raise their strength sliders to see the effect.</li>
+          <li><strong>Transfer ramp:</strong> Shows the current edit applied to a simple black-to-white gradient, from dark on the left to bright on the right.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelLooks" role="tabpanel" aria-labelledby="helpTabLooks" tabindex="0" hidden>
+        <h4>Looks &amp; pipeline</h4>
+        <ul>
+          <li><strong>Pipeline:</strong> Shows the transforms used to make the final image. The <strong>Base LUT</strong> is applied first; the layers below it are applied in order.</li>
+          <li><strong>Layer controls:</strong> Untick a layer to switch it off without deleting it. Drag the <strong>⋮</strong> handle to change its order. Change its strength to blend it in. Press <strong>×</strong> to remove it.</li>
+          <li><strong>Save:</strong> Saves your current adjustments as a reusable look inside LutMaster. It does not download a file. Saved looks stay in this browser.</li>
+          <li><strong>Add .cube file:</strong> Imports a LUT file made by another app or downloaded from elsewhere. Select a saved look or imported LUT to add it to the Pipeline.</li>
+          <li><strong>Estimate from one photo:</strong> Analyses a reference photo and creates approximate starting settings for tone, white balance, colour and split toning.</li>
+          <li><strong>Import Lightroom preset:</strong> Reads supported colour settings from an <kbd>.xmp</kbd> or <kbd>.lrtemplate</kbd> preset. The result is an approximation because Lightroom edits camera RAW data, while a LUT changes an already-rendered image.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelExport" role="tabpanel" aria-labelledby="helpTabExport" tabindex="0" hidden>
+        <h4>Export &amp; projects</h4>
+        <ul>
+          <li><strong>Save photo:</strong> Exports the selected photo with the current edit. JPG 93 is a good smaller file; JPG 100 keeps more detail but is larger; PNG is lossless and usually largest.</li>
+          <li><strong>Save all photos:</strong> Exports every photo in the workspace using the same current settings.</li>
+          <li><strong>Export LUT (.cube):</strong> Creates a reusable colour transform for other software or supported cameras. <strong>Look strength</strong> controls how much of the edit is included. Choose a name and size: 17 is smaller, 33 is a common quality/size balance, and 65 is larger and more detailed.</li>
+          <li><strong>Base Photo Style:</strong> For compatible Lumix cameras, choose the Photo Style used when the footage was recorded. The LUT can then carry that information with it.</li>
+          <li><strong>Export look pack:</strong> Downloads all saved looks as separate .cube files.</li>
+          <li><strong>Cube analysis:</strong> Shows a visual summary of the current colour transform. Change the 17³ / 33³ / 65³ view size to inspect it at different detail levels.</li>
+          <li><strong>Save project / Load project:</strong> Saves or restores your editing setup, including adjustments and the Pipeline. Use this to continue working later. It is not the same as exporting a finished photo or LUT.</li>
+          <li><strong>Undo / Redo:</strong> Undo reverses the last edit; Redo brings it back. <strong>Reset all</strong> resets the current edit.</li>
+        </ul>
+      </section>
+
+      <section class="help-panel" id="helpPanelKeys" role="tabpanel" aria-labelledby="helpTabKeys" tabindex="0" hidden>
+        <h4>Keyboard shortcuts</h4>
+        <ul>
+          <li><kbd>Space</kbd> hold: show the original photo. Release to return to the edit.</li>
+          <li><kbd>S</kbd>: toggle Split Compare. <kbd>C</kbd>: toggle Clipping. <kbd>H</kbd>: toggle Histogram.</li>
+          <li><kbd>↑</kbd> / <kbd>↓</kbd>: previous / next photo when no editing point is selected.</li>
+          <li><kbd>←</kbd> / <kbd>→</kbd>: switch to A / B settings when no editing point is selected.</li>
+          <li><kbd>G</kbd>: turn Add point from image on or off. Then click the photo to add a curve point.</li>
+          <li><kbd>W</kbd>: turn the White Balance picker on or off. Then click a neutral area in the photo.</li>
+          <li><strong>When a curve point is selected:</strong> arrow keys move the point. Left/right changes its input position; up/down changes its output.</li>
+          <li><strong>When a Color Grading point is selected:</strong> arrow keys move the marker on the colour wheel.</li>
+          <li><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Z</kbd>: Undo. Add <kbd>Shift</kbd> for Redo; <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Y</kbd> also redoes.</li>
+          <li><kbd>Enter</kbd> finishes the subject outline and applies its correction; <kbd>Esc</kbd> cancels it. In save/export dialogs, Enter confirms and Esc cancels.</li>
+        </ul>
+        <div class="help-note">Arrow keys edit the selected point first. Photo navigation and A/B switching work only when no curve or Color Grading point is selected. Keyboard shortcuts are ignored while typing in text fields.</div>
+      </section>
+    </div>
+  </div>
 </div>
 </div>
 <script>
@@ -919,6 +1030,29 @@ function closeHelp(){
   $("helpBtn").focus();
 }
 $("helpBtn").addEventListener("click",openHelp);
+const helpTabs=[...helpModal.querySelectorAll(".help-tab")];
+function selectHelpChapter(tab){
+  if(!tab)return;
+  helpTabs.forEach(t=>{
+    const active=t===tab;
+    t.setAttribute("aria-selected",active?"true":"false");
+    const panel=$(t.getAttribute("aria-controls"));
+    if(panel)panel.hidden=!active;
+  });
+}
+helpTabs.forEach((tab,index)=>{
+  tab.addEventListener("click",()=>selectHelpChapter(tab));
+  tab.addEventListener("keydown",e=>{
+    let next=index;
+    if(e.key==="ArrowDown"||e.key==="ArrowRight")next=(index+1)%helpTabs.length;
+    else if(e.key==="ArrowUp"||e.key==="ArrowLeft")next=(index-1+helpTabs.length)%helpTabs.length;
+    else if(e.key==="Home")next=0;
+    else if(e.key==="End")next=helpTabs.length-1;
+    else return;
+    e.preventDefault();helpTabs[next].focus();selectHelpChapter(helpTabs[next]);
+  });
+});
+selectHelpChapter(helpTabs[0]);
 /* ================= fullscreen toggle ================= */
 const fullscreenBtn=$("fullscreenBtn");
 function isFullscreen(){
@@ -1004,6 +1138,7 @@ const cbState={
   highlights:{x:0,y:0}
 };
 let activeColorWheelRegion=null;
+let keyboardPointContext=null;
 
 let baseLUT=null;
 let baseOn=true;
@@ -1024,21 +1159,39 @@ function updateNormalisationGains(src){
 }
 
 /* ================= curve maths ================= */
-function buildCurveLUT(pts){
-  const p=[...pts].sort((a,b)=>a.x-b.x),n=p.length,lut=new Float32Array(256);
-  if(n===1){lut.fill(clamp(p[0].y));return lut;}
-  const dx=[],dy=[],m=[];
-  for(let i=0;i<n-1;i++){dx[i]=Math.max(p[i+1].x-p[i].x,1e-6);dy[i]=p[i+1].y-p[i].y;m[i]=dy[i]/dx[i];}
-  const t=[m[0]];
+function curveSplineData(points){
+  const p=[...points].sort((a,b)=>a.x-b.x),n=p.length,dx=[],m=[],t=[];
+  if(n===1)return{p,dx,m,t:[Number.isFinite(p[0].tangent)?p[0].tangent:0]};
+  for(let i=0;i<n-1;i++){dx[i]=Math.max(p[i+1].x-p[i].x,1e-6);m[i]=(p[i+1].y-p[i].y)/dx[i];}
+  t[0]=m[0];
   for(let i=1;i<n-1;i++)t[i]=(m[i-1]*m[i]<=0)?0:2*m[i-1]*m[i]/(m[i-1]+m[i]);
   t[n-1]=m[n-2];
+  // Optional fixed Hermite tangents let an image-sampled point split an
+  // existing segment without changing the represented curve.
+  for(let i=0;i<n;i++)if(Number.isFinite(p[i].tangent))t[i]=p[i].tangent;
+  return{p,dx,m,t};
+}
+function curveValueAndSlopeAt(points,x){
+  const {p,dx,t}=curveSplineData(points),n=p.length;x=clamp(x);
+  if(n===1)return{y:clamp(p[0].y),slope:t[0]||0};
+  if(x<=p[0].x)return{y:clamp(p[0].y),slope:t[0]};
+  if(x>=p[n-1].x)return{y:clamp(p[n-1].y),slope:t[n-1]};
+  let i=0;while(i<n-2&&x>p[i+1].x)i++;
+  const h=dx[i],u=(x-p[i].x)/h,u2=u*u,u3=u2*u;
+  const y=p[i].y*(2*u3-3*u2+1)+h*t[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t[i+1]*(u3-u2);
+  const slope=(p[i].y*(6*u2-6*u)/h+t[i]*(3*u2-4*u+1)+p[i+1].y*(-6*u2+6*u)/h+t[i+1]*(3*u2-2*u));
+  return{y:clamp(y),slope};
+}
+function buildCurveLUT(pts){
+  const {p,dx,t}=curveSplineData(pts),n=p.length,lut=new Float32Array(256);
+  if(n===1){lut.fill(clamp(p[0].y));return lut;}
   for(let k=0;k<256;k++){
     const x=k/255;
     if(x<=p[0].x){lut[k]=clamp(p[0].y);continue;}
     if(x>=p[n-1].x){lut[k]=clamp(p[n-1].y);continue;}
     let i=0;while(i<n-2&&x>p[i+1].x)i++;
-    const h=dx[i],s=(x-p[i].x)/h,s2=s*s,s3=s2*s;
-    lut[k]=clamp(p[i].y*(2*s3-3*s2+1)+h*t[i]*(s3-2*s2+s)+p[i+1].y*(-2*s3+3*s2)+h*t[i+1]*(s3-s2));
+    const h=dx[i],u=(x-p[i].x)/h,u2=u*u,u3=u2*u;
+    lut[k]=clamp(p[i].y*(2*u3-3*u2+1)+h*t[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t[i+1]*(u3-u2));
   }
   return lut;
 }
@@ -1623,6 +1776,7 @@ function applyPreviewZoom(){
   const transform=`translate(${previewZoom.x}px,${previewZoom.y}px) scale(${previewZoom.scale})`;
   view.style.transform=transform;
   hiresLayer.style.transform=transform;
+  const sampleOverlay=$("curveSampleOverlay");if(sampleOverlay)sampleOverlay.style.transform=transform;
   view.style.setProperty("--preview-cursor",previewZoom.scale>1?"grab":"default");
   positionWipe();
   scheduleHiresTiles();
@@ -2498,13 +2652,20 @@ function drawCurves(){
 let dragPt=null;
 let selectedCurvePoint=null,selectedCurveOriginal=null,curveImagePickMode=false;
 const curvePointStatus=$("curvePointStatus"),curveImagePickBtn=$("curveImagePick");
-function curveValueAt(points,x){
-  const lut=buildCurveLUT(points);
-  const i=clamp(Math.round(clamp(x)*255),0,255);
-  return lut[i];
+const curveSampleOverlay=$("curveSampleOverlay"),curveSampleCircle=$("curveSampleCircle");
+let lastCurveSamplePointer=null;
+function updateCurveSampleOverlay(clientX=null,clientY=null){
+  if(clientX!==null&&clientY!==null)lastCurveSamplePointer={x:clientX,y:clientY};
+  if(!curveSampleOverlay||!lastCurveSamplePointer||cur<0||!images[cur]||!images[cur].data){if(curveSampleOverlay)curveSampleOverlay.style.display="none";return;}
+  const src=images[cur].data,point=previewPoint({clientX:lastCurveSamplePointer.x,clientY:lastCurveSamplePointer.y});
+  const d=Math.max(1,5*view.offsetWidth/src.width),dh=Math.max(1,5*view.offsetHeight/src.height);
+  curveSampleCircle.style.width=d+"px";curveSampleCircle.style.height=dh+"px";
+  curveSampleCircle.style.left=point.x+"px";curveSampleCircle.style.top=point.y+"px";
+  curveSampleOverlay.style.display="block";
 }
+function curveValueAt(points,x){return curveValueAndSlopeAt(points,x).y;}
 function curveOriginalSnapshot(){
-  return curves[curveCh].map(p=>({x:p.x,y:p.y}));
+  return curves[curveCh].map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
 }
 function syncCurvePointTools(){
   const has=!!selectedCurvePoint&&curves[curveCh].includes(selectedCurvePoint);
@@ -2512,9 +2673,10 @@ function syncCurvePointTools(){
   ["curveMoveLeft","curveMoveRight","curveMoveDown","curveMoveUp","curveMoveDiagBack","curveMoveDiagForward"].forEach(id=>$(id).disabled=!has);
   curveImagePickBtn.classList.toggle("on",curveImagePickMode);
   curveImagePickBtn.setAttribute("aria-pressed",curveImagePickMode?"true":"false");
+  updateCurveSampleOverlay();
 }
 function selectCurvePoint(p,original=null){
-  selectedCurvePoint=p;
+  selectedCurvePoint=p;keyboardPointContext="curve";
   selectedCurveOriginal=original||curveOriginalSnapshot();
   syncCurvePointTools();drawCurves();
 }
@@ -2525,8 +2687,10 @@ function curvePointNudge(kind,dir){
   const step=.01;
   const isEnd=p===pts.reduce((a,b)=>a.x<b.x?a:b)||p===pts.reduce((a,b)=>a.x>b.x?a:b);
   const original=selectedCurveOriginal||curveOriginalSnapshot();
+  if((kind==="x"||kind==="path")&&isEnd&&kind==="x")return;
+  const sorted=pts.slice().sort((a,b)=>a.x-b.x),idx=sorted.indexOf(p);
+  [sorted[idx-1],p,sorted[idx+1]].filter(Boolean).forEach(q=>delete q.tangent);
   if(kind==="x"||kind==="path"){
-    if(isEnd&&kind==="x")return;
     const others=pts.filter(q=>q!==p);
     const lo=isEnd?0:Math.max(0,...others.filter(q=>q.x<p.x).map(q=>q.x))+.005;
     const hi=isEnd?1:Math.min(1,...others.filter(q=>q.x>p.x).map(q=>q.x))-.005;
@@ -2543,8 +2707,12 @@ function addCurvePointFromImage(e){
   const x=Math.round(point.x/view.offsetWidth*(src.width-1));
   const y=Math.round(point.y/view.offsetHeight*(src.height-1));
   const d=src.data;let r=0,g=0,b=0,n=0;
+  // Average a circular 5-source-pixel-diameter neighborhood centered on the cursor.
+  // The same circular footprint is used for the live graduation-curve hover sample.
+  // At image borders, average only pixels inside both the image and the circle.
   for(let yy=y-2;yy<=y+2;yy++)for(let xx=x-2;xx<=x+2;xx++){
     if(xx<0||xx>=src.width||yy<0||yy>=src.height)continue;
+    const dx=xx-x,dy=yy-y;if(dx*dx+dy*dy>6.25)continue;
     const i=(yy*src.width+xx)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++;
   }
   if(!n)return false;
@@ -2558,7 +2726,19 @@ function addCurvePointFromImage(e){
   if(p&&Math.abs(p.x-cx)<.006){
     selectCurvePoint(p,original);
   }else{
-    p={x:cx,y:curveValueAt(original,cx)};
+    // Split the existing Hermite segment at the sampled input coordinate.
+    // Retaining the exact endpoint and split tangents makes the curve identical
+    // before/after insertion; the new point becomes an ordinary control point
+    // as soon as the user moves or nudges it.
+    const spline=curveSplineData(original);
+    const split=curveValueAndSlopeAt(original,cx);
+    let rightIndex=spline.p.findIndex(q=>q.x>cx);
+    if(rightIndex<1)rightIndex=spline.p.length-1;
+    const left=spline.p[rightIndex-1],right=spline.p[rightIndex];
+    const leftLive=pts.find(q=>q.x===left.x),rightLive=pts.find(q=>q.x===right.x);
+    if(leftLive)leftLive.tangent=spline.t[rightIndex-1];
+    if(rightLive)rightLive.tangent=spline.t[rightIndex];
+    p={x:cx,y:split.y,tangent:split.slope};
     pts.push(p);pts.sort((a,b)=>a.x-b.x);
     if(curveCh==="m")markAutoCurveAsManual();
     rebuildCurves();render();selectCurvePoint(p,original);pushHistory();
@@ -2597,6 +2777,8 @@ function beginCurveEditAt(px,py){
 function moveCurveEditTo(px,py){
   if(!dragPt)return;
   const pts=curves[curveCh],isEnd=dragPt===pts.reduce((a,b)=>a.x<b.x?a:b)||dragPt===pts.reduce((a,b)=>a.x>b.x?a:b);
+  const sorted=pts.slice().sort((a,b)=>a.x-b.x),idx=sorted.indexOf(dragPt);
+  [sorted[idx-1],dragPt,sorted[idx+1]].filter(Boolean).forEach(q=>delete q.tangent);
   if(!isEnd){const o=pts.filter(q=>q!==dragPt),lo=Math.max(0,...o.filter(q=>q.x<=dragPt.x).map(q=>q.x))+.005,hi=Math.min(1,...o.filter(q=>q.x>dragPt.x).map(q=>q.x))-.005;dragPt.x=Math.max(lo,Math.min(hi,px2cx(px)));}
   dragPt.y=px2cy(py);rebuildCurves();render();
 }
@@ -2604,8 +2786,8 @@ ccv.addEventListener("pointerdown",e=>{
   if(e.pointerType==="touch"){
     curveTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{ccv.setPointerCapture(e.pointerId);}catch(_){}
-    if(curveTouchPointers.size===1){curveTouchPending={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,original:curves[curveCh].map(q=>({x:q.x,y:q.y}))};return;}
-    if(curveTouchPointers.size>=2){e.preventDefault();if(curveTouchPending&&curveTouchPending.moved){curves[curveCh]=curveTouchPending.original.map(q=>({x:q.x,y:q.y}));rebuildCurves();render();}dragPt=null;curveTouchPending=null;curveGesture=curveGestureMetrics();curveGesture.view={...curveView};return;}
+    if(curveTouchPointers.size===1){curveTouchPending={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,original:curves[curveCh].map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}))};return;}
+    if(curveTouchPointers.size>=2){e.preventDefault();if(curveTouchPending&&curveTouchPending.moved){curves[curveCh]=curveTouchPending.original.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));rebuildCurves();render();}dragPt=null;curveTouchPending=null;curveGesture=curveGestureMetrics();curveGesture.view={...curveView};return;}
   }
   const[px,py]=curvePos(e);beginCurveEditAt(px,py);ccv.setPointerCapture(e.pointerId);
 });
@@ -2654,7 +2836,7 @@ ccv.addEventListener("dblclick",e=>{
 ccv.addEventListener("wheel",zoomCurves,{passive:false});
 document.querySelectorAll(".chtabs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".chtabs button").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on");curveCh=b.dataset.ch;selectedCurvePoint=null;selectedCurveOriginal=null;curveImagePickMode=false;drawCurves();syncCurvePointTools();
+  b.classList.add("on");curveCh=b.dataset.ch;selectedCurvePoint=null;selectedCurveOriginal=null;if(keyboardPointContext==="curve")keyboardPointContext=null;curveImagePickMode=false;drawCurves();syncCurvePointTools();
 }));
 $("curveImagePick").addEventListener("click",()=>{
   curveImagePickMode=!curveImagePickMode;syncCurvePointTools();
@@ -2765,14 +2947,14 @@ function rebuildVisibleAutoCurve(){
   const active=AUTO_CURVE_KEYS.filter(k=>state.curveAuto[k]);
   if(!active.length){
     const base=state.curveAutoData.baseCurve;
-    if(Array.isArray(base))curves.m=base.map(q=>({x:q.x,y:q.y}));
+    if(Array.isArray(base))curves.m=base.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
     state.curveAutoData.baseCurve=null;
     rebuildCurves();drawCurves();return;
   }
   if(!Array.isArray(state.curveAutoData.baseCurve))
     // Stable manual baseline: every active auto contribution is regenerated
     // from this snapshot, never from the previous effective curve.
-    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y}));
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
 
   // Keep the user's existing control points and add only the semantic anchors
   // needed by the active automatic transforms. This keeps the result editable
@@ -3125,7 +3307,7 @@ function applyTonalAutoGrade(points=null,isSubject=false){
 $('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
 $('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode==='global')resetAutoGrade('global');setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
 function smoothSubjectPolygon(points,steps=4){
-  if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y}));
+  if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
   // Closed Catmull-Rom interpolation: smooths hand-drawn corners while
   // retaining the user's outline. Clamp samples to normalized image bounds.
   const out=[],n=points.length;
@@ -3139,7 +3321,7 @@ function smoothSubjectPolygon(points,steps=4){
   }
   return out;
 }
-$('subjectGradeApply').addEventListener('click',()=>{if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y)}));const ok=applyTonalAutoGrade(pts,true);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeSubjectBtn').classList.add('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','true');$('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');}});
+$('subjectGradeApply').addEventListener('click',()=>{if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));const ok=applyTonalAutoGrade(pts,true);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeSubjectBtn').classList.add('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','true');$('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');}});
 $('subjectGradeCancel').addEventListener('click',()=>setAutoGradeMode(null));
 document.addEventListener('keydown',e=>{if(subjectGradeMode&&e.key==='Enter'){e.preventDefault();$('subjectGradeApply').click();}if(subjectGradeMode&&e.key==='Escape'){e.preventDefault();setAutoGradeMode(null);}});
 function drawSubjectSelection(){if(!subjectGradeMode||subjectGradePoints.length===0)return;const pathPts=subjectGradeClosed?smoothSubjectPolygon(subjectGradePoints):subjectGradePoints;ctx.save();ctx.strokeStyle='#ff9d36';ctx.fillStyle='rgba(255,157,54,.12)';ctx.lineWidth=Math.max(1,view.width/900);ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(subjectGradeClosed?[]:[6,4]);ctx.beginPath();pathPts.forEach((p,i)=>{const x=p.x*view.width,y=p.y*view.height;if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);});if(subjectGradeClosed&&pathPts.length>=3){ctx.closePath();ctx.fill();}ctx.stroke();ctx.restore();}
@@ -4156,6 +4338,25 @@ function drawColorWheel(){
     const offset=crowded?displayOffsets[region]:{x:0,y:0};
     return{x:cx+p.x*r+offset.x,y:cy-p.y*r+offset.y};
   };
+  // Fine dashed guides intersect at the selected tonal marker.
+  // They are drawn beneath the handles so the marker remains unobstructed.
+  if(activeColorWheelRegion){
+    const selected=displayPoint(activeColorWheelRegion);
+    const dx=selected.x-cx,dy=selected.y-cy;
+    const guideRadius=Math.hypot(dx,dy);
+    if(guideRadius>0.75){
+      c.save();
+      c.setLineDash([3,4]);
+      c.strokeStyle="rgba(255,255,255,.88)";
+      c.lineWidth=.8;
+      c.beginPath();
+      c.moveTo(cx,cy);c.lineTo(selected.x,selected.y);
+      c.moveTo(cx+guideRadius,cy);
+      c.arc(cx,cy,guideRadius,0,Math.PI*2);
+      c.stroke();
+      c.restore();
+    }
+  }
   // Draw the active point last so its selection ring remains visible.
   const order=regions.filter(region=>region!==activeColorWheelRegion);
   if(activeColorWheelRegion)order.push(activeColorWheelRegion);
@@ -4241,6 +4442,7 @@ function setupColorWheel(){
   };
   const updateActiveFromEvent=e=>{
     if(!activeColorWheelRegion)return;
+    keyboardPointContext="color";
     const p=wheelPointFromEvent(canvas,e);
     cbState[activeColorWheelRegion].x=p.x;cbState[activeColorWheelRegion].y=p.y;
     dragChanged=true;drawColorWheel();render();
@@ -4253,7 +4455,7 @@ function setupColorWheel(){
       pendingWasActive=hit.region===activeColorWheelRegion;
       if(!pendingWasActive){
         // Activate on pointer-down, but defer drag until movement exceeds the tap threshold.
-        activeColorWheelRegion=hit.region;drawColorWheel();clearColorHarmonySelection();
+        activeColorWheelRegion=hit.region;keyboardPointContext="color";drawColorWheel();clearColorHarmonySelection();
       }
       startX=e.clientX;startY=e.clientY;
       canvas.setPointerCapture(e.pointerId);
@@ -4281,7 +4483,7 @@ function setupColorWheel(){
       if(wasAlreadyActive){
         // Tapping the selected marker toggles edit mode off; a drag never does.
         clearTimeout(deselectTimer);
-        deselectTimer=setTimeout(()=>{activeColorWheelRegion=null;drawColorWheel();},260);
+        deselectTimer=setTimeout(()=>{activeColorWheelRegion=null;if(keyboardPointContext==="color")keyboardPointContext=null;drawColorWheel();},260);
       }
     }
     if(!dragging&&!canvas.hasPointerCapture(e.pointerId))return;
@@ -4292,6 +4494,7 @@ function setupColorWheel(){
   canvas.addEventListener("dblclick",e=>{
     e.preventDefault();e.stopPropagation();clearTimeout(deselectTimer);dragging=false;pendingActive=null;pendingWasActive=false;
     if(!activeColorWheelRegion)return;
+    keyboardPointContext="color";
     clearColorHarmonySelection();cbState[activeColorWheelRegion]={x:0,y:0};
     drawColorWheel();render();pushHistory();
   });
@@ -4637,11 +4840,14 @@ view.addEventListener("pointercancel",finishSubjectStroke);
 view.addEventListener("lostpointercapture",()=>{if(subjectGradeMode&&subjectGradeDrawing)finishSubjectStroke(null);});
 view.addEventListener("pointermove",e=>{
   if(cur<0)return;
+  updateCurveSampleOverlay(e.clientX,e.clientY);
   const point=previewPoint(e),src=images[cur].data;
   const cx=Math.round(point.x/view.offsetWidth*(src.width-1)),cy=Math.round(point.y/view.offsetHeight*(src.height-1));
   let r=0,g=0,b=0,n=0;
+  // Match the add-point sampler: circular 5-source-pixel diameter.
   for(let y=cy-2;y<=cy+2;y++)for(let x=cx-2;x<=cx+2;x++){
     if(x<0||x>=src.width||y<0||y>=src.height)continue;
+    const dx=x-cx,dy=y-cy;if(dx*dx+dy*dy>6.25)continue;
     const i=(y*src.width+x)*4;r+=src.data[i];g+=src.data[i+1];b+=src.data[i+2];n++;
   }
   hoverCurveValues={r:r/n/255,g:g/n/255,b:b/n/255};
@@ -4655,6 +4861,7 @@ view.addEventListener("pointermove",e=>{
   }
 });
 view.addEventListener("pointerleave",()=>{
+  lastCurveSamplePointer=null;if(curveSampleOverlay)curveSampleOverlay.style.display="none";
   if(!hoverCurveValues)return;
   hoverCurveValues=null;clearColorWheelHover();drawCurves();
   const pi=$("pixinfo");if(pi)pi.textContent="";
@@ -5096,9 +5303,9 @@ function lrApply(v){
   let gotCurve=false;
   for(const[nm,ch]of Object.entries(cmap)){
     const pts=v["_curve_"+nm];
-    if(pts&&pts.length>=2){curves[ch]=pts.map(p=>({x:clamp(p.x),y:clamp(p.y)}));gotCurve=true;}
+    if(pts&&pts.length>=2){curves[ch]=pts.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));gotCurve=true;}
   }
-  if(!gotCurve&&v._curve_ToneCurve)curves.m=v._curve_ToneCurve.map(p=>({x:clamp(p.x),y:clamp(p.y)}));
+  if(!gotCurve&&v._curve_ToneCurve)curves.m=v._curve_ToneCurve.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
 
   // ---- HSL -> our hue strips ----
   const hh=bw?null:lrResampleHSL(v,"HueAdjustment",1/100);   // ±100 -> ±1 (=±60 deg)
@@ -5224,7 +5431,7 @@ function applyDataSilent(p){
   state.curveAutoData={dynamic:null,contrast:null,film:null,shadowLift:null,midLift:null,curveShoulder:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null,...((p.state&&p.state.curveAutoData)||{})};
   state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false,...((p.state&&p.state.autoCorrections)||{})};
   state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
-  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
@@ -5334,7 +5541,7 @@ function applyGradeData(p){
   state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
   if(Array.isArray(p.loadedLutData))restoreSavedLoadedLutData(p.loadedLutData);
   restoreLoadedLutSettings(p.loadedLuts);
-  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y})));
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
@@ -5934,7 +6141,7 @@ $("toneReset").addEventListener("click",e=>{
   ["exposure","recover"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});
   const hadAutoCurve=AUTO_CURVE_KEYS.some(k=>state.curveAuto[k]);
   AUTO_CURVE_KEYS.forEach(key=>state.curveAuto[key]=false);
-  if(Array.isArray(state.curveAutoData.baseCurve))curves.m=state.curveAutoData.baseCurve.map(q=>({x:q.x,y:q.y}));
+  if(Array.isArray(state.curveAutoData.baseCurve))curves.m=state.curveAutoData.baseCurve.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
   state.curveAutoData.baseCurve=null;
   if(hadAutoCurve){rebuildCurves();drawCurves();}
   syncAutoCurveButtons();syncIndependentCorrectionButtons();
@@ -6878,26 +7085,88 @@ function migrateLegacyAutoAdjustments(){
   }
   const active=AUTO_CURVE_KEYS.some(k=>state.curveAuto[k]);
   if(active&&!Array.isArray(state.curveAutoData.baseCurve)){
-    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y}));
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
     rebuildVisibleAutoCurve();
   }
 }
 view.addEventListener("dblclick",()=>{if(subjectGradeMode){$('subjectGradeApply').disabled=subjectGradePoints.length<3;return;}if(cur>=0){resetPreviewZoom();fitPreviewToStage();}});
+function isKeyboardTextEntry(target){
+  if(!target)return false;
+  if(target.isContentEditable)return true;
+  if(/^(TEXTAREA|SELECT)$/.test(target.tagName))return true;
+  return target.tagName==="INPUT"&&!/^(range|checkbox|radio|button)$/i.test(target.type);
+}
+function nudgeSelectedColorWheelPoint(key){
+  const region=activeColorWheelRegion;
+  if(!region)return false;
+  const p=cbState[region],step=.025;
+  if(key==="ArrowLeft")p.x-=step;
+  else if(key==="ArrowRight")p.x+=step;
+  else if(key==="ArrowUp")p.y+=step;
+  else if(key==="ArrowDown")p.y-=step;
+  const radius=Math.hypot(p.x,p.y);
+  if(radius>1){p.x/=radius;p.y/=radius;}
+  clearColorHarmonySelection();
+  drawColorWheel();render();pushHistory();
+  return true;
+}
 document.addEventListener("keydown",e=>{
-  if(e.ctrlKey||e.metaKey||e.altKey||cur<0)return;
-  const t=e.target;
-  if(t&&/^(TEXTAREA|SELECT)$/.test(t.tagName))return;
-  if(t&&t.tagName==="INPUT"&&!/^(range|checkbox)$/.test(t.type))return;
+  if(e.ctrlKey||e.metaKey||e.altKey||cur<0||isKeyboardTextEntry(e.target))return;
   const k=e.key.toLowerCase();
-  if(k==="\\"){e.preventDefault();if(!showOriginal){showOriginal=true;render();}}
-  else if(k==="w")$("wipeOn").click();
-  else if(k==="j")$("clipOn").click();
+
+  // Hold Space to inspect the unedited source. Keyup restores the graded preview.
+  if(e.code==="Space"){
+    e.preventDefault();
+    if(!showOriginal){showOriginal=true;render();}
+    return;
+  }
+
+  // Arrow-key precedence: selected curve point, selected colour-grading point,
+  // then image navigation / A-B slot selection.
+  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
+    const curveSelected=keyboardPointContext!=="color"&&!!selectedCurvePoint&&curves[curveCh].includes(selectedCurvePoint);
+    if(curveSelected){
+      e.preventDefault();
+      if(e.repeat)return;
+      if(e.key==="ArrowLeft")curvePointNudge("x",-1);
+      else if(e.key==="ArrowRight")curvePointNudge("x",1);
+      else if(e.key==="ArrowDown")curvePointNudge("y",-1);
+      else curvePointNudge("y",1);
+      return;
+    }
+    if(keyboardPointContext!=="curve"&&activeColorWheelRegion){
+      e.preventDefault();
+      if(e.repeat)return;
+      nudgeSelectedColorWheelPoint(e.key);
+      return;
+    }
+    e.preventDefault();
+    if(e.repeat)return;
+    if(e.key==="ArrowUp"&&cur>0)selectImage(cur-1);
+    else if(e.key==="ArrowDown"&&cur<images.length-1)selectImage(cur+1);
+    else if(e.key==="ArrowLeft")switchSlot("A");
+    else if(e.key==="ArrowRight")switchSlot("B");
+    return;
+  }
+
+  if(k==="s")$("wipeOn").click();
+  else if(k==="c")$("clipOn").click();
   else if(k==="h")$("scopeOn").click();
-  else if(k==="]"&&cur<images.length-1)selectImage(cur+1);
-  else if(k==="["&&cur>0)selectImage(cur-1);
-  else if(k==="0"){resetPreviewZoom();fitPreviewToStage();}
+  else if(k==="g"){
+    e.preventDefault();
+    curveImagePickMode=!curveImagePickMode;syncCurvePointTools();
+  }
+  else if(k==="w"){
+    e.preventDefault();
+    setPick("wb");
+  }
 });
-document.addEventListener("keyup",e=>{if(e.key==="\\"&&showOriginal){showOriginal=false;render();}});
+document.addEventListener("keyup",e=>{
+  if(e.code==="Space"&&showOriginal){showOriginal=false;render();}
+});
+window.addEventListener("blur",()=>{
+  if(showOriginal){showOriginal=false;render();}
+});
 
 render();
 pushHistory();
