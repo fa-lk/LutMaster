@@ -4,7 +4,8 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LutMaster — visual LUT designer</title>
+<title>LutMaster 138 — visual LUT designer</title>
+<!-- LutMaster 138: worker-based grading, asynchronous colour harmony, priority-coalesced rendering and background progress. -->
 <!-- LutMaster 120: removed tonal-mask visualization and hardened shared-wheel marker visibility. -->
 <!-- LutMaster 127: Hue-vs-Hue and Hue-vs-Saturation handles use their live colour with a white outline. -->
 <!-- LutMaster 133: scene-adaptive harmony strength, chromatic per-region sampling, robust hue anchors, and alpha fallback. -->
@@ -59,6 +60,15 @@
   #previewQualityBtn:disabled{opacity:.4;cursor:default}
   #previewQualityBtn:focus-visible{outline:2px solid var(--orange-hi);outline-offset:2px}
   @media(max-width:760px){header{gap:8px;padding:10px 12px}header h1{font-size:18px}header p{display:none}#previewQualityControl span{display:none}}
+  /* Background processing indicator: intentionally unobtrusive. */
+  #backgroundProgress{position:fixed;right:16px;bottom:13px;z-index:120;display:none;align-items:center;gap:9px;width:190px;padding:7px 9px 8px;background:rgba(18,21,19,.92);border:1px solid rgba(105,120,110,.28);border-radius:4px;box-shadow:0 4px 18px rgba(0,0,0,.22);font:10px var(--mono);color:var(--dim);pointer-events:none;backdrop-filter:blur(5px)}
+  #backgroundProgress.visible{display:flex}
+  #backgroundProgress .progress-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;flex:1}
+  #backgroundProgress .progress-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #backgroundProgress .progress-value{flex:0 0 auto;color:var(--text);font-variant-numeric:tabular-nums}
+  #backgroundProgress .progress-track{position:absolute;left:9px;right:9px;bottom:4px;height:2px;overflow:hidden;background:rgba(154,160,152,.16);border-radius:2px}
+  #backgroundProgress .progress-fill{width:0;height:100%;background:var(--orange-hi);transition:width .12s linear}
+  @media(max-width:760px){#backgroundProgress{right:8px;bottom:8px;width:160px;padding:6px 8px 7px}}
   /* 2. Header utilities and modal overlays */
   #helpModal{position:fixed;inset:0;z-index:110;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.68)}
   #helpModal.show{display:flex}
@@ -469,6 +479,10 @@
 <button id="loadProj" title="Load a previously saved project">Load project</button>
 <input hidden="" id="projfile" type="file"/ title="Select a LutMaster project file to load">
 </header>
+<div id="backgroundProgress" role="progressbar" aria-label="Background processing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <div class="progress-meta"><span class="progress-label">Processing</span><span class="progress-value">0%</span></div>
+  <div class="progress-track"><div class="progress-fill"></div></div>
+</div>
 <main>
 <div id="thumbs"></div>
 <div id="stage">
@@ -1646,11 +1660,13 @@ function previewNeedsHires(){
   return !showOriginal&&!subjectGradeMode&&(previewQuality.full||previewZoom.scale>=1.35);
 }
 function scheduleHiresTiles(){
-  if(!hiresLayer||cur<0)return;
+  if(!hiresLayer||cur<0){clearBackgroundProgress("hires");return;}
   clearTimeout(hiresRenderTimer);
   const token=++hiresRenderToken;
+  clearBackgroundProgress("hires");
   if(!previewNeedsHires()||!currentPreviewLut){
-    hiresLayer.replaceChildren();return;
+    for(const node of [...hiresLayer.children])if(node.dataset.clipOverlay!=="true")node.remove();
+    return;
   }
   hiresRenderTimer=setTimeout(()=>renderVisibleHiresTiles(token),90);
 }
@@ -1677,9 +1693,11 @@ async function renderVisibleHiresTiles(token){
   const sy1=Math.min(oh,Math.ceil(y1/baseH*oh/HIRES_TILE_SIZE)*HIRES_TILE_SIZE);
   const needed=[];
   for(let sy=sy0;sy<sy1;sy+=HIRES_TILE_SIZE)for(let sx=sx0;sx<sx1;sx+=HIRES_TILE_SIZE)needed.push({sx,sy,sw:Math.min(HIRES_TILE_SIZE,ow-sx),sh:Math.min(HIRES_TILE_SIZE,oh-sy)});
+  let completedTiles=0;if(needed.length)setBackgroundProgress("hires","Rendering detail preview",0);
   const wanted=new Set(needed.map(t=>`${im.uid}:${previewGradeRevision}:${Math.round(renderScale*10000)}:${t.sx}:${t.sy}`));
   // Detach off-screen tiles but retain them in the bounded LRU cache.
   for(const node of [...hiresLayer.children]){
+    if(node.dataset.clipOverlay==="true")continue;
     if(!wanted.has(node.dataset.tileKey))node.remove();
   }
   const plut=currentPreviewLut,N=currentPreviewLutSize,revision=previewGradeRevision;
@@ -1714,8 +1732,10 @@ async function renderVisibleHiresTiles(token){
       break;
     }
     // Yield between tiles to keep gestures and controls responsive.
+    completedTiles++;setBackgroundProgress("hires","Rendering detail preview",completedTiles/needed.length*100);
     await new Promise(resolve=>setTimeout(resolve,0));
   }
+  clearBackgroundProgress("hires");
 }
 
 let hiresWorker=null,hiresWorkerUrl=null,hiresWorkerSeq=0,hiresWorkerLutRevision=-1;
@@ -1924,6 +1944,325 @@ function makeTestChart(){
   addImageData(c.getImageData(0,0,w,h),"test-chart",null,cv);
 }
 
+let backgroundWorkerUrl=null;
+const backgroundWorkers={};
+const backgroundTasks=new Map();
+const backgroundTaskPriority={harmony:4,preview:3,thumbs:2,cube:1,hires:2};
+const backgroundProgressEl=$("backgroundProgress");
+let backgroundProgressHideTimer=null;
+function setBackgroundProgress(task,label,progress){
+  const value=Math.max(0,Math.min(100,Math.round(Number(progress)||0)));
+  backgroundTasks.set(task,{label,value,updated:performance.now()});
+  clearTimeout(backgroundProgressHideTimer);
+  drawBackgroundProgress();
+}
+function clearBackgroundProgress(task){
+  backgroundTasks.delete(task);
+  drawBackgroundProgress();
+}
+function drawBackgroundProgress(){
+  if(!backgroundProgressEl)return;
+  if(!backgroundTasks.size){
+    backgroundProgressEl.classList.remove("visible");
+    backgroundProgressEl.setAttribute("aria-valuenow","0");
+    return;
+  }
+  const chosen=[...backgroundTasks.entries()].sort((a,b)=>
+    (backgroundTaskPriority[b[0]]||0)-(backgroundTaskPriority[a[0]]||0)||b[1].updated-a[1].updated)[0];
+  const [task,item]=chosen;
+  backgroundProgressEl.classList.add("visible");
+  backgroundProgressEl.querySelector(".progress-label").textContent=item.label;
+  backgroundProgressEl.querySelector(".progress-value").textContent=item.value+"%";
+  backgroundProgressEl.querySelector(".progress-fill").style.width=item.value+"%";
+  backgroundProgressEl.setAttribute("aria-valuenow",String(item.value));
+}
+function getBackgroundWorkerSource(){
+  if(backgroundWorkerUrl)return backgroundWorkerUrl;
+  if(!( "Worker" in window)||!("Blob" in window)||!URL.createObjectURL)return null;
+  const declarations=[
+    "let state={},hueShift=[],hueSat=[],lumaSat=[],cbState={shadows:{x:0,y:0},midtones:{x:0,y:0},highlights:{x:0,y:0}};",
+    "let baseLUT=null,baseOn=true,normalisationGains=[1,1,1],applyingLookStack=false,lutM=null,lutR=null,lutG=null,lutB=null,loadedLuts=[];",
+    "let sourceImage=null,sourceUid=null,previewLutCacheKey=null,previewLutCache=null,harmonyAnalysisCacheKey=null,harmonyAnalysisCache=null,harmonySamplesCacheKey=null,harmonySamplesCache=null;const HUEN=8,LUMN=8;const HARMONY_GEOMETRIES={line:{shadows:0,midtones:0,highlights:0},three:{shadows:-25,midtones:0,highlights:25},y:{shadows:155,midtones:205,highlights:0},tri:{shadows:120,midtones:240,highlights:0}};",
+    `const clamp=${clamp.toString()};`,
+    `const sstep=${sstep.toString()};`,
+    `const sm=${sm.toString()};`,
+    `const cAt=(lut,v)=>lut[Math.round(clamp(v)*255)];`,
+    rgb2hsl.toString(),hsl2rgb.toString(),periodic8.toString(),linear8.toString(),peakMask.toString(),
+    colorBalanceMasks.toString(),vlog2rec709.toString(),sampleBase.toString(),colorBalanceProtection.toString(),grade.toString(),
+    srgbChannelToLinear.toString(),rgbToOKLab.toString(),calculateDominantPalette.toString(),analyzeImageColorTones.toString(),
+    harmonyReferenceHue.toString(),selectAutomaticHarmonyGeometry.toString(),calculateHarmonyHueTargets.toString(),
+    buildStratifiedSampleIndices.toString(),imageHasUsableAlpha.toString(),buildHarmonySampleIndicesByRegion.toString(),
+    calculateAutomaticHueSatCurve.toString(),
+    "const imageAlphaFallbackCache=new WeakMap();",
+    `function sampleLutArr(data,N,r,g,b){const m=N-1,rf=clamp(r)*m,gf=clamp(g)*m,bf=clamp(b)*m;const r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(r0+1,m),g1=Math.min(g0+1,m),b1=Math.min(b0+1,m);const fr=rf-r0,fg=gf-g0,fb=bf-b0,idx=(R,G,B)=>((B*N+G)*N+R)*3,out=[0,0,0];for(let ch=0;ch<3;ch++){const c00=data[idx(r0,g0,b0)+ch]+(data[idx(r1,g0,b0)+ch]-data[idx(r0,g0,b0)+ch])*fr,c10=data[idx(r0,g1,b0)+ch]+(data[idx(r1,g1,b0)+ch]-data[idx(r0,g1,b0)+ch])*fr,c01=data[idx(r0,g0,b1)+ch]+(data[idx(r1,g0,b1)+ch]-data[idx(r0,g0,b1)+ch])*fr,c11=data[idx(r0,g1,b1)+ch]+(data[idx(r1,g1,b1)+ch]-data[idx(r0,g1,b1)+ch])*fr,c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;out[ch]=clamp(c0+(c1-c0)*fb);}return out;}`,
+    `function applyActiveLooks(r,g,b){for(const lk of loadedLuts){if(!lk.active||lk.strength<=0)continue;const o=sampleLutArr(lk.data,lk.size,r,g,b),a=lk.strength/100;r+=(o[0]-r)*a;g+=(o[1]-g)*a;b+=(o[2]-b)*a;}return[r,g,b];}`,
+    `function installSnapshot(s){state=s.state;hueShift=new Float32Array(s.hueShift);hueSat=new Float32Array(s.hueSat);lumaSat=new Float32Array(s.lumaSat);cbState=s.cbState;baseLUT=s.baseLut?{size:s.baseLut.size,name:s.baseLut.name,data:new Float32Array(s.baseLut.data)}:null;baseOn=s.baseOn;normalisationGains=s.normalisationGains;lutM=new Float32Array(s.lutM);lutR=new Float32Array(s.lutR);lutG=new Float32Array(s.lutG);lutB=new Float32Array(s.lutB);loadedLuts=(s.looks||[]).map(x=>({size:x.size,strength:x.strength,active:x.active!==false,data:new Float32Array(x.data)}));applyingLookStack=false;}`,
+    `function sendProgress(m,label,p){self.postMessage({type:"progress",task:m.type,revision:m.revision,label,progress:p});}`,
+    `function applyLutBuffer(src,plut,N,m,base=0,span=100){const out=new Uint8ClampedArray(src.length),scale=(N-1)/255,nn=N*N,total=src.length/4,chunk=262144;for(let p=0;p<src.length;p+=4){const rf=src[p]*scale,gf=src[p+1]*scale,bf=src[p+2]*scale,r0=rf|0,g0=gf|0,b0=bf|0,r1=Math.min(N-1,r0+1),g1=Math.min(N-1,g0+1),b1=Math.min(N-1,b0+1),fr=rf-r0,fg=gf-g0,fb=bf-b0,i000=((b0*N+g0)*N+r0)*3,i100=((b0*N+g0)*N+r1)*3,i010=((b0*N+g1)*N+r0)*3,i110=((b0*N+g1)*N+r1)*3,i001=((b1*N+g0)*N+r0)*3,i101=((b1*N+g0)*N+r1)*3,i011=((b1*N+g1)*N+r0)*3,i111=((b1*N+g1)*N+r1)*3;for(let ch=0;ch<3;ch++){const c00=plut[i000+ch]+(plut[i100+ch]-plut[i000+ch])*fr,c10=plut[i010+ch]+(plut[i110+ch]-plut[i010+ch])*fr,c01=plut[i001+ch]+(plut[i101+ch]-plut[i001+ch])*fr,c11=plut[i011+ch]+(plut[i111+ch]-plut[i011+ch])*fr,c0=c00+(c10-c00)*fg,c1=c01+(c11-c01)*fg;out[p+ch]=255*(c0+(c1-c0)*fb);}out[p+3]=255;if((p/4)%chunk===0){const pct=base+span*(p/4+1)/total;sendProgress(m,m.type==="preview"?"Rendering preview":"Processing thumbnails",Math.min(99,pct));}}return out;}`,
+    `function buildClipOverlayBuffer(data,W,H,m){const overlay=new Uint8ClampedArray(data.length),chunk=262144,HI=[232,60,76],HH=[232,120,120],LO=[60,140,232],LH=[120,170,232];for(let p=0;p<data.length;p+=4){const r=data[p],g=data[p+1],b=data[p+2],hi=r>=254||g>=254||b>=254,lo=r<=1&&g<=1&&b<=1;if(!hi&&!lo)continue;const x=(p/4)%W,y=((p/4)/W)|0,c=hi?HI:LO,h=hi?HH:LH;overlay[p]=c[0];overlay[p+1]=c[1];overlay[p+2]=c[2];overlay[p+3]=255;if(x>0){const q=p-4;overlay[q]=h[0];overlay[q+1]=h[1];overlay[q+2]=h[2];overlay[q+3]=180;}if(x<W-1){const q=p+4;overlay[q]=h[0];overlay[q+1]=h[1];overlay[q+2]=h[2];overlay[q+3]=180;}if(y>0){const q=p-W*4;overlay[q]=h[0];overlay[q+1]=h[1];overlay[q+2]=h[2];overlay[q+3]=180;}if(y<H-1){const q=p+W*4;overlay[q]=h[0];overlay[q+1]=h[1];overlay[q+2]=h[2];overlay[q+3]=180;}if(p%(chunk*4)===0)sendProgress(m,"Building clipping overlay",90+7*p/data.length);}return overlay;}`,
+    `function runPreview(m){if(!sourceImage||sourceUid!==m.uid)throw new Error("Preview source image is not available in the worker.");installSnapshot(m.snapshot);const N=m.N;let lut;if(m.lutKey&&m.lutKey===previewLutCacheKey&&previewLutCache){lut=previewLutCache;sendProgress(m,"Reusing preview LUT",25);}else{lut=new Float32Array(N*N*N*3);let i=0;for(let b=0;b<N;b++){for(let g=0;g<N;g++)for(let r=0;r<N;r++){const o=grade(r/(N-1),g/(N-1),b/(N-1));lut[i++]=o[0];lut[i++]=o[1];lut[i++]=o[2];}sendProgress(m,"Building preview LUT",4+21*(b+1)/N);}previewLutCacheKey=m.lutKey||null;previewLutCache=lut;}const out=applyLutBuffer(sourceImage,lut,N,m,25,65);let clip=null;if(m.clipOn)clip=buildClipOverlayBuffer(out,m.width,m.height,m);let histogram=null;if(m.scopeOn){histogram=new Float64Array(192);for(let p=0;p<out.length;p+=16){histogram[out[p]>>2]++;histogram[64+(out[p+1]>>2)]++;histogram[128+(out[p+2]>>2)]++;}sendProgress(m,"Calculating histogram",98);}sendProgress(m,"Finishing preview",100);const lutForMain=lut.slice(),transfer=[out.buffer,lutForMain.buffer];if(clip)transfer.push(clip.buffer);if(histogram)transfer.push(histogram.buffer);self.postMessage({type:"result",task:"preview",revision:m.revision,uid:m.uid,width:m.width,height:m.height,buffer:out.buffer,lutBuffer:lutForMain.buffer,clipBuffer:clip?clip.buffer:null,histogramBuffer:histogram?histogram.buffer:null,N},transfer);}`,
+    `function runCube(m){installSnapshot(m.snapshot);const N=m.N,dst=new Float32Array(N*N*N*3);let p=0;state.logMode=false;for(let b=0;b<N;b++){const B=b/(N-1);for(let g=0;g<N;g++){const G=g/(N-1);for(let r=0;r<N;r++){const R=r/(N-1),o=grade(R,G,B);dst[p++]=o[0];dst[p++]=o[1];dst[p++]=o[2];}}sendProgress(m,"Calculating colour analysis",100*(b+1)/N);}self.postMessage({type:"result",task:"cube",revision:m.revision,N,buffer:dst.buffer},[dst.buffer]);}`,
+    `function runThumbs(m){const lut=new Float32Array(m.lutBuffer),N=m.N,items=[];for(let i=0;i<m.items.length;i++){const item=m.items[i],src=new Uint8ClampedArray(item.buffer),out=applyLutBuffer(src,lut,N,m,100*i/Math.max(1,m.items.length),100/Math.max(1,m.items.length));items.push({uid:item.uid,width:item.width,height:item.height,buffer:out.buffer});}const transfer=items.map(x=>x.buffer);self.postMessage({type:"result",task:"thumbs",revision:m.revision,items},transfer);}`,
+    `function workerMeasureWheelHueResponse(imageData,region,x,y,sampleIndices){const saved={shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},wasEnabled=state.enabled.colorBalance,alphaFallback=imageHasUsableAlpha(imageData);let sx=0,sy=0,weight=0,sumDL=0,sumDC=0,clipped=0;try{state.enabled.colorBalance=true;cbState.shadows={x:0,y:0};cbState.midtones={x:0,y:0};cbState.highlights={x:0,y:0};cbState[region]={x,y};const d=imageData.data;for(const i of sampleIndices){const k=i*4;if(!alphaFallback&&d[k+3]<128)continue;let pre=null;grade(d[k]/255,d[k+1]/255,d[k+2]/255,(r,g,b)=>{pre=[r,g,b];});if(!pre)continue;const mask=colorBalanceMasks(.2126*pre[0]+.7152*pre[1]+.0722*pre[2])[region];if(mask<.01)continue;cbState[region]={x:0,y:0};const base=grade(d[k]/255,d[k+1]/255,d[k+2]/255),baseLab=rgbToOKLab(...base),baseC=Math.hypot(baseLab.a,baseLab.b);if(baseC<.025){cbState[region]={x,y};continue;}cbState[region]={x,y};const rgb=grade(d[k]/255,d[k+1]/255,d[k+2]/255),lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);if(C<.018)continue;const delta=Math.atan2(Math.sin(Math.atan2(lab.b,lab.a)-Math.atan2(baseLab.b,baseLab.a)),Math.cos(Math.atan2(lab.b,lab.a)-Math.atan2(baseLab.b,baseLab.a))),wt=mask*Math.min(.20,baseC)*Math.min(.20,C);sx+=Math.cos(delta)*wt;sy+=Math.sin(delta)*wt;weight+=wt;sumDL+=(lab.L-baseLab.L)*wt;sumDC+=(C-baseC)*wt;if(rgb.some((v,ch)=>(v<=.001&&base[ch]>.001)||(v>=.999&&base[ch]<.999)))clipped+=wt;}}finally{state.enabled.colorBalance=wasEnabled;cbState.shadows=saved.shadows;cbState.midtones=saved.midtones;cbState.highlights=saved.highlights;}return weight>1e-8?{hue:Math.atan2(sy,sx)*180/Math.PI,deltaL:sumDL/weight,deltaC:sumDC/weight,clipped:clipped/weight,weight}:{hue:0,deltaL:0,deltaC:0,clipped:0,weight:0};}`,
+    `function workerOptimizeWheelVector(imageData,region,targetDelta,sampleIndices,intensity,progressBase){if(Math.abs(targetDelta)<.15||intensity<=0||!sampleIndices.length)return{x:0,y:0};const probe=.02,maxRadius=.40*clamp(intensity);const response=(x,y)=>workerMeasureWheelHueResponse(imageData,region,x,y,sampleIndices);let x=0,y=0;for(let iteration=0;iteration<4;iteration++){const current=response(x,y),error=targetDelta-current.hue;if(Math.abs(error)<.25)break;const wrapDelta=(a,b)=>((a-b+540)%360)-180,gx=wrapDelta(response(x+probe,y).hue,response(x-probe,y).hue)/(2*probe),gy=wrapDelta(response(x,y+probe).hue,response(x,y-probe).hue)/(2*probe),den=gx*gx+gy*gy;if(!Number.isFinite(den)||den<1e-4)break;x+=error*gx/den;y+=error*gy/den;const radius=Math.hypot(x,y);if(radius>maxRadius&&radius>0){x*=maxRadius/radius;y*=maxRadius/radius;}}for(let guard=0;guard<4;guard++){const q=response(x,y);if(Math.abs(q.deltaL)<=.035&&Math.abs(q.deltaC)<=.060&&q.clipped<=.020)break;x*=.78;y*=.78;}return{x,y};}`,
+    `function workerMeasurePipelineHueShift(imageData,baseline,sampleLimit=512){const data=imageData.data,indices=buildStratifiedSampleIndices(imageData,sampleLimit),alphaFallback=imageHasUsableAlpha(imageData),saved={shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},autoEnabled=state.enabled.colorBalance;let sx=0,sy=0,weightSum=0;try{for(const region of ["shadows","midtones","highlights"]){const stored=baseline?.wheels?.[region]||{x:0,y:0};cbState[region]=baseline?.colorBalanceEnabled===false?{x:0,y:0}:{...stored};}state.enabled.colorBalance=baseline?.colorBalanceEnabled??autoEnabled;const samples=[];for(const i of indices){const k=i*4;if(!alphaFallback&&data[k+3]<128)continue;const rgb=grade(data[k]/255,data[k+1]/255,data[k+2]/255),lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);if(C>.025)samples.push({i,h:Math.atan2(lab.b,lab.a),C});}cbState.shadows=saved.shadows;cbState.midtones=saved.midtones;cbState.highlights=saved.highlights;state.enabled.colorBalance=autoEnabled;for(const sample of samples){const k=sample.i*4,rgb=grade(data[k]/255,data[k+1]/255,data[k+2]/255),lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);if(C<.018)continue;const h=Math.atan2(lab.b,lab.a),d=Math.atan2(Math.sin(h-sample.h),Math.cos(h-sample.h)),wt=Math.min(.20,sample.C)*Math.min(.20,C);sx+=Math.cos(d)*wt;sy+=Math.sin(d)*wt;weightSum+=wt;}}finally{cbState.shadows=saved.shadows;cbState.midtones=saved.midtones;cbState.highlights=saved.highlights;state.enabled.colorBalance=autoEnabled;}return weightSum>1e-8&&Math.hypot(sx,sy)>1e-8?Math.atan2(sy,sx)*180/Math.PI:0;}`,
+    `function workerRotateWheels(angle,baseline){const rad=angle*Math.PI/180,c=Math.cos(rad),s=Math.sin(rad);for(const region of ["shadows","midtones","highlights"]){const p=cbState[region],stored=baseline?.wheels?.[region]||{x:0,y:0},base=baseline?.colorBalanceEnabled===false?{x:0,y:0}:stored,x=p.x-base.x,y=p.y-base.y;cbState[region]={x:base.x+x*c-y*s,y:base.y+x*s+y*c};}}`,
+    `function workerOptimizeProtectHue(imageData,preservation,baseline,m){if(preservation<=0)return;const limit=28*clamp(preservation),baseWheels={shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}};let best={offset:0,error:Math.abs(workerMeasurePipelineHueShift(imageData,baseline))};for(let offset=-limit;offset<=limit+.001;offset+=7){cbState.shadows={...baseWheels.shadows};cbState.midtones={...baseWheels.midtones};cbState.highlights={...baseWheels.highlights};workerRotateWheels(offset,baseline);const error=Math.abs(workerMeasurePipelineHueShift(imageData,baseline));if(error<best.error)best={offset,error};}const coarse=best.offset;for(let offset=Math.max(-limit,coarse-7);offset<=Math.min(limit,coarse+7)+.001;offset+=2){cbState.shadows={...baseWheels.shadows};cbState.midtones={...baseWheels.midtones};cbState.highlights={...baseWheels.highlights};workerRotateWheels(offset,baseline);const error=Math.abs(workerMeasurePipelineHueShift(imageData,baseline));if(error<best.error)best={offset,error};}cbState.shadows={...baseWheels.shadows};cbState.midtones={...baseWheels.midtones};cbState.highlights={...baseWheels.highlights};workerRotateWheels(best.offset,baseline);sendProgress(m,"Protecting original hue",98);}`,
+    `function runHarmony(m){if(!sourceImage||sourceUid!==m.uid)throw new Error("Harmony source image is not available in the worker.");installSnapshot(m.snapshot);const baseline=m.baseline,intensity=clamp(m.intensity/100),preservation=clamp(m.preservation/100),regions=["shadows","midtones","highlights"];for(const region of regions){const stored=baseline?.wheels?.[region]||{x:0,y:0};cbState[region]=baseline?.colorBalanceEnabled===false?{x:0,y:0}:{...stored};}state.enabled.colorBalance=baseline?.colorBalanceEnabled??state.enabled.colorBalance;sendProgress(m,"Analysing image colours",4);const data={data:sourceImage,width:m.width,height:m.height};const stride=Math.max(1,Math.floor(Math.sqrt((m.width*m.height)/300000))),sw=Math.ceil(m.width/stride),sh=Math.ceil(m.height/stride),transformed=new Uint8ClampedArray(sw*sh*4);let opaque=false;for(let i=3;i<sourceImage.length;i+=4){if(sourceImage[i]>=128){opaque=true;break;}}let out=0;for(let y=0;y<m.height;y+=stride)for(let x=0;x<m.width;x+=stride){const i=(y*m.width+x)*4,a=opaque?sourceImage[i+3]:255;if(a<128){transformed[out+3]=a;out+=4;continue;}grade(sourceImage[i]/255,sourceImage[i+1]/255,sourceImage[i+2]/255,(r,g,b)=>{transformed[out]=Math.round(clamp(r)*255);transformed[out+1]=Math.round(clamp(g)*255);transformed[out+2]=Math.round(clamp(b)*255);transformed[out+3]=a;});out+=4;}let analysis;if(harmonyAnalysisCacheKey===m.analysisKey&&harmonyAnalysisCache){analysis=harmonyAnalysisCache;}else{analysis=analyzeImageColorTones({data:transformed,width:sw,height:sh});harmonyAnalysisCacheKey=m.analysisKey;harmonyAnalysisCache=analysis;}sendProgress(m,"Sampling tonal regions",30);const selection=m.shape==="auto"?selectAutomaticHarmonyGeometry(analysis):null,shape=selection?selection.shape:m.shape,harmony=calculateHarmonyHueTargets(shape,analysis,100);let sampleIndicesByRegion;if(harmonySamplesCacheKey===m.analysisKey&&harmonySamplesCache){sampleIndicesByRegion=harmonySamplesCache;}else{sampleIndicesByRegion=buildHarmonySampleIndicesByRegion(data,384);harmonySamplesCacheKey=m.analysisKey;harmonySamplesCache=sampleIndicesByRegion;}sendProgress(m,"Optimising colour wheels",43);let hasWheelCorrection=false;for(let ri=0;ri<regions.length;ri++){const region=regions[ri],observed=harmonyReferenceHue(analysis.tones[region]),targetDelta=((harmony.targets[region]-observed+540)%360)-180,vector=workerOptimizeWheelVector(data,region,targetDelta*intensity,sampleIndicesByRegion[region],intensity),stored=baseline.wheels[region],base=baseline.colorBalanceEnabled===false?{x:0,y:0}:stored;cbState[region]={x:base.x+vector.x,y:base.y+vector.y};if(Math.hypot(vector.x,vector.y)>.0005)hasWheelCorrection=true;sendProgress(m,"Optimising colour wheels",43+(ri+1)*13);}if(hasWheelCorrection)state.enabled.colorBalance=true;const autoHueSat=calculateAutomaticHueSatCurve(analysis,intensity),baselineHueSat=baseline.hueSat||[];for(let i=0;i<HUEN;i++){const base=baseline.hueSatEnabled!==false&&Number.isFinite(baselineHueSat[i])?baselineHueSat[i]:0;hueSat[i]=clamp(base+autoHueSat[i]);}if(autoHueSat.some(v=>Math.abs(v)>.0005))state.enabled.hueSat=true;sendProgress(m,"Balancing overall hue",84);if(preservation>0)workerOptimizeProtectHue(data,preservation,baseline,m);sendProgress(m,"Finishing automatic grade",100);return{shape,wheels:{shadows:cbState.shadows,midtones:cbState.midtones,highlights:cbState.highlights},hueSat:Array.from(hueSat),colorBalanceEnabled:state.enabled.colorBalance,hueSatEnabled:state.enabled.hueSat};}`,
+    `self.onmessage=e=>{const m=e.data;try{if(m.type==="setImage"){sourceImage=new Uint8ClampedArray(m.buffer);sourceUid=m.uid;previewLutCacheKey=null;previewLutCache=null;harmonyAnalysisCacheKey=null;harmonyAnalysisCache=null;harmonySamplesCacheKey=null;harmonySamplesCache=null;return;}if(m.type==="preview"){runPreview(m);return;}if(m.type==="cube"){runCube(m);return;}if(m.type==="thumbs"){runThumbs(m);return;}if(m.type==="harmony"){const result=runHarmony(m);self.postMessage({type:"result",task:"harmony",revision:m.revision,uid:m.uid,result});return;}}catch(err){self.postMessage({type:"error",task:m.type,revision:m.revision,uid:m.uid,error:err&&err.message?err.message:String(err)});}};`
+  ];
+  const source=declarations.join("\n");
+  const blob=new Blob([source],{type:"text/javascript"});
+  backgroundWorkerUrl=URL.createObjectURL(blob);
+  return backgroundWorkerUrl;
+}
+function getBackgroundWorker(kind){
+  if(backgroundWorkers[kind])return backgroundWorkers[kind];
+  const url=getBackgroundWorkerSource();if(!url)return null;
+  try{
+    const worker=new Worker(url);
+    worker.__kind=kind;
+    worker.onmessage=e=>{if(backgroundWorkers[kind]!==worker)return;handleBackgroundWorkerMessage(kind,e.data);};
+    worker.onerror=e=>{
+      if(backgroundWorkers[kind]!==worker)return;
+      console.error("LutMaster background worker failed:",e.message||e);
+      clearBackgroundProgress(kind);
+      if(kind==="preview")previewWorkerFailed=true;
+      if(kind==="harmony")harmonyWorkerFailed=true;
+      if(kind==="cube")cubeWorkerFailed=true;
+      worker.terminate();delete backgroundWorkers[kind];
+      if(kind==="preview"){previewBusy=false;if(pendingPreview)dispatchPendingPreview();else if(cur>=0)renderPreviewMainThread();}
+      if(kind==="harmony"){
+        const failedJob=dispatchedHarmonyJob;harmonyBusy=false;
+        if(failedJob&&failedJob.revision===harmonyRevision){applyAutomaticColorHarmonyFallback(failedJob.shape,{record:failedJob.record,force:true});}
+        dispatchedHarmonyRecord=false;dispatchedHarmonyJob=null;
+        if(pendingHarmony)dispatchPendingHarmony();
+      }
+      if(kind==="cube"){
+        const failedJob=dispatchedCubeJob;cubeBusy=false;analysisRunning=false;
+        if(failedJob&&failedJob.revision===cubeRevision){const d=new Float32Array(failedJob.N**3*3);buildAnalysisCube(failedJob.N,d);drawAnalysisHeat({size:failedJob.N,data:d});drawAnalysisHistograms({size:failedJob.N,data:d});}
+        if(pendingCube)dispatchPendingCube();else if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}
+      }
+    };
+    backgroundWorkers[kind]=worker;return worker;
+  }catch(err){console.warn("Background worker unavailable:",err);return null;}
+}
+function cancelBackgroundWorker(kind){
+  const worker=backgroundWorkers[kind];
+  if(worker){worker.terminate();delete backgroundWorkers[kind];}
+  clearBackgroundProgress(kind);
+  if(kind==="preview")previewBusy=false;
+  if(kind==="harmony"){
+    harmonyBusy=false;dispatchedHarmonyRecord=false;dispatchedHarmonyJob=null;
+  }
+  if(kind==="cube"){cubeBusy=false;analysisRunning=false;}
+}
+function createWorkerSnapshot(){
+  const transfer=[];
+  const pack=value=>{const a=Float32Array.from(value||[]);transfer.push(a.buffer);return a.buffer;};
+  const looks=[];
+  for(const lk of loadedLuts){
+    if(!lk.active||!(lk.strength>0))continue;
+    const lut=lk.type==="cube"?{size:lk.size,data:lk.data}:compileGradeLook(lk);
+    looks.push({size:lut.size,strength:+lk.strength,active:true,data:pack(lut.data)});
+  }
+  const base=baseLUT?{size:baseLUT.size,name:baseLUT.name||"",data:pack(baseLUT.data)}:null;
+  const snapshot={
+    state:JSON.parse(JSON.stringify(state)),
+    hueShift:pack(hueShift),hueSat:pack(hueSat),lumaSat:pack(lumaSat),
+    cbState:{shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},
+    baseLut:base,baseOn,normalisationGains:[...normalisationGains],
+    lutM:pack(lutM),lutR:pack(lutR),lutG:pack(lutG),lutB:pack(lutB),looks
+  };
+  return{snapshot,transfer};
+}
+function attachImageToWorker(worker,im){
+  if(!worker||!im||worker.__imageUid===im.uid)return;
+  const copy=new Uint8ClampedArray(im.data.data);
+  worker.postMessage({type:"setImage",uid:im.uid,width:im.data.width,height:im.data.height,buffer:copy.buffer},[copy.buffer]);
+  worker.__imageUid=im.uid;
+}
+
+let previewRevision=0,previewBusy=false,pendingPreview=null,previewWorkerFailed=false,previewDebounce=null;
+let previewObjectSerial=0;const previewObjectIds=new WeakMap();
+function previewObjectId(value){if(!value||(typeof value!=="object"&&typeof value!=="function"))return 0;let id=previewObjectIds.get(value);if(!id){id=++previewObjectSerial;previewObjectIds.set(value,id);}return id;}
+function getPreviewLutCacheKey(im,N){
+  return JSON.stringify({uid:im.uid,N,state,curves,hueShift:Array.from(hueShift),hueSat:Array.from(hueSat),lumaSat:Array.from(lumaSat),
+    cbState,baseOn,baseRef:previewObjectId(baseLUT),baseDataRef:previewObjectId(baseLUT?.data),baseSize:baseLUT?.size,normalisationGains,
+    looks:loadedLuts.map(x=>[x.slotId,x.active,x.strength,x.type,x.size,previewObjectId(x.data),previewObjectId(x.baked?.data)])});
+}
+let harmonyRevision=0,harmonyBusy=false,pendingHarmony=null,harmonyWorkerFailed=false,harmonyDebounce=null,dispatchedHarmonyRecord=false,dispatchedHarmonyJob=null;
+let cubeRevision=0,cubeBusy=false,pendingCube=null,cubeWorkerFailed=false,dispatchedCubeJob=null;
+let thumbsRevision=0,thumbsBusy=false,pendingThumbs=null;
+function enqueuePreview(){
+  if(cur<0||!images[cur])return;
+  pendingPreview={revision:++previewRevision,uid:images[cur].uid};
+  // Stop obsolete pixel/LUT work instead of letting it consume CPU until completion.
+  if(previewBusy)cancelBackgroundWorker("preview");
+  clearTimeout(previewDebounce);
+  previewDebounce=setTimeout(()=>{previewDebounce=null;dispatchPendingPreview();},45);
+}
+function dispatchPendingPreview(){
+  if(previewBusy||!pendingPreview)return;
+  const job=pendingPreview;pendingPreview=null;
+  if(cur<0||!images[cur]||images[cur].uid!==job.uid)return;
+  const worker=getBackgroundWorker("preview");
+  if(!worker||previewWorkerFailed){renderPreviewMainThread();return;}
+  previewBusy=true;
+  try{
+    const im=images[cur];attachImageToWorker(worker,im);updateNormalisationGains(im.data);rebuildAutoCurve();
+    const N=Math.min(33,+$("lutsize").value||33),lutKey=getPreviewLutCacheKey(im,N),packed=createWorkerSnapshot();
+    worker.postMessage({type:"preview",revision:job.revision,uid:im.uid,width:im.data.width,height:im.data.height,lutKey,
+      clipOn:$("clipOn").checked,scopeOn:$("scopeOn").checked,N,snapshot:packed.snapshot},packed.transfer);
+    setBackgroundProgress("preview","Rendering preview",0);
+  }catch(err){previewBusy=false;console.error("Preview worker dispatch failed:",err);renderPreviewMainThread();}
+}
+function renderPreviewMainThread(){
+  if(cur<0)return;
+  updateNormalisationGains(images[cur].data);rebuildAutoCurve();
+  const src=images[cur].data,N=Math.min(33,+$("lutsize").value||33),plut=new Float32Array(N*N*N*3);let i=0;
+  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){const o=grade(r/(N-1),g/(N-1),b/(N-1));plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];}
+  currentPreviewLut=plut;currentPreviewLutSize=N;previewGradeRevision++;
+  commitPreviewOutput(applyLut(src,plut,N),plut,N,previewGradeRevision);
+}
+function commitPreviewOutput(out,plut,N,revision,clipBuffer=null,histogramBuffer=null){
+  currentPreviewLut=plut;currentPreviewLutSize=N;previewGradeRevision=revision;
+  hiresTileCache.clear();hiresLayer.replaceChildren();
+  const showClipLayer=!!clipBuffer&&$("clipOn").checked;
+  hiresLayer.style.display=showOriginal&&!$("wipeOn").checked&&!showClipLayer?"none":"block";
+  hiresLayer.style.clipPath=$("wipeOn").checked?`inset(0 0 0 ${wipeX*100}%)`:"none";
+  if($("clipOn").checked&&clipBuffer&&hiresLayer.style.display!=="none"){
+    const clipCanvas=document.createElement("canvas");clipCanvas.width=out.width;clipCanvas.height=out.height;
+    clipCanvas.style.left="0px";clipCanvas.style.top="0px";clipCanvas.style.width=view.style.width;clipCanvas.style.height=view.style.height;
+    clipCanvas.dataset.clipOverlay="true";
+    const clipCtx=clipCanvas.getContext("2d");
+    if(clipCtx)clipCtx.putImageData(new ImageData(new Uint8ClampedArray(clipBuffer),out.width,out.height),0,0);
+    hiresLayer.appendChild(clipCanvas);
+  }
+  updatePreviewQualityButton();lastOut=out;
+  const src=cur>=0?images[cur].data:null;if(!src)return;
+  if(showOriginal&&!$("wipeOn").checked){ctx.putImageData(src,0,0);}
+  else{
+    ctx.putImageData(out,0,0);
+    if($("wipeOn").checked){const px=Math.round(wipeX*src.width);if(px>0)ctx.putImageData(src,0,0,0,0,px,src.height);positionWipe();}
+  }
+  if($("clipOn").checked&&!clipBuffer){try{drawClipping(out,wipeX,$("wipeOn").checked);}catch(err){console.error("clipping overlay:",err);}}
+  if($("scopeOn").checked){try{if(histogramBuffer)drawHistoBins(new Float64Array(histogramBuffer));else drawHisto(out);}catch(err){console.error("histogram:",err);}}
+  try{scheduleThumbs(plut,N);}catch(err){console.error("thumbnails:",err);}
+  try{drawSubjectSelection();}catch(err){console.error("subject selection overlay:",err);}
+  scheduleHiresTiles();
+}
+function enqueueHarmony(shape,options={}){
+  if(cur<0||!images[cur])return;
+  const intensity=clamp((+colorHarmonyIntensity.value||0)/100),preservation=clamp((+colorHuePreservation.value||0)/100);
+  if(intensity===0){
+    harmonyRevision++;pendingHarmony=null;clearTimeout(harmonyDebounce);
+    if(harmonyBusy)cancelBackgroundWorker("harmony");else clearBackgroundProgress("harmony");
+    restoreColorWheels(colorHarmonyBaseline);activeColorHarmony=shape;syncColorHarmonyButtons();drawColorWheel();render();
+    if(options.record!==false)pushHistory();return;
+  }
+  activeColorHarmony=shape;syncColorHarmonyButtons();
+  const revision=++harmonyRevision;
+  pendingHarmony={revision,uid:images[cur].uid,shape,intensity:intensity*100,preservation:preservation*100,
+    baseline:JSON.parse(JSON.stringify(colorHarmonyBaseline)),record:options.record!==false};
+  // A running harmony solve is now obsolete. Terminating the dedicated worker
+  // stops its CPU work; the next request gets a fresh worker and current image.
+  if(harmonyBusy)cancelBackgroundWorker("harmony");
+  clearTimeout(harmonyDebounce);
+  harmonyDebounce=setTimeout(()=>{if(!harmonyBusy)dispatchPendingHarmony();},36);
+}
+function getHarmonyAnalysisSignature(){
+  return JSON.stringify({
+    sliders:Object.fromEntries(sliders.map(k=>[k,state[k]])),enabled:state.enabled,
+    temp:state.temp,tint:state.tint,colorNorm:state.colorNorm,logMode:state.logMode,curves,
+    hueShift:Array.from(hueShift),hueSat:Array.from(hueSat),
+    secondary:[state.secHue,state.secSat,state.secLum,state.secHueC,state.secRange,state.secSoft],
+    gains:normalisationGains,baseOn,baseName:baseLUT?.name,baseSize:baseLUT?.size,
+    lookStack:loadedLuts.map(x=>[x.slotId,x.active,x.strength]),cbBalance:state.cbBalance,cbBlending:state.cbBlending
+  });
+}
+function dispatchPendingHarmony(){
+  if(harmonyBusy||!pendingHarmony)return;
+  const job=pendingHarmony;pendingHarmony=null;
+  if(cur<0||!images[cur]||images[cur].uid!==job.uid)return;
+  const worker=getBackgroundWorker("harmony");
+  if(!worker||harmonyWorkerFailed){applyAutomaticColorHarmonyFallback(job.shape,{record:job.record,force:true});return;}
+  harmonyBusy=true;dispatchedHarmonyRecord=job.record===true;dispatchedHarmonyJob=job;
+  try{
+    const im=images[cur];updateNormalisationGains(im.data);rebuildAutoCurve();attachImageToWorker(worker,im);const packed=createWorkerSnapshot();
+    worker.postMessage({type:"harmony",revision:job.revision,uid:im.uid,width:im.data.width,height:im.data.height,
+      shape:job.shape,intensity:job.intensity,preservation:job.preservation,baseline:job.baseline,analysisKey:getHarmonyAnalysisSignature(),snapshot:packed.snapshot},packed.transfer);
+    setBackgroundProgress("harmony","Grading colours",0);
+  }catch(err){harmonyBusy=false;console.error("Harmony worker dispatch failed:",err);applyAutomaticColorHarmonyFallback(job.shape,{record:job.record,force:true});}
+}
+function enqueueCube(){
+  pendingCube={revision:++cubeRevision,N:analysisSize};
+  if(!cubeBusy)dispatchPendingCube();
+}
+function dispatchPendingCube(){
+  if(cubeBusy||!pendingCube)return;
+  const job=pendingCube;pendingCube=null;const worker=getBackgroundWorker("cube");
+  if(!worker||cubeWorkerFailed){cubeBusy=false;analysisRunning=false;const d=new Float32Array(job.N**3*3);buildAnalysisCube(job.N,d);drawAnalysisHeat({size:job.N,data:d});drawAnalysisHistograms({size:job.N,data:d});if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}return;}
+  cubeBusy=true;dispatchedCubeJob=job;
+  try{const packed=createWorkerSnapshot();worker.postMessage({type:"cube",revision:job.revision,N:job.N,snapshot:packed.snapshot},packed.transfer);setBackgroundProgress("cube","Calculating colour analysis",0);}
+  catch(err){cubeBusy=false;analysisRunning=false;console.error("Cube worker dispatch failed:",err);cubeWorkerFailed=true;const d=new Float32Array(job.N**3*3);buildAnalysisCube(job.N,d);drawAnalysisHeat({size:job.N,data:d});drawAnalysisHistograms({size:job.N,data:d});if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}}
+}
+function dispatchPendingThumbs(){
+  if(thumbsBusy||!pendingThumbs)return;
+  const job=pendingThumbs;pendingThumbs=null;const worker=getBackgroundWorker("thumbs");
+  if(!worker){job.items.forEach(item=>{const im=images.find(x=>x.uid===item.uid);if(im)im.thumb.getContext("2d").putImageData(applyLut(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),job.lut,job.N),0,0);});return;}
+  thumbsBusy=true;
+  try{const lutCopy=job.lut.slice(),transfer=[lutCopy.buffer];const items=job.items.map(item=>{transfer.push(item.buffer);return item;});worker.postMessage({type:"thumbs",revision:job.revision,N:job.N,lutBuffer:lutCopy.buffer,items},transfer);setBackgroundProgress("thumbs","Updating thumbnails",0);}
+  catch(err){thumbsBusy=false;console.error("Thumbnail worker dispatch failed:",err);}
+}
+function handleBackgroundWorkerMessage(kind,m){
+  if(m.type==="progress"){
+    if(kind==="preview"&&m.revision!==previewRevision)return;
+    if(kind==="harmony"&&m.revision!==harmonyRevision)return;
+    if(kind==="cube"&&m.revision!==cubeRevision)return;
+    if(kind==="thumbs"&&m.revision!==thumbsRevision)return;
+    const task=kind,label=m.label||({preview:"Rendering preview",harmony:"Grading colours",cube:"Calculating colour analysis",thumbs:"Updating thumbnails"}[kind]||"Processing");
+    setBackgroundProgress(task,label,m.progress);return;
+  }
+  if(m.type==="error"){
+    console.error("Background "+kind+" calculation failed:",m.error);
+    clearBackgroundProgress(kind);
+    if(kind==="preview"){previewBusy=false;previewWorkerFailed=true;if(m.revision===previewRevision)renderPreviewMainThread();if(pendingPreview)dispatchPendingPreview();}
+    if(kind==="harmony"){harmonyBusy=false;harmonyWorkerFailed=true;if(m.revision===harmonyRevision&&dispatchedHarmonyJob)applyAutomaticColorHarmonyFallback(dispatchedHarmonyJob.shape,{record:dispatchedHarmonyRecord,force:true});if(pendingHarmony)dispatchPendingHarmony();}
+    if(kind==="cube"){cubeBusy=false;cubeWorkerFailed=true;analysisRunning=false;if(m.revision===cubeRevision&&dispatchedCubeJob){const d=new Float32Array(dispatchedCubeJob.N**3*3);buildAnalysisCube(dispatchedCubeJob.N,d);drawAnalysisHeat({size:dispatchedCubeJob.N,data:d});drawAnalysisHistograms({size:dispatchedCubeJob.N,data:d});}if(pendingCube)dispatchPendingCube();}
+    if(kind==="thumbs"){thumbsBusy=false;}
+    return;
+  }
+  if(m.type!=="result")return;
+  clearBackgroundProgress(kind);
+  if(kind==="preview"){
+    previewBusy=false;
+    if(m.revision===previewRevision&&cur>=0&&images[cur]?.uid===m.uid){
+      const out=new ImageData(new Uint8ClampedArray(m.buffer),m.width,m.height),lut=new Float32Array(m.lutBuffer);
+      commitPreviewOutput(out,lut,m.N,m.revision,m.clipBuffer,m.histogramBuffer);
+    }
+    if(pendingPreview)dispatchPendingPreview();
+  }else if(kind==="harmony"){
+    harmonyBusy=false;
+    if(m.revision===harmonyRevision&&cur>=0&&images[cur]?.uid===m.uid){
+      const r=m.result;for(const region of ["shadows","midtones","highlights"])cbState[region]={...r.wheels[region]};
+      for(let i=0;i<HUEN;i++)hueSat[i]=r.hueSat[i]||0;
+      state.enabled.colorBalance=r.colorBalanceEnabled;state.enabled.hueSat=r.hueSatEnabled;syncSectionEnabled();
+      activeColorHarmony=r.shape;syncColorHarmonyButtons();drawHueSat();expandSidebarSectionForElement($("cbWheel"));drawColorWheel();render();
+      if(dispatchedHarmonyRecord||dispatchedHarmonyJob?.record)pushHistory();
+    }
+    if(pendingHarmony)dispatchPendingHarmony();
+  }else if(kind==="cube"){
+    cubeBusy=false;analysisRunning=false;
+    if(m.revision===cubeRevision){const lut={size:m.N,data:new Float32Array(m.buffer),name:"current grade"};drawAnalysisHeat(lut);drawAnalysisHistograms(lut);}
+    if(pendingCube)dispatchPendingCube();else if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}
+  }else if(kind==="thumbs"){
+    thumbsBusy=false;
+    if(m.revision===thumbsRevision){for(const item of m.items){const im=images.find(x=>x.uid===item.uid);if(im)im.thumb.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),0,0);}}
+    if(pendingThumbs)dispatchPendingThumbs();
+  }
+}
+
 let raf=null;
 /**
  * Rebuilds the preview from current state.
@@ -1960,43 +2299,11 @@ function render(){
     drawRamp();drawCurves();drawStrips();
     scheduleCubeAnalysis();
     if(cur<0)return;
-    const src=images[cur].data;
-    // Preview grid is capped at 33: a 65-point export setting would cost 274k grade() calls per frame.
-    const N=Math.min(33,+$("lutsize").value||33),plut=new Float32Array(N*N*N*3);
-    let i=0;
-    for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
-      const o=grade(r/(N-1),g/(N-1),b/(N-1));
-      plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];
-    }
-    currentPreviewLut=plut;currentPreviewLutSize=N;previewGradeRevision++;
-    hiresTileCache.clear();hiresLayer.replaceChildren();
-    hiresLayer.style.display=showOriginal?"none":"block";
-    hiresLayer.style.clipPath=$("wipeOn").checked?`inset(0 0 0 ${wipeX*100}%)`:"none";
-    updatePreviewQualityButton();
-    const out=applyLut(src,plut,N);
-    lastOut=out;
-    if(showOriginal&&!$("wipeOn").checked){ctx.putImageData(src,0,0);}
-    else{
-      ctx.putImageData(out,0,0);
-      if($("wipeOn").checked){
-        const px=Math.round(wipeX*src.width);
-        if(px>0)ctx.putImageData(src,0,0,0,0,px,src.height);
-        positionWipe();
-      }
-    }
-    // Overlays are isolated: a fault in one must never abort the rest of the
-    // frame (that would silently freeze the histogram and thumbnails too).
-    if($("clipOn").checked){
-      try{drawClipping(out,wipeX,$("wipeOn").checked);}catch(err){console.error("clipping overlay:",err);}
-    }
-    if($("scopeOn").checked){
-      try{drawHisto(out);}catch(err){console.error("histogram:",err);}
-    }
-    try{scheduleThumbs(plut,N);}catch(err){console.error("thumbnails:",err);}
-    try{drawSubjectSelection();}catch(err){console.error("subject selection overlay:",err);}
-    scheduleHiresTiles();
+    enqueuePreview();
   });
 }
+function scheduleRender(){render();}
+
 function applyLut(src,plut,N){
   const out=new ImageData(src.width,src.height);
   const sd=src.data,od=out.data,m=(N-1)/255,NN=N*N;
@@ -2069,18 +2376,14 @@ function drawClipping(out,wipeXc,wipeOn){
   }
   ctx.putImageData(cv,0,0);
 }
-function drawHisto(out){
+function drawHistoBins(bins){
   const hcv=$("histo"),hc=hcv.getContext("2d");
-  const bins=[new Float64Array(64),new Float64Array(64),new Float64Array(64)];
-  const d=out.data;
-  for(let p=0;p<d.length;p+=16){
-    bins[0][d[p]>>2]++;bins[1][d[p+1]>>2]++;bins[2][d[p+2]>>2]++;
-  }
-  let mx=1;bins.forEach(b=>{for(const v of b)if(v>mx)mx=v;});
+  const channels=[bins.subarray(0,64),bins.subarray(64,128),bins.subarray(128,192)];
+  let mx=1;channels.forEach(b=>{for(const v of b)if(v>mx)mx=v;});
   hc.fillStyle="#0d0c09";hc.fillRect(0,0,hcv.width,hcv.height);
   const cols=["rgba(230,80,70,.8)","rgba(110,210,110,.8)","rgba(100,140,240,.8)"];
   hc.globalCompositeOperation="screen";
-  bins.forEach((b,ci)=>{
+  channels.forEach((b,ci)=>{
     hc.fillStyle=cols[ci];
     for(let k=0;k<64;k++){
       const hgt=Math.pow(b[k]/mx,0.5)*(hcv.height-4);
@@ -2089,27 +2392,34 @@ function drawHisto(out){
   });
   hc.globalCompositeOperation="source-over";
 }
-let thumbTimer=null;
-function scheduleThumbs(plut, N) {
-  if (images.length < 2) return;
-  clearTimeout(thumbTimer);
-  thumbTimer = setTimeout(() => {
-    images.forEach(im => {
-      const tc = im.thumb.getContext("2d");
-      if (!im.small) {
-        const full = document.createElement("canvas");
-        full.width = im.data.width; full.height = im.data.height;
-        full.getContext("2d").putImageData(im.data, 0, 0);
-        const sc = document.createElement("canvas");
-        sc.width = im.thumb.width; sc.height = im.thumb.height;
-        const scx = sc.getContext("2d");
-        scx.drawImage(full, 0, 0, sc.width, sc.height);
-        im.small = scx.getImageData(0, 0, sc.width, sc.height);
-      }
-      tc.putImageData(applyLut(im.small, plut, N), 0, 0);
-    });
-  }, 250);
+function drawHisto(out){
+  const bins=new Float64Array(192),d=out.data;
+  for(let p=0;p<d.length;p+=16){bins[d[p]>>2]++;bins[64+(d[p+1]>>2)]++;bins[128+(d[p+2]>>2)]++;}
+  drawHistoBins(bins);
 }
+let thumbTimer=null;
+function scheduleThumbs(plut,N){
+  if(images.length<2)return;
+  clearTimeout(thumbTimer);
+  const revision=++thumbsRevision;
+  thumbTimer=setTimeout(()=>{
+    const items=[];
+    images.forEach(im=>{
+      if(!im.small){
+        const full=document.createElement("canvas");full.width=im.data.width;full.height=im.data.height;
+        full.getContext("2d").putImageData(im.data,0,0);
+        const sc=document.createElement("canvas");sc.width=im.thumb.width;sc.height=im.thumb.height;
+        const scx=sc.getContext("2d");scx.drawImage(full,0,0,sc.width,sc.height);
+        im.small=scx.getImageData(0,0,sc.width,sc.height);
+      }
+      const copy=new Uint8ClampedArray(im.small.data);
+      items.push({uid:im.uid,width:im.small.width,height:im.small.height,buffer:copy.buffer});
+    });
+    pendingThumbs={revision,N,lut:plut.slice(),items};
+    if(!thumbsBusy)dispatchPendingThumbs();
+  },250);
+}
+
 function drawRamp(){
   const rc=$("ramp"),c=rc.getContext("2d"),w=rc.width;
   for(let x=0;x<w;x++){
@@ -3686,7 +3996,7 @@ function calculateAutomaticHueSatCurve(analysis,intensity){
  * Calculates the complete automatic colour grade. Wheel targets and the
  * Hue-vs-Saturation curve are applied together from the same immutable baseline.
  */
-function applyAutomaticColorHarmony(shape,options={}){
+function applyAutomaticColorHarmonyFallback(shape,options={}){
   const record=options.record!==false;
   if(cur<0||!images[cur]||!images[cur].data){fail("Open a photo before tuning colors.");return;}
   if(shape!=="auto"&&!["three","y","line","tri"].includes(shape))return;
@@ -3733,24 +4043,39 @@ function applyAutomaticColorHarmony(shape,options={}){
   expandSidebarSectionForElement($("cbWheel"));drawColorWheel();render();
   if(record)pushHistory();
 }
+function applyAutomaticColorHarmony(shape,options={}){
+  const record=options.record!==false;
+  if(cur<0||!images[cur]||!images[cur].data){fail("Open a photo before tuning colors.");return;}
+  if(shape!=="auto"&&!(["three","y","line","tri"].includes(shape)))return;
+  if(!colorHarmonyBaseline)colorHarmonyBaseline=cloneColorWheels();
+  restoreColorWheels(colorHarmonyBaseline);
+  enqueueHarmony(shape,{record});
+}
+function commitAutomaticHarmonyHistory(){
+  if(!activeColorHarmony)return;
+  if(pendingHarmony){pendingHarmony.record=true;return;}
+  if(harmonyBusy&&dispatchedHarmonyJob&&dispatchedHarmonyJob.revision===harmonyRevision){
+    dispatchedHarmonyRecord=true;dispatchedHarmonyJob.record=true;return;
+  }
+  pushHistory();
+}
 colorHarmonyIntensity.addEventListener("input",()=>{
   syncColorHarmonyIntensity();
   if(activeColorHarmony)applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
 });
-colorHarmonyIntensity.addEventListener("change",()=>{if(activeColorHarmony)pushHistory();});
+colorHarmonyIntensity.addEventListener("change",commitAutomaticHarmonyHistory);
 syncColorHuePreservation();
 colorHuePreservation.addEventListener("input",()=>{
   syncColorHuePreservation();
   if(activeColorHarmony)applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
 });
-colorHuePreservation.addEventListener("change",()=>{if(activeColorHarmony)pushHistory();});
+colorHuePreservation.addEventListener("change",commitAutomaticHarmonyHistory);
 function resetColorHuePreservation(e){
   if(e){e.preventDefault();e.stopPropagation();}
   colorHuePreservation.value="0";
   syncColorHuePreservation();
   if(activeColorHarmony){
-    applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
-    pushHistory();
+    applyAutomaticColorHarmony(activeColorHarmony,{record:true,force:true});
   }
 }
 colorHuePreservation.addEventListener("dblclick",resetColorHuePreservation);
@@ -3762,8 +4087,7 @@ function resetColorHarmonyIntensity(e){
   colorHarmonyIntensity.value="40";
   syncColorHarmonyIntensity();
   if(activeColorHarmony){
-    applyAutomaticColorHarmony(activeColorHarmony,{record:false,force:true});
-    pushHistory();
+    applyAutomaticColorHarmony(activeColorHarmony,{record:true,force:true});
   }
 }
 colorHarmonyIntensity.addEventListener("dblclick",resetColorHarmonyIntensity);
@@ -3777,6 +4101,7 @@ colorHarmonyIntensityValue.addEventListener("dblclick",resetColorHarmonyIntensit
  */
 function toggleAutomaticColorHarmony(){
   if(activeColorHarmony){
+    harmonyRevision++;pendingHarmony=null;clearTimeout(harmonyDebounce);clearBackgroundProgress("harmony");
     const baseline=colorHarmonyBaseline;
     if(baseline)restoreColorWheels(baseline);
     clearColorHarmonySelection();
@@ -6306,18 +6631,8 @@ function drawAnalysisMiniSwatches(lut){
 function renderCubeAnalysis(){
   if(analysisRunning){analysisDirty=true;return;}
   analysisRunning=true;
-  const N=analysisSize;
-  chLabel.textContent="Output "+N+"³ preview";
-  chSizeBtn.textContent=N+"³";
-  setTimeout(()=>{
-    const data=new Float32Array(N*N*N*3);
-    buildAnalysisCube(N,data);
-    const lut={size:N,data,name:"current grade"};
-    drawAnalysisHeat(lut);
-    drawAnalysisHistograms(lut);
-    analysisRunning=false;
-    if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}
-  },0);
+  const N=analysisSize;chLabel.textContent="Output "+N+"³ preview";chSizeBtn.textContent=N+"³";
+  enqueueCube();
 }
 
 let analysisTimer=null,analysisDirty=false;
