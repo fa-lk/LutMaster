@@ -1,5 +1,5 @@
 # LutMaster
-<img width="1439" height="833" alt="image" src="https://github.com/user-attachments/assets/2010b86d-93a9-4bcd-9285-1d9d654b510c" />
+<img width="1439" height="836" alt="image" src="https://github.com/user-attachments/assets/53342741-3488-4fa2-ac97-e6260ba1bdd7" />
 
 
 ## Quick start
