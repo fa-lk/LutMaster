@@ -210,7 +210,7 @@
   .chtabs{margin-bottom:10px}
   .chtabs button.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}
   .curve-tools{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:10px 0}
-  .curve-point-move-tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;flex:0 0 100%;width:100%}
+  .curve-point-move-tools{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;width:100%;margin:10px 0 4px}
   .curve-point-move-tools .btn{width:100%;min-width:0;padding:7px 2px;text-align:center}
   .auto-correction-groups{display:flex;flex-direction:column;gap:11px;margin:10px 0}
   .auto-correction-block{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -219,7 +219,7 @@
   .auto-correction-groups .btn{width:100%;min-width:0;min-height:34px;padding:7px 6px;text-align:center;white-space:normal;line-height:1.25;overflow-wrap:anywhere}
   .auto-correction-groups .btn.on,.auto-grade-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3);box-shadow:inset 0 0 0 1px var(--orange)}
   .curve-tools span{font:10px var(--mono);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
-  .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}\n  #curvePointStatus{font:10px var(--mono);color:var(--dim);min-width:90px}\n  #curvePointTools button:disabled{opacity:.35;cursor:not-allowed}
+  .curve-tools .btn.on{border-color:var(--orange);color:var(--orange-hi);background:var(--panel3)}\n  #curvePointTools button:disabled,.curve-point-move-tools button:disabled{opacity:.35;cursor:not-allowed}
   #curves{width:100%;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:crosshair;touch-action:none}
   .tiny{color:var(--faint);font-size:11px;margin-top:8px;line-height:1.5}
   #looksDD{position:relative;margin-top:10px}
@@ -266,16 +266,7 @@
   #nameModal h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
   #nameModal input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:9px 10px;border-radius:3px;font:13px var(--mono);margin-bottom:14px}
   #nameModal input:focus{border-color:var(--orange);outline:none;box-shadow:0 0 0 3px var(--ring)}
-  #nameModal .acts,#fmtModal .acts{display:flex;gap:8px;justify-content:flex-end}
-  #fmtModal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
-  #fmtModal.show{display:flex}
-  #fmtModal .box{width:min(360px,90vw);background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r);padding:18px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
-  #fmtModal h3{font:600 13px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin-bottom:12px}
-  #fmtModal label{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;border:1px solid var(--line);border-radius:3px;background:var(--panel2);cursor:pointer;font:12px var(--mono)}
-  #fmtModal label:has(input:checked){border-color:var(--orange);color:var(--orange-hi)}
-  #fmtModal label small{margin-left:auto;color:var(--dim)}
-  #fmtModal input{accent-color:var(--orange)}
-  #fmtModal .acts{margin-top:14px}
+  #nameModal .acts{display:flex;gap:8px;justify-content:flex-end}
   .strip{width:100%;border:1px solid var(--line);border-radius:3px;touch-action:none;cursor:ns-resize;margin-bottom:4px}
   footer{padding:18px 20px;margin-top:auto;background:linear-gradient(0deg,var(--panel),transparent)}
   #lutname{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 10px;border-radius:3px;margin-bottom:10px;font:13px var(--mono)}
@@ -309,6 +300,7 @@
   #abwrap button:hover:not(.on){color:var(--text)}
   #view.picking{cursor:default}
   .pickbtn.on{border-color:var(--orange);color:var(--orange-hi)}
+  #wbPick{display:block;width:100%;margin-bottom:11px}
   #secSwatch{width:22px;height:22px;border-radius:3px;border:1px solid var(--line);flex-shrink:0}
   .look .lswatch{display:flex;gap:1px;flex-shrink:0}
   .look .lswatch i{width:9px;height:14px;display:block}
@@ -670,6 +662,72 @@
   #appHeader #previewQualityBtn:disabled .quality-glyph{opacity:.75}
   @media(max-width:420px){#appHeader #previewQualityBtn.preview-quality-btn{width:40px;min-width:40px}}
 </style>
+
+<style id="export-dialog-styles">
+  #appHeader .topbar-export-group #openExportDialog{width:40px;height:40px;min-width:40px;min-height:40px;margin:0}
+  @media(max-width:760px){#appHeader .topbar-export-group #openExportDialog{width:36px;height:36px;min-width:36px;min-height:36px}}
+  #exportModal.export-modal{position:fixed;inset:0;z-index:650;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(3px)}
+  #exportModal.export-modal.show{display:flex}
+  #exportModal .export-dialog{width:min(1040px,96vw);max-height:min(88vh,900px);display:flex;flex-direction:column;min-height:0;background:var(--panel);border:1px solid var(--line-hi);border-radius:5px;box-shadow:0 22px 64px rgba(0,0,0,.68);color:var(--text);padding:18px}
+  #exportModal .export-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  #exportModal h3{margin:0;color:var(--text);font:600 14px var(--mono);letter-spacing:.07em;text-transform:uppercase}
+  #exportModal .export-close-btn{width:32px;height:32px;min-width:32px;border:1px solid var(--line);border-radius:3px;background:var(--panel2);color:var(--dim);font:22px/1 var(--mono);cursor:pointer}
+  #exportModal .export-toolbar-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  #exportModal .export-control-group{display:flex;align-items:center;gap:9px;min-width:0}
+  #exportModal .export-control-label{color:var(--dim);font:10px var(--mono);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+  #exportModal .export-button-group{display:flex;align-items:center;gap:5px}
+  #exportModal .export-tool-btn,#exportModal .export-format-btn,#exportModal .export-secondary-btn{border:1px solid var(--line);border-radius:3px;background:var(--panel2);color:var(--text);cursor:pointer;transition:border-color .12s,background .12s,color .12s}
+  #exportModal .export-tool-btn{width:34px;height:34px;display:flex;align-items:center;justify-content:center;padding:5px}
+  #exportModal .export-tool-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  #exportModal .export-format-btn{min-height:34px;padding:6px 10px;font:11px var(--mono);white-space:nowrap}
+  #exportModal .export-tool-btn:hover,#exportModal .export-format-btn:hover,#exportModal .export-secondary-btn:hover{border-color:var(--orange);color:var(--orange-hi)}
+  #exportModal .export-tool-btn.active,#exportModal .export-format-btn.active{border-color:var(--orange);background:var(--orange-dim);color:var(--orange-hi)}
+  #exportModal .export-selection-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;color:var(--dim);font:11px var(--mono)}
+  #exportModal .export-secondary-btn{min-height:34px;padding:7px 12px;font:11px var(--mono)}
+  #exportModal .export-thumbnail-grid{--export-card-min:148px;--export-preview-height:100px;display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--export-card-min),1fr));align-content:start;gap:10px;min-height:120px;max-height:48vh;overflow:auto;padding:2px 3px 12px;scrollbar-width:thin;scrollbar-color:var(--orange) var(--panel)}
+  #exportModal .export-thumbnail-grid[data-size="small"]{--export-card-min:116px;--export-preview-height:78px}
+  #exportModal .export-thumbnail-grid[data-size="medium"]{--export-card-min:164px;--export-preview-height:124px}
+  #exportModal .export-thumbnail-grid[data-size="large"]{--export-card-min:232px;--export-preview-height:178px}
+  #exportModal .export-thumbnail-card{position:relative;display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:7px 7px 8px;border:1px solid var(--line);border-radius:3px;background:var(--panel2);color:var(--text);text-align:left;cursor:pointer}
+  #exportModal .export-thumbnail-card:hover{border-color:var(--line-hi)}
+  #exportModal .export-thumbnail-card.selected{border:2px solid var(--orange);padding:6px 6px 7px;background:var(--orange-dim)}
+  #exportModal .export-thumbnail-preview{height:var(--export-preview-height);display:flex;align-items:center;justify-content:center;overflow:hidden;background:#161816;border-radius:2px}
+  #exportModal .export-thumbnail-preview img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;user-select:none}
+  #exportModal .export-thumbnail-name{display:block;margin-top:7px;min-width:0;overflow:hidden;color:var(--text);font:10px/1.35 var(--mono);text-overflow:ellipsis;white-space:nowrap}
+  #exportModal .export-thumbnail-check{display:none;position:absolute;top:10px;right:10px;width:20px;height:20px;align-items:center;justify-content:center;border-radius:50%;background:var(--orange);color:var(--film);font:700 13px/1 var(--mono);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  #exportModal .export-thumbnail-card.selected .export-thumbnail-check{display:flex}
+  #exportModal .export-dialog-footer{display:flex;justify-content:flex-end;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+  #exportModal .export-primary-btn{min-width:150px;min-height:38px;padding:8px 15px;border:1px solid var(--orange);border-radius:3px;background:var(--orange);color:var(--film);font:600 12px var(--mono);cursor:pointer}
+  #exportModal .export-primary-btn:hover:not(:disabled){background:var(--orange-hi);border-color:var(--orange-hi)}
+  #exportModal .export-primary-btn:disabled{opacity:.42;cursor:not-allowed}
+  #exportModal button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  @media(max-width:700px){
+    #exportModal.export-modal{padding:8px}
+    #exportModal .export-dialog{width:100%;max-height:94vh;padding:12px}
+    #exportModal .export-toolbar-row{align-items:flex-start;gap:10px}
+    #exportModal .export-control-group{flex-wrap:wrap}
+    #exportModal .export-control-label{width:100%}
+    #exportModal .export-format-control{flex:1 1 100%}
+    #exportModal .export-format-group{width:100%;flex-wrap:wrap}
+    #exportModal .export-format-btn{flex:1 1 auto}
+    #exportModal .export-thumbnail-grid{max-height:48vh}
+    #exportModal .export-thumbnail-grid[data-size="large"]{--export-card-min:170px;--export-preview-height:136px}
+  }
+</style>
+
+
+<style id="image-load-modal-styles">
+  #imageLoadModal.image-load-modal{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,6,.72);backdrop-filter:blur(3px)}
+  #imageLoadModal.image-load-modal.visible{display:flex}
+  #imageLoadModal .image-load-dialog{width:min(440px,calc(100vw - 36px));padding:22px 22px 18px;background:var(--panel);border:1px solid var(--line-hi);border-radius:5px;box-shadow:0 20px 60px rgba(0,0,0,.62);color:var(--text)}
+  #imageLoadModal .image-load-title{margin:0 0 12px;color:var(--orange-hi);font:600 13px var(--mono);letter-spacing:.07em;text-transform:uppercase}
+  #imageLoadModal .image-load-status{min-height:18px;overflow:hidden;color:var(--text);font:11px var(--mono);text-overflow:ellipsis;white-space:nowrap}
+  #imageLoadModal .image-load-track{height:7px;margin:17px 0 11px;overflow:hidden;border:1px solid var(--line);border-radius:4px;background:rgba(154,160,152,.12)}
+  #imageLoadModal .image-load-fill{width:0;height:100%;border-radius:3px;background:var(--orange-hi);transition:width .28s cubic-bezier(.22,.61,.36,1)}
+  #imageLoadModal .image-load-footer{display:flex;justify-content:space-between;gap:10px;color:var(--dim);font:10px var(--mono);font-variant-numeric:tabular-nums}
+  @media(max-width:600px){#imageLoadModal .image-load-dialog{padding:18px 16px 15px}}
+</style>
+
 </head>
 <body>
 <header id="appHeader">
@@ -679,6 +737,7 @@
 <div class="topbar-direct-group" role="group" aria-label="History">
   <button class="topbar-icon-btn" disabled id="undoBtn" type="button" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/></svg></button>
   <button class="topbar-icon-btn" disabled id="redoBtn" type="button" aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"/></svg></button>
+  <button id="resetAll" class="topbar-icon-btn reset-all-btn" type="button" aria-label="Reset all adjustments" title="Reset all adjustments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v7m4-7v7M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button>
 </div>
 
 
@@ -702,18 +761,8 @@
 </div>
 <div class="topbar-action-cluster" role="group" aria-label="Project, workspace and export">
 <div class="topbar-menu" data-topbar-menu>
-  <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Project actions" title="Project actions" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><path d="M12 10v7m-3.5-3.5h7"/></svg></button>
-  <div class="topbar-popover" role="menu" aria-label="Project actions">
-    <div class="topbar-menu-heading">Project</div>
-    <button id="saveProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8"/></svg><span>Save project</span></button>
-    <button id="loadProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg><span>Load project</span></button>
-    <div class="topbar-menu-divider"></div>
-    <button id="resetAll" class="topbar-menu-item danger" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v7m4-7v7M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Reset all adjustments</span></button>
-  </div>
-</div>
-<div class="topbar-menu" data-topbar-menu>
   <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Add images" title="Add images" aria-haspopup="true" aria-expanded="false" aria-controls="stageMenuAdd">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6M18 3v6M15 6h6"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8.5" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/><circle cx="18" cy="6" r="4.25"/><path d="M18 3.8v4.4M15.8 6h4.4"/></svg>
   </button>
   <div class="topbar-popover" id="stageMenuAdd" role="group" aria-label="Add images">
     <div class="topbar-menu-heading">Workspace</div>
@@ -721,19 +770,36 @@
     <button id="chartbtn2" class="topbar-menu-item" type="button" title="Load the built-in test chart"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 4v16M15 4v16M3 14h18"/></svg><span>Load test chart</span></button>
   </div>
 </div>
-<div class="topbar-menu topbar-export-group" data-topbar-menu>
-  <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Export images" title="Export images" aria-haspopup="true" aria-expanded="false" aria-controls="stageMenuExport">
+<div class="topbar-menu" data-topbar-menu>
+  <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Project actions" title="Project actions" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h1z"/><path d="M7 3v6h10V3M7 21v-7h10v7M14.5 5.5h.01"/></svg></button>
+  <div class="topbar-popover" role="menu" aria-label="Project actions">
+    <div class="topbar-menu-heading">Project</div>
+    <button id="saveProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8"/></svg><span>Save project</span></button>
+    <button id="loadProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg><span>Load project</span></button>
+
+  </div>
+</div>
+<div class="topbar-menu topbar-export-group">
+  <button id="openExportDialog" class="topbar-icon-btn" type="button" disabled aria-label="Export images" title="Open the image export dialog" aria-haspopup="dialog" aria-expanded="false" aria-controls="exportModal">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg>
   </button>
-  <div class="topbar-popover" id="stageMenuExport" role="group" aria-label="Export images">
-    <div class="topbar-menu-heading">Export</div>
-    <button id="savephoto" class="topbar-menu-item" type="button" title="Export the currently selected graded photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg><span>Save current photo…</span></button>
-    <button id="saveallphotos" class="topbar-menu-item" type="button" title="Grade and save every loaded photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM8 9h8M8 13h5M12 16v-5M9 14l3-3 3 3"/></svg><span>Save all photos…</span></button>
-  </div>
 </div>
 </div>
 <input hidden id="projfile" type="file" accept=".lutmaster" title="Select a LutMaster project file to load">
 </header>
+<div id="imageLoadModal" class="image-load-modal" role="dialog" aria-modal="true" aria-labelledby="imageLoadTitle" aria-hidden="true">
+  <div class="image-load-dialog">
+    <div id="imageLoadTitle" class="image-load-title">Loading images</div>
+    <div id="imageLoadStatus" class="image-load-status" aria-live="polite">Preparing images…</div>
+    <div class="image-load-track" role="progressbar" aria-label="Image loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="imageLoadFill" class="image-load-fill"></div>
+    </div>
+    <div class="image-load-footer">
+      <span id="imageLoadCount">0 of 0 images</span>
+      <span id="imageLoadPercent">0%</span>
+    </div>
+  </div>
+</div>
 <div id="backgroundProgress" role="progressbar" aria-label="Background processing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
   <div class="progress-meta"><span class="progress-label">Processing</span><span class="progress-value">0%</span><button id="backgroundProgressCancel" class="progress-cancel" type="button" aria-label="Cancel export" hidden>×</button></div>
   <div class="progress-track"><div class="progress-fill"></div></div>
@@ -744,7 +810,7 @@
 <div id="drop" title="Drop image files here or click to choose photos">
 <strong>Drop one or more photos here</strong>
       or click to choose example images. They never leave your device.
-      <p class="tiny">Limits: 100 MP · 20,000 px per edge · 250 MiB per file. Actual import/export also depends on available browser memory.</p>
+      <p class="tiny">Limits: 100 MP · 20,000 px per edge · 250 MiB per file. Actual import/export depends on browser and canvas allocation limits.</p>
       <div class="or">No photo to hand?<br/><button id="chartbtn1" title="Load the built-in test chart as a sample image" type="button">Use the built-in test chart</button></div>
 <div id="droperr"></div>
 <input accept="image/*" hidden="" id="file" multiple="" type="file"/ title="Select image files to add to the workspace">
@@ -906,7 +972,7 @@
 <div class="row"><label>Fade blacks</label><input id="fade" max="100" min="0" title="Fade blacks: raise the black floor for a faded look." type="range" value="0"/><input class="num" title="Fade blacks: raise the black floor for a faded look." type="number" value="0"/></div>
 </section>
 <section id="sidebar-colour"><h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Colour" checked="" data-enable="colour" title="Enable or disable Colour" type="checkbox"/></label>Colour <button class="reset" id="colReset" title="Reset all colour adjustments">reset</button></h2><div class="auto-correction-heading">White balance</div>
-<button class="btn pickbtn" id="wbPick" title="Sample a neutral area in the photo to set white balance">⌖ White balance picker — tap a neutral in the photo</button>
+<button class="btn pickbtn" id="wbPick" title="Sample a neutral area in the photo to set white balance">⌖ Pick Whitebalance</button>
 <div class="auto-correction-heading">Tonal normalisation</div>
 <div class="row"><label for="normHighlights" title="Image-adaptive RGB neutralisation strength in highlights. Uses a fixed, smooth tonal transition and is applied before the colour wheels.">Normalisation · Highlights</label><input id="normHighlights" max="100" min="0" title="Normalisation strength in highlights" type="range" value="0"/><input class="num" title="Normalisation strength in highlights" type="number" value="0"/></div>
 <div class="row"><label for="normMids" title="Image-adaptive RGB neutralisation strength in midtones. Uses a fixed, smooth tonal transition and is applied before the colour wheels.">Normalisation · Mids</label><input id="normMids" max="100" min="0" title="Normalisation strength in midtones" type="range" value="0"/><input class="num" title="Normalisation strength in midtones" type="number" value="0"/></div>
@@ -927,19 +993,23 @@
 <button data-ch="b" title="Blue">Blue</button>
 </div>
 <canvas height="210" id="curves" title="Edit the active tone curve by adding or dragging control points" width="300"></canvas>
+<div class="curve-point-move-tools" id="curvePointMoveTools" aria-label="Move selected curve point">
+  <button class="btn" id="curveMoveLeft" type="button" title="Move selected point horizontally to the left" aria-label="Move point left">←</button>
+  <button class="btn" id="curveMoveRight" type="button" title="Move selected point horizontally to the right" aria-label="Move point right">→</button>
+  <button class="btn" id="curveMoveDown" type="button" title="Move selected point vertically down" aria-label="Move point down">↓</button>
+  <button class="btn" id="curveMoveUp" type="button" title="Move selected point vertically up" aria-label="Move point up">↑</button>
+  <button class="btn" id="curveMoveDiagBack" type="button" title="Move selected point along the original curve towards lower input values" aria-label="Move point along original curve towards lower input values">↙</button>
+  <button class="btn" id="curveMoveDiagForward" type="button" title="Move selected point along the original curve towards higher input values" aria-label="Move point along original curve towards higher input values">↗</button>
+</div>
 <div class="curve-tools" id="curvePointTools">
   <button class="btn" id="curveImagePick" type="button" aria-pressed="false" title="Click a pixel in the image to add a point on the active curve">⌖ Add point from image</button>
-  <span id="curvePointStatus">No point selected</span>
-  <div class="curve-point-move-tools">
-    <button class="btn" id="curveMoveLeft" type="button" title="Move selected point horizontally to the left">←</button>
-    <button class="btn" id="curveMoveRight" type="button" title="Move selected point horizontally to the right">→</button>
-    <button class="btn" id="curveMoveDown" type="button" title="Move selected point vertically down">↓</button>
-    <button class="btn" id="curveMoveUp" type="button" title="Move selected point vertically up">↑</button>
-    <button class="btn" id="curveMoveDiagBack" type="button" title="Move selected point along the original curve towards lower input values">↙</button>
-    <button class="btn" id="curveMoveDiagForward" type="button" title="Move selected point along the original curve towards higher input values">↗</button>
-  </div>
 </div>
 <p class="tiny">Click to add a point, drag to shape, double-click a point to remove it. Image picker uses the sampled pixel value as input and the current curve output as the point's output.</p>
+<div class="row curve-smoothness-row">
+  <label for="graduationSmoothness">Smoothness</label>
+  <input id="graduationSmoothness" type="range" min="0" max="100" step="1" value="50" title="0 = linear segments; 50 = current PCHIP interpolation; 100 = strong smoothing"/>
+  <input class="num" id="graduationSmoothnessValue" type="number" min="0" max="100" step="1" value="50" aria-label="Gradation Curve Smoothness value"/>
+</div>
 </section>
 <section id="sidebar-colour-grading" class="closed">
 <h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Color Grading" checked="" data-enable="colorBalance" title="Enable or disable Color Grading" type="checkbox"/></label>Color grading <button class="reset" id="cbReset" title="Reset all three colour wheels to neutral and restore Blending to 50 and Balance to 0.">reset</button></h2>
@@ -971,16 +1041,31 @@
 <h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Hue" checked="" data-enable="hueShift" title="Enable or disable Hue vs Hue" type="checkbox"/></label>Hue vs hue <button class="reset" id="hueReset" title="Reset hue vs hue adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="huecv" title="Adjust hue by dragging the colour-band handles" width="300"></canvas>
 <p class="tiny">Drag a handle to rotate that hue (±60°).</p>
+<div class="row curve-smoothness-row">
+  <label for="hueShiftSmoothness">Smoothness</label>
+  <input id="hueShiftSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
+  <input class="num" id="hueShiftSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Hue vs Hue Smoothness value"/>
+</div>
 </section>
 <section id="sidebar-hue-vs-saturation" class="closed">
 <h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Saturation" checked="" data-enable="hueSat" title="Enable or disable Hue vs Saturation" type="checkbox"/></label>Hue vs saturation <button class="reset" id="hsReset" title="Reset hue vs saturation adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="hscv" title="Adjust saturation by hue by dragging the colour-band handles" width="300"></canvas>
 <p class="tiny">Drag up to boost, down to mute, that hue's saturation.</p>
+<div class="row curve-smoothness-row">
+  <label for="hueSatSmoothness">Smoothness</label>
+  <input id="hueSatSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
+  <input class="num" id="hueSatSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Hue vs Saturation Smoothness value"/>
+</div>
 </section>
 <section id="sidebar-luma-vs-saturation" class="closed">
 <h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Luma vs Saturation" checked="" data-enable="lumaSat" title="Enable or disable Luma vs Saturation" type="checkbox"/></label>Luma vs saturation <button class="reset" id="lsReset" title="Reset luma vs saturation adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="lscv" title="Adjust saturation across the luminance range" width="300"></canvas>
 <p class="tiny">Saturation by brightness — left is shadows, right is highlights.</p>
+<div class="row curve-smoothness-row">
+  <label for="lumaSatSmoothness">Smoothness</label>
+  <input id="lumaSatSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
+  <input class="num" id="lumaSatSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Luma vs Saturation Smoothness value"/>
+</div>
 </section>
 <section id="sidebar-secondary-colour" class="closed">
 <h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Secondary Colour" checked="" data-enable="secondary" title="Enable or disable Secondary Colour" type="checkbox"/></label>Secondary colour <button class="reset" id="secReset" title="Reset secondary colour adjustments">reset</button></h2>
@@ -1062,14 +1147,46 @@
 <div class="acts"><button class="btn" id="nameModalCancel" title="Cancel saving this look" type="button">Cancel</button><button class="btn" id="nameModalOk" title="Save the look with this name" type="button">Save</button></div>
 </div>
 </div>
-<div aria-labelledby="fmtModalTitle" aria-modal="true" id="fmtModal" role="dialog">
-<div class="box">
-<h3 id="fmtModalTitle">Export format</h3>
-<label><input checked="" name="fmtChoice" title="JPG 93 small, good quality" type="radio" value="jpg93"/> JPG 93 <small>small, good quality</small></label>
-<label><input name="fmtChoice" title="JPG 100 max JPG quality" type="radio" value="jpg100"/> JPG 100 <small>max JPG quality</small></label>
-<label><input name="fmtChoice" title="PNG lossless, large" type="radio" value="png"/> PNG <small>lossless, large</small></label>
-<div class="acts"><button class="btn" id="fmtCancel" title="Cancel photo export" type="button">Cancel</button><button class="btn" id="fmtOk" title="Export the photo in the selected format" type="button">Export</button></div>
-</div>
+<div id="exportModal" class="export-modal" role="dialog" aria-labelledby="exportModalTitle" aria-modal="true" aria-hidden="true">
+  <div class="export-dialog">
+    <div class="export-dialog-header">
+      <h3 id="exportModalTitle">Export images</h3>
+      <button id="exportModalClose" class="export-close-btn" type="button" title="Close the export window" aria-label="Close export window">×</button>
+    </div>
+    <div class="export-toolbar-row">
+      <div class="export-control-group" role="group" aria-label="Thumbnail size">
+        <span class="export-control-label">Thumbnail size</span>
+        <div class="export-button-group export-size-group">
+          <button class="export-tool-btn" type="button" data-export-size="small" title="Show small thumbnails" aria-label="Small thumbnails" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="7" width="11" height="10" rx="1.2"/><path d="m7.5 15 3-3 2 2 2-2 2 3"/></svg>
+          </button>
+          <button class="export-tool-btn active" type="button" data-export-size="medium" title="Show medium thumbnails" aria-label="Medium thumbnails" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.4"/><path d="m4.5 16.5 4.2-4.2 3 3 3.1-3.6 4.7 5"/></svg>
+          </button>
+          <button class="export-tool-btn" type="button" data-export-size="large" title="Show large thumbnails" aria-label="Large thumbnails" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="3" width="21" height="18" rx="1.5"/><path d="m2.5 17.5 5-5 3.4 3.3 4-4.5 6.6 6.7"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="export-control-group export-format-control" role="group" aria-label="Export format">
+        <span class="export-control-label">Format</span>
+        <div class="export-button-group export-format-group">
+          <button class="export-format-btn active" type="button" data-export-format="jpg93" title="JPG - High: JPEG quality 93, good image quality with smaller files" aria-pressed="true">JPG - High</button>
+          <button class="export-format-btn" type="button" data-export-format="jpg100" title="JPG - Highest: JPEG quality 100, maximum JPEG quality" aria-pressed="false">JPG - Highest</button>
+          <button class="export-format-btn" type="button" data-export-format="png" title="Uncompressed PNG: lossless PNG export with larger files" aria-pressed="false">Uncompressed PNG</button>
+        </div>
+      </div>
+    </div>
+    <div class="export-selection-bar">
+      <span id="exportSelectionStatus" aria-live="polite">0 selected</span>
+      <button id="exportSelectAll" class="export-secondary-btn" type="button" title="Select all loaded images">Select all</button>
+    </div>
+    <div id="exportThumbnailGrid" class="export-thumbnail-grid" data-size="medium" aria-label="Loaded images"></div>
+    <div class="export-dialog-footer">
+      <button id="exportCancel" class="export-secondary-btn" type="button" title="Cancel image export">Cancel</button>
+      <button id="exportGo" class="export-primary-btn" type="button" title="Export the selected images" disabled>Export image</button>
+    </div>
+  </div>
 </div>
 <div aria-hidden="true" id="helpModal">
 <div aria-labelledby="helpTitle" aria-modal="true" class="help-box" role="dialog" tabindex="-1">
@@ -1179,7 +1296,7 @@
       <section class="help-panel" id="helpPanelExport" role="tabpanel" aria-labelledby="helpTabExport" tabindex="0" hidden>
         <h4>Export &amp; projects</h4>
         <ul>
-          <li><strong>Save photo:</strong> Exports the selected photo with the current edit. JPG 93 is a good smaller file; JPG 100 keeps more detail but is larger; PNG is lossless and usually largest. The hard source limits are 100 MP, 20,000 px per edge and 250 MiB. Import and export additionally check estimated memory budgets before application-owned canvas allocation; browser canvas/encoder limits can still prevent export on some devices.</li>
+          <li><strong>Save photo:</strong> Exports the selected photo with the current edit. JPG 93 is a good smaller file; JPG 100 keeps more detail but is larger; PNG is lossless and usually largest. The hard source limits are 100 MP, 20,000 px per edge and 250 MiB. Import and export are not blocked by an estimated RAM budget; actual browser, canvas and encoder allocation limits can still prevent an operation on some devices.</li>
           <li><strong>Save all photos:</strong> Exports every photo in the workspace using the same current settings.</li>
           <li><strong>Export LUT (.cube):</strong> Creates a reusable colour transform for other software or supported cameras. <strong>Look strength</strong> controls how much of the edit is included. Choose a name and size: 17 is smaller, 33 is a common quality/size balance, and 65 is larger and more detailed.</li>
           <li><strong>Base Photo Style:</strong> For compatible Lumix cameras, choose the Photo Style used when the footage was recorded. The LUT can then carry that information with it.</li>
@@ -1320,15 +1437,21 @@ document.addEventListener("keydown",e=>{
 const sliders=["exposure","contrast","gamma","fade","highlights","shadows","blacks",
   "temp","tint","sat","vib","skin","normHighlights","normMids","normShadows","shAmt","hiAmt",
   "secHueC","secRange","secSoft","secHue","secSat","secLum","strength","cbBlending","cbBalance",
-  "skinProtection"];
+  "skinProtection","graduationSmoothness"];
 const DEF={secRange:40,secSoft:50,strength:100,cbBlending:50,cbBalance:0,
-  skinProtection:70};
+  skinProtection:70,graduationSmoothness:50};
 const SECTION_DEFAULTS={tone:true,colour:true,curves:true,hueShift:true,hueSat:true,lumaSat:true,secondary:true,colorBalance:true,splitToning:true};
 const state={};
 sliders.forEach(s=>state[s]=DEF[s]||0);
 state.shCol=hex2rgb("#406080");
 state.hiCol=hex2rgb("#e0a060");
 state.logMode=false;
+// 0 retains the existing shape-preserving interpolation; 100 adds strong
+// Gaussian smoothing across the eight control samples. 30 is the conservative default.
+state.hueShiftSmoothness=30;
+state.hueSatSmoothness=30;
+state.lumaSatSmoothness=30;
+state.graduationSmoothness=50;
 state.enabled={...SECTION_DEFAULTS};
 state.curveAuto={dynamic:false,contrast:false,film:false,shadowLift:false,midLift:false,curveShoulder:false,exposure:false,recover:false,colour:false,wb:false};
 state.curveAutoData={dynamic:null,contrast:null,film:null,shadowLift:null,midLift:null,curveShoulder:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null};
@@ -1411,31 +1534,80 @@ function updateNormalisationGains(src){
 }
 
 /* ================= curve maths ================= */
-function curveSplineData(points){
-  const p=[...points].sort((a,b)=>a.x-b.x),n=p.length,dx=[],m=[],t=[];
-  if(n===1)return{p,dx,m,t:[Number.isFinite(p[0].tangent)?p[0].tangent:0]};
-  for(let i=0;i<n-1;i++){dx[i]=Math.max(p[i+1].x-p[i].x,1e-6);m[i]=(p[i+1].y-p[i].y)/dx[i];}
+function getGraduationSmoothness(){
+  const control=document.getElementById("graduationSmoothness");
+  const fromControl=control?Number(control.value):NaN;
+  const raw=Number.isFinite(fromControl)?fromControl:Number(state.graduationSmoothness??50);
+  return Math.max(0,Math.min(100,raw));
+}
+function curveSplineData(points,smoothness=getGraduationSmoothness()){
+  const p=[...points].sort((a,b)=>a.x-b.x),n=p.length,dx=[],m=[],t=[],t0=[],t1=[];
+  if(n===1)return{p,dx,m,t:[Number.isFinite(p[0].tangent)?p[0].tangent:0],t0:[],t1:[]};
+  for(let i=0;i<n-1;i++){
+    dx[i]=Math.max(p[i+1].x-p[i].x,1e-6);
+    m[i]=(p[i+1].y-p[i].y)/dx[i];
+  }
+  // Preserve the existing interpolation exactly at 50.
   t[0]=m[0];
   for(let i=1;i<n-1;i++)t[i]=(m[i-1]*m[i]<=0)?0:2*m[i-1]*m[i]/(m[i-1]+m[i]);
   t[n-1]=m[n-2];
-  // Optional fixed Hermite tangents let an image-sampled point split an
-  // existing segment without changing the represented curve.
   for(let i=0;i<n;i++)if(Number.isFinite(p[i].tangent))t[i]=p[i].tangent;
-  return{p,dx,m,t};
+
+  const amount=Math.max(0,Math.min(100,Number(smoothness)||0));
+  let stronger=null;
+  if(amount>50){
+    stronger=t.slice();
+    for(let i=1;i<n-1;i++){
+      const left=m[i-1],right=m[i];
+      if(left*right<=0){stronger[i]=0;continue;}
+      // Weighted arithmetic derivative is less conservative than the
+      // harmonic tangent and produces a more flowing transition.
+      stronger[i]=(dx[i]*left+dx[i-1]*right)/(dx[i-1]+dx[i]);
+    }
+  }
+  for(let i=0;i<n-1;i++){
+    // Segment-local tangents make the 0 setting genuinely linear even where
+    // adjacent segments have different slopes.
+    const startBase=Number.isFinite(p[i].tangentOut)?p[i].tangentOut:t[i];
+    const endBase=Number.isFinite(p[i+1].tangentIn)?p[i+1].tangentIn:t[i+1];
+    if(amount<=50){
+      const blend=amount/50;
+      t0[i]=m[i]+(startBase-m[i])*blend;
+      t1[i]=m[i]+(endBase-m[i])*blend;
+    }else{
+      const blend=(amount-50)/50;
+      t0[i]=startBase+(stronger[i]-startBase)*blend;
+      t1[i]=endBase+(stronger[i+1]-endBase)*blend;
+      // Fritsch–Carlson limiter prevents local overshoot at strong smoothing.
+      const delta=m[i];
+      if(Math.abs(delta)<1e-12){t0[i]=0;t1[i]=0;}
+      else{
+        let a=t0[i]/delta,b=t1[i]/delta;
+        if(a<0){t0[i]=0;a=0;}
+        if(b<0){t1[i]=0;b=0;}
+        const q=a*a+b*b;
+        if(q>9){
+          const tau=3/Math.sqrt(q);
+          t0[i]=tau*a*delta;t1[i]=tau*b*delta;
+        }
+      }
+    }
+  }
+  return{p,dx,m,t,t0,t1};
 }
-function curveValueAndSlopeAt(points,x){
-  const {p,dx,t}=curveSplineData(points),n=p.length;x=clamp(x);
+function curveValueAndSlopeAt(points,x,smoothness=getGraduationSmoothness()){
+  const {p,dx,t,t0,t1}=curveSplineData(points,smoothness),n=p.length;x=clamp(x);
   if(n===1)return{y:clamp(p[0].y),slope:t[0]||0};
-  if(x<=p[0].x)return{y:clamp(p[0].y),slope:t[0]};
-  if(x>=p[n-1].x)return{y:clamp(p[n-1].y),slope:t[n-1]};
+  if(x<=p[0].x)return{y:clamp(p[0].y),slope:t0[0]};
+  if(x>=p[n-1].x)return{y:clamp(p[n-1].y),slope:t1[n-2]};
   let i=0;while(i<n-2&&x>p[i+1].x)i++;
   const h=dx[i],u=(x-p[i].x)/h,u2=u*u,u3=u2*u;
-  const y=p[i].y*(2*u3-3*u2+1)+h*t[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t[i+1]*(u3-u2);
-  const slope=(p[i].y*(6*u2-6*u)/h+t[i]*(3*u2-4*u+1)+p[i+1].y*(-6*u2+6*u)/h+t[i+1]*(3*u2-2*u));
+  const y=p[i].y*(2*u3-3*u2+1)+h*t0[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t1[i]*(u3-u2);
+  const slope=(p[i].y*(6*u2-6*u)/h+t0[i]*(3*u2-4*u+1)+p[i+1].y*(-6*u2+6*u)/h+t1[i]*(3*u2-2*u));
   return{y:clamp(y),slope};
 }
-function buildCurveLUT(pts){
-  const {p,dx,t}=curveSplineData(pts),n=p.length,lut=new Float32Array(256);
+function buildCurveLUT(pts,smoothness=getGraduationSmoothness()){
+  const {p,dx,t0,t1}=curveSplineData(pts,smoothness),n=p.length,lut=new Float32Array(256);
   if(n===1){lut.fill(clamp(p[0].y));return lut;}
   for(let k=0;k<256;k++){
     const x=k/255;
@@ -1443,12 +1615,12 @@ function buildCurveLUT(pts){
     if(x>=p[n-1].x){lut[k]=clamp(p[n-1].y);continue;}
     let i=0;while(i<n-2&&x>p[i+1].x)i++;
     const h=dx[i],u=(x-p[i].x)/h,u2=u*u,u3=u2*u;
-    lut[k]=clamp(p[i].y*(2*u3-3*u2+1)+h*t[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t[i+1]*(u3-u2));
+    lut[k]=clamp(p[i].y*(2*u3-3*u2+1)+h*t0[i]*(u3-2*u2+u)+p[i+1].y*(-2*u3+3*u2)+h*t1[i]*(u3-u2));
   }
   return lut;
 }
 let lutM,lutR,lutG,lutB;
-function rebuildCurves(){lutM=buildCurveLUT(curves.m);lutR=buildCurveLUT(curves.r);lutG=buildCurveLUT(curves.g);lutB=buildCurveLUT(curves.b);}
+function rebuildCurves(){const smoothness=getGraduationSmoothness();lutM=buildCurveLUT(curves.m,smoothness);lutR=buildCurveLUT(curves.r,smoothness);lutG=buildCurveLUT(curves.g,smoothness);lutB=buildCurveLUT(curves.b,smoothness);}
 function curvePercentile(hist,total,q){
   const target=total*q;let sum=0;
   for(let i=0;i<hist.length;i++){sum+=hist[i];if(sum>=target)return i/(hist.length-1);}
@@ -1572,22 +1744,33 @@ const sm=t=>t*t*(3-2*t);
 // Shape-preserving cubic Hermite interpolation (PCHIP).
 // Tangents use the Fritsch–Butland weighted harmonic mean and are then
 // limited per interval (Fritsch–Carlson) to prevent overshoot.
-function periodic8(arr,h){
+function periodic8(arr,h,smoothness=0){
   const n=HUEN;
+  const amount=clamp((Number(smoothness)||0)/100,0,1);
+  let values=arr;
+  if(amount>0){
+    const sigma=.45+1.15*amount,blend=.90*amount;
+    values=Array.from({length:n},(_,i)=>{
+      let sum=0,total=0;
+      for(let offset=-3;offset<=3;offset++){
+        const weight=Math.exp(-(offset*offset)/(2*sigma*sigma));
+        sum+=arr[(i+offset+n)%n]*weight;total+=weight;
+      }
+      const filtered=sum/total;
+      return arr[i]+(filtered-arr[i])*blend;
+    });
+  }
   // Handles are positioned at bin centres ((i + 0.5) / n).
   // Shift the periodic interpolation domain by half a bin so the curve
   // passes through each visible handle instead of being phase-shifted.
   const f=(((h%360)+360)%360)/360*n-0.5, base=Math.floor(f), i0=((base%n)+n)%n, i1=(i0+1)%n, t=f-base;
-  const d=Array.from({length:n},(_,k)=>arr[(k+1)%n]-arr[k]);
+  const d=Array.from({length:n},(_,k)=>values[(k+1)%n]-values[k]);
   const tangent=k=>{
     const a=d[(k-1+n)%n], b=d[k];
     if(a===0||b===0||Math.sign(a)!==Math.sign(b))return 0;
-    // Equal interval widths: weighted harmonic mean reduces to this form.
     return 2*a*b/(a+b);
   };
   const m=Array.from({length:n},(_,k)=>tangent(k));
-  // Local Fritsch–Carlson limiter. A flat interval must remain flat;
-  // neighboring tangents are constrained so the cubic cannot overshoot.
   for(let k=0;k<n;k++){
     const delta=d[k], j=(k+1)%n;
     if(delta===0){m[k]=0;m[j]=0;continue;}
@@ -1601,18 +1784,33 @@ function periodic8(arr,h){
       m[j]=tau*b*delta;
     }
   }
-  const y0=arr[i0],y1=arr[i1],m0=m[i0],m1=m[i1],t2=t*t,t3=t2*t;
+  const y0=values[i0],y1=values[i1],m0=m[i0],m1=m[i1],t2=t*t,t3=t2*t;
   return (2*t3-3*t2+1)*y0+(t3-2*t2+t)*m0+(-2*t3+3*t2)*y1+(t3-t2)*m1;
 }
-function linear8(arr,v){
+function linear8(arr,v,smoothness=0){
   const n=LUMN;
+  const amount=clamp((Number(smoothness)||0)/100,0,1);
+  let values=arr;
+  if(amount>0){
+    const sigma=.45+1.15*amount,blend=.90*amount;
+    values=Array.from({length:n},(_,i)=>{
+      let sum=0,total=0;
+      for(let offset=-3;offset<=3;offset++){
+        const index=Math.max(0,Math.min(n-1,i+offset));
+        const weight=Math.exp(-(offset*offset)/(2*sigma*sigma));
+        sum+=arr[index]*weight;total+=weight;
+      }
+      const filtered=sum/total;
+      return arr[i]+(filtered-arr[i])*blend;
+    });
+  }
   // Luma handles also sit at equal-width bin centres. Clamp beyond the
   // first/last handle and interpolate between the actual handle positions.
   const f=clamp(v)*n-0.5;
-  if(f<=0)return arr[0];
-  if(f>=n-1)return arr[n-1];
+  if(f<=0)return values[0];
+  if(f>=n-1)return values[n-1];
   const i=Math.min(n-2,Math.floor(f)), t=f-i;
-  const d=Array.from({length:n-1},(_,k)=>arr[k+1]-arr[k]);
+  const d=Array.from({length:n-1},(_,k)=>values[k+1]-values[k]);
   const endpoint=(first)=>{
     const a=first?d[0]:d[n-2], b=first?d[1]:d[n-3];
     let m=(3*a-b)/2;
@@ -1641,7 +1839,7 @@ function linear8(arr,v){
       m[k+1]=tau*b*delta;
     }
   }
-  const y0=arr[i],y1=arr[i+1],m0=m[i],m1=m[i+1],t2=t*t,t3=t2*t;
+  const y0=values[i],y1=values[i+1],m0=m[i],m1=m[i+1],t2=t*t,t3=t2*t;
   return (2*t3-3*t2+1)*y0+(t3-2*t2+t)*m0+(-2*t3+3*t2)*y1+(t3-t2)*m1;
 }
 function peakMask(l,center,halfWidth){
@@ -1990,8 +2188,8 @@ function grade(r,g,b,preColorBalanceTap){
   if(needHsl){
     const[h,s,l]=rgb2hsl(r,g,b);
     if(s>1e-4){
-      let nh=(h+(state.enabled.hueShift?periodic8(hueShift,h)*60*Math.min(1,s*4):0))%360;if(nh<0)nh+=360;
-      let ns=clamp(s*(1+(state.enabled.hueSat?periodic8(hueSat,h)*Math.min(1,s*4):0)));
+      let nh=(h+(state.enabled.hueShift?periodic8(hueShift,h,state.hueShiftSmoothness)*60*Math.min(1,s*4):0))%360;if(nh<0)nh+=360;
+      let ns=clamp(s*(1+(state.enabled.hueSat?periodic8(hueSat,h,state.hueSatSmoothness)*Math.min(1,s*4):0)));
       [r,g,b]=hsl2rgb(nh,ns,l);
     }
   }
@@ -2065,7 +2263,7 @@ function grade(r,g,b,preColorBalanceTap){
   let l2=0.2126*r+0.7152*g+0.0722*b;
   let anyLs=false;for(let i=0;i<LUMN;i++)if(state.enabled.lumaSat&&lumaSat[i]){anyLs=true;break;}
   let satEff=1+(state.enabled.colour?state.sat:0)/100;
-  if(anyLs)satEff*=1+linear8(lumaSat,l2);
+  if(anyLs)satEff*=1+linear8(lumaSat,l2,state.lumaSatSmoothness);
   if(state.enabled.colour&&state.vib){const cs=Math.max(r,g,b)-Math.min(r,g,b);satEff*=1+(state.vib/100)*(1-cs);}
   if(satEff<0)satEff=0;
   r=clamp(l2+(r-l2)*satEff);g=clamp(l2+(g-l2)*satEff);b=clamp(l2+(b-l2)*satEff);
@@ -2445,11 +2643,17 @@ function isLikelyMobileRuntime(){
     (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1));
 }
 function getAppMemoryBudgetBytes(deviceMemoryGiB=navigator.deviceMemory,mobile=isLikelyMobileRuntime()){
-  // Device Memory is intentionally coarse and absent in several browsers.
-  // Unknown desktop runtimes get a conservative 4 GiB estimate; mobile gets 2 GiB.
-  const reported=Number(deviceMemoryGiB),totalGiB=Number.isFinite(reported)&&reported>0?reported:(mobile?2:4);
-  const minimum=mobile?384*MiB:512*MiB,maximum=mobile?1024*MiB:2048*MiB;
-  return Math.max(minimum,Math.min(maximum,totalGiB*.25*GiB));
+  // navigator.deviceMemory is a coarse estimate of total device RAM, not free RAM.
+  // Desktop browsers may report a capped value (commonly 8 GiB), so do not apply
+  // another artificial application-wide maximum here.
+  // Desktop: reserve half of the reported/estimated RAM for LutMaster.
+  // Mobile: retain a conservative quarter-share to reduce browser/OS pressure.
+  const reported=Number(deviceMemoryGiB);
+  const fallbackTotalGiB=mobile?2:8;
+  const totalGiB=Number.isFinite(reported)&&reported>0?reported:fallbackTotalGiB;
+  const allocationFraction=mobile?.25:.50;
+  const minimum=mobile?384*MiB:512*MiB;
+  return Math.max(minimum,totalGiB*allocationFraction*GiB);
 }
 function getRuntimeMemoryBudgetBytes(){return getAppMemoryBudgetBytes();}
 function estimateDecodedImageBytes(width,height){return Math.ceil(width*height*SOURCE_BYTES_PER_PIXEL_ESTIMATE);}
@@ -2457,23 +2661,20 @@ function getLoadedSourceMemoryBytes(records=images){
   return records.reduce((sum,im)=>sum+(im.memoryEstimateBytes||estimateDecodedImageBytes(im.originalWidth||im.data?.width||1,im.originalHeight||im.data?.height||1)),0);
 }
 function validateImageMemoryBudget(width,height,currentBytes=getLoadedSourceMemoryBytes(),budgetBytes=getRuntimeMemoryBudgetBytes(),label="Image"){
-  const estimate=estimateDecodedImageBytes(width,height),limit=Math.floor(budgetBytes*.60),required=currentBytes+estimate;
-  if(required>limit){
-    const mb=n=>Math.ceil(n/MiB);
-    throw new Error(label+" exceeds the estimated decoded-image memory budget ("+mb(required)+" MiB required, "+mb(limit)+" MiB available for loaded images). Remove other images or use a device with more memory.");
-  }
-  return {estimatedBytes:estimate,totalEstimatedBytes:required,budgetBytes:limit};
+  // Memory figures are estimates only. Do not reject an import based on a
+  // synthetic per-device RAM budget; the browser/runtime remains the authority
+  // on whether a real allocation can be completed.
+  const estimate=estimateDecodedImageBytes(width,height),required=currentBytes+estimate;
+  return {estimatedBytes:estimate,totalEstimatedBytes:required,budgetBytes:null};
 }
 function estimatePhotoExportWorkingSetBytes(width,height,loadedSourceBytes=getLoadedSourceMemoryBytes()){
   return loadedSourceBytes+width*height*EXPORT_EXTRA_BYTES_PER_PIXEL_ESTIMATE+64*MiB;
 }
 function validatePhotoExportMemoryBudget(width,height,loadedSourceBytes=getLoadedSourceMemoryBytes(),budgetBytes=getRuntimeMemoryBudgetBytes(),label="Photo export"){
+  // Keep the working-set estimate for diagnostics and tile planning only.
+  // Never block an export because of a guessed browser/device RAM budget.
   const estimatedBytes=estimatePhotoExportWorkingSetBytes(width,height,loadedSourceBytes);
-  if(!Number.isSafeInteger(estimatedBytes)||estimatedBytes>budgetBytes){
-    const mb=n=>Math.ceil(n/MiB);
-    throw new Error(label+" is estimated to need "+mb(estimatedBytes)+" MiB, exceeding the current browser memory budget of "+mb(budgetBytes)+" MiB. Close other images/apps or use a higher-memory desktop browser. No downscaling was applied.");
-  }
-  return {estimatedBytes,budgetBytes};
+  return {estimatedBytes,budgetBytes:null};
 }
 function getPhotoExportTileSize(budgetBytes=getRuntimeMemoryBudgetBytes()){
   return budgetBytes>=1024*MiB?1024:512;
@@ -2508,6 +2709,7 @@ const th = document.createElement("canvas");
     originalWidth: sourceDimensions.width,
     originalHeight: sourceDimensions.height,
     memoryEstimateBytes:memoryEstimate.estimatedBytes,
+    thumbReady:false,
     uid: "img-"+(++imageUid) };
   images.push(rec);
   th.addEventListener("click", () => { selectImage(images.indexOf(rec)); });
@@ -2520,6 +2722,7 @@ function refreshUIAfterLoad(){
   $("drop").style.display="none";
   $("filmframe").style.display="block";
   $("stagebar").classList.add("visible");
+  $("openExportDialog").disabled=false;
   $("thumbs").style.display=images.length>1?"flex":"none";
   $("scopes").style.display=$("scopeOn").checked?"flex":"none";
   updatePreviewQualityButton();
@@ -2540,29 +2743,97 @@ function selectImage(i){
   render();
 }
 let pendingImageFiles=[],imageLoadActive=false;
+let imageLoadTotal=0,imageLoadDone=0,imageLoadCurrentName="",imageLoadCurrentFraction=0;
+function updateImageLoadProgress(status=imageLoadCurrentName,fraction=imageLoadCurrentFraction){
+  const modal=$("imageLoadModal");
+  if(!modal)return;
+  const total=Math.max(1,imageLoadTotal);
+  const currentFraction=Math.max(0,Math.min(1,Number(fraction)||0));
+  const value=Math.max(0,Math.min(100,Math.round(((imageLoadDone+currentFraction)/total)*100)));
+  modal.classList.add("visible");
+  modal.setAttribute("aria-hidden","false");
+  $("imageLoadTitle").textContent="Loading images";
+  $("imageLoadStatus").textContent=status||"Preparing images…";
+  $("imageLoadCount").textContent=`${Math.min(imageLoadDone+1,total)} of ${imageLoadTotal} images`;
+  $("imageLoadPercent").textContent=value+"%";
+  const track=modal.querySelector('[role="progressbar"]');
+  track.setAttribute("aria-valuenow",String(value));
+  $("imageLoadFill").style.width=value+"%";
+}
+function closeImageLoadProgress(){
+  const modal=$("imageLoadModal");
+  if(!modal)return;
+  modal.classList.remove("visible");
+  modal.setAttribute("aria-hidden","true");
+  $("imageLoadFill").style.width="0%";
+  modal.querySelector('[role="progressbar"]').setAttribute("aria-valuenow","0");
+  imageLoadTotal=0;imageLoadDone=0;imageLoadCurrentName="";imageLoadCurrentFraction=0;
+}
 function loadFiles(list){
-  pendingImageFiles.push(...Array.from(list||[]));
-  if(imageLoadActive)return;
-  imageLoadActive=true;
+  const incoming=Array.from(list||[]);
+  if(!incoming.length)return;
+  pendingImageFiles.push(...incoming);
+  imageLoadTotal+=incoming.length;
+  if(!imageLoadActive){
+    imageLoadActive=true;
+    imageLoadDone=0;
+    imageLoadCurrentFraction=0;
+  }
+  if(imageLoadCurrentName)updateImageLoadProgress(imageLoadCurrentName,imageLoadCurrentFraction);
   const loadNext=()=>{
     const file=pendingImageFiles.shift();
-    if(!file){imageLoadActive=false;return;}
-    if(!/^image\//.test(file.type||"")){fail("Skipped a non-image file.");loadNext();return;}
-    if(file.size>MAX_SOURCE_FILE_BYTES){fail("Skipped "+file.name+": file exceeds the "+Math.round(MAX_SOURCE_FILE_BYTES/1024/1024)+" MB safety limit.");loadNext();return;}
+    if(!file){
+      imageLoadActive=false;
+      imageLoadCurrentName="";
+      updateImageLoadProgress("Images loaded",1);
+      closeImageLoadProgress();
+      return;
+    }
+    imageLoadCurrentName=file.name||"Image";
+    imageLoadCurrentFraction=0;
+    updateImageLoadProgress("Loading "+imageLoadCurrentName,0);
+    const complete=(message)=>{
+      if(message)fail(message);
+      imageLoadDone++;
+      imageLoadCurrentFraction=0;
+      const next=pendingImageFiles[0];
+      imageLoadCurrentName=next?(next.name||"Image"):"";
+      if(imageLoadCurrentName)updateImageLoadProgress("Loading "+imageLoadCurrentName,0);
+      loadNext();
+    };
+    if(!/^image\//.test(file.type||"")){
+      complete("Skipped a non-image file.");
+      return;
+    }
+    if(file.size>MAX_SOURCE_FILE_BYTES){
+      complete("Skipped "+file.name+": file exceeds the "+Math.round(MAX_SOURCE_FILE_BYTES/1024/1024)+" MB safety limit.");
+      return;
+    }
     let srcURL;
     try{srcURL=URL.createObjectURL(file);}
-    catch(err){fail("Could not create a temporary image URL for "+file.name+": "+(err.message||err));loadNext();return;}
+    catch(err){
+      complete("Could not create a temporary image URL for "+file.name+": "+(err.message||err));
+      return;
+    }
     const img=new Image();let adopted=false,finished=false;
     const release=()=>{if(!adopted&&srcURL){URL.revokeObjectURL(srcURL);srcURL=null;}};
     const finish=(message)=>{
-      if(finished)return;finished=true;img.onload=null;img.onerror=null;
+      if(finished)return;
+      finished=true;img.onload=null;img.onerror=null;
       if(!adopted){release();try{img.src="";}catch(_){}}
       if(message)fail(message);
+      imageLoadDone++;
+      imageLoadCurrentFraction=0;
+      const next=pendingImageFiles[0];
+      imageLoadCurrentName=next?(next.name||"Image"):"";
+      if(imageLoadCurrentName)updateImageLoadProgress("Loading "+imageLoadCurrentName,0);
       loadNext();
     };
     img.onerror=()=>finish("Couldn't decode "+file.name+". Try a JPG or PNG.");
     img.onload=()=>{
       try{
+        imageLoadCurrentFraction=.78;
+        updateImageLoadProgress("Preparing preview: "+file.name,imageLoadCurrentFraction);
         const sourceDimensions=validateImageDimensions(img.naturalWidth||img.width,img.naturalHeight||img.height,"Image "+file.name);
         validateImageMemoryBudget(sourceDimensions.width,sourceDimensions.height,getLoadedSourceMemoryBytes(),getRuntimeMemoryBudgetBytes(),"Image "+file.name);
         const maxW=1100,sc=Math.min(1,img.width>0?maxW/img.width:1);
@@ -2673,7 +2944,14 @@ function createPhotoExportWorker(snapshot,N,transfer,revision,signal,onProgress)
     worker.onmessage=e=>{
       const m=e.data||{};
       if(m.revision!==revision)return;
-      if(m.type==="progress"){onProgress(m.progress||0,m.label||"Exporting photo");return;}
+      if(m.type==="progress"){
+        if(pending&&m.task==="photoExportTile"){
+          pending.onProgress(m.progress||0,m.label||"Applying photo LUT");
+        }else{
+          onProgress(m.progress||0,m.label||"Building photo export LUT");
+        }
+        return;
+      }
       if(m.type==="error"){const err=new Error(m.error||"Photo export worker failed.");if(!ready){close();resolve(null);}else if(pending){pending.reject(err);pending=null;close();}return;}
       if(m.type==="exportReady"){ready=true;resolve(session);return;}
       if(m.type==="exportTileResult"&&pending){pending.resolve(m);pending=null;}
@@ -3040,7 +3318,7 @@ function dispatchPendingCube(){
 function dispatchPendingThumbs(){
   if(thumbsBusy||!pendingThumbs)return;
   const job=pendingThumbs;pendingThumbs=null;const worker=getBackgroundWorker("thumbs");
-  if(!worker){job.items.forEach(item=>{const im=images.find(x=>x.uid===item.uid);if(im)im.thumb.getContext("2d").putImageData(applyLut(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),job.lut,job.N),0,0);});return;}
+  if(!worker){job.items.forEach(item=>{const im=images.find(x=>x.uid===item.uid);if(im){im.thumb.getContext("2d").putImageData(applyLut(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),job.lut,job.N),0,0);im.thumbReady=true;}});return;}
   thumbsBusy=true;
   try{const lutCopy=job.lut.slice(),transfer=[lutCopy.buffer];const items=job.items.map(item=>{transfer.push(item.buffer);return item;});worker.postMessage({type:"thumbs",revision:job.revision,N:job.N,lutBuffer:lutCopy.buffer,items},transfer);setBackgroundProgress("thumbs","Updating thumbnails",0);}
   catch(err){thumbsBusy=false;console.error("Thumbnail worker dispatch failed:",err);}
@@ -3099,7 +3377,7 @@ function handleBackgroundWorkerMessage(kind,m){
     if(pendingCube)dispatchPendingCube();else if(analysisDirty){analysisDirty=false;renderCubeAnalysis();}
   }else if(kind==="thumbs"){
     thumbsBusy=false;
-    if(m.revision===thumbsRevision){for(const item of m.items){const im=images.find(x=>x.uid===item.uid);if(im)im.thumb.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),0,0);}}
+    if(m.revision===thumbsRevision){for(const item of m.items){const im=images.find(x=>x.uid===item.uid);if(im){im.thumb.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(item.buffer),item.width,item.height),0,0);im.thumbReady=true;}}}
     if(pendingThumbs)dispatchPendingThumbs();
   }
 }
@@ -3308,6 +3586,7 @@ function zoomCurves(e){
 const chColour={m:"#e8e2d4",r:"#e06a5a",g:"#7ec07a",b:"#6a90e0"};
 let hoverCurveValues=null;
 function drawCurves(){
+  const smoothness=getGraduationSmoothness();
   cc.clearRect(0,0,ccv.width,ccv.height);
   cc.strokeStyle="#332e25";cc.lineWidth=1;
   for(let i=1;i<4;i++){
@@ -3318,12 +3597,12 @@ function drawCurves(){
   cc.beginPath();cc.moveTo(cx2px(0),cy2px(0));cc.lineTo(cx2px(1),cy2px(1));cc.stroke();
   for(const ch of["m","r","g","b"]){
     if(ch===curveCh)continue;
-    const lut=buildCurveLUT(curves[ch]);
+    const lut=buildCurveLUT(curves[ch],smoothness);
     cc.globalAlpha=.22;cc.strokeStyle=chColour[ch];cc.lineWidth=1;cc.beginPath();
     for(let k=0;k<256;k++){const X=cx2px(k/255),Y=cy2px(lut[k]);k?cc.lineTo(X,Y):cc.moveTo(X,Y);}
     cc.stroke();cc.globalAlpha=1;
   }
-  const lut=buildCurveLUT(curves[curveCh]);
+  const lut=buildCurveLUT(curves[curveCh],smoothness);
   cc.strokeStyle=chColour[curveCh];cc.lineWidth=2;cc.beginPath();
   for(let k=0;k<256;k++){const X=cx2px(k/255),Y=cy2px(lut[k]);k?cc.lineTo(X,Y):cc.moveTo(X,Y);}
   cc.stroke();
@@ -3340,7 +3619,7 @@ function drawCurves(){
 }
 let dragPt=null;
 let selectedCurvePoint=null,selectedCurveOriginal=null,curveImagePickMode=false,pickMode=null;
-const curvePointStatus=$("curvePointStatus"),curveImagePickBtn=$("curveImagePick");
+const curveImagePickBtn=$("curveImagePick");
 const curveSampleOverlay=$("curveSampleOverlay"),curveSampleCircle=$("curveSampleCircle");
 let lastCurveSamplePointer=null;
 function updateCurveSampleOverlay(clientX=null,clientY=null){
@@ -3356,12 +3635,32 @@ function updateCurveSampleOverlay(clientX=null,clientY=null){
   curveSampleOverlay.style.display="block";
 }
 function curveValueAt(points,x){return curveValueAndSlopeAt(points,x).y;}
+// Return a strictly ordered horizontal interval for an interior control point.
+// The margin shrinks with narrow neighbouring segments, so it can never invert
+// the interval or force the point across an adjacent control point.
+function curvePointXBounds(points,point){
+  const sorted=points.slice().sort((a,b)=>a.x-b.x),index=sorted.indexOf(point);
+  if(index<=0||index>=sorted.length-1)return null;
+  const left=sorted[index-1].x,right=sorted[index+1].x,gap=right-left;
+  if(!(gap>0))return null;
+  const margin=Math.min(.005,gap*.25);
+  return{min:left+margin,max:right-margin};
+}
+function curvePointInsertionX(points,x){
+  const sorted=points.slice().sort((a,b)=>a.x-b.x);
+  let rightIndex=sorted.findIndex(point=>point.x>=x);
+  if(rightIndex<1)rightIndex=1;
+  if(rightIndex>=sorted.length)rightIndex=sorted.length-1;
+  const left=sorted[rightIndex-1],right=sorted[rightIndex],gap=right.x-left.x;
+  if(!(gap>0))return null;
+  const margin=Math.min(.005,gap*.25);
+  return Math.max(left.x+margin,Math.min(right.x-margin,x));
+}
 function curveOriginalSnapshot(){
-  return curves[curveCh].map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
+  return curves[curveCh].map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
 }
 function syncCurvePointTools(){
   const has=!!selectedCurvePoint&&curves[curveCh].includes(selectedCurvePoint);
-  curvePointStatus.textContent=has?`Point ${selectedCurvePoint.x.toFixed(3)}, ${selectedCurvePoint.y.toFixed(3)}`:"No point selected";
   ["curveMoveLeft","curveMoveRight","curveMoveDown","curveMoveUp","curveMoveDiagBack","curveMoveDiagForward"].forEach(id=>$(id).disabled=!has);
   curveImagePickBtn.classList.toggle("on",curveImagePickMode);
   curveImagePickBtn.setAttribute("aria-pressed",curveImagePickMode?"true":"false");
@@ -3377,17 +3676,22 @@ function curvePointNudge(kind,dir,recordHistory=true){
   if(!p||!pts.includes(p))return false;
   const step=.01;
   const isEnd=p===pts.reduce((a,b)=>a.x<b.x?a:b)||p===pts.reduce((a,b)=>a.x>b.x?a:b);
-  if((kind==="x"||kind==="path")&&isEnd&&kind==="x")return false;
+  // Endpoints are fixed at x=0 and x=1 for both horizontal and path nudges.
+  if((kind==="x"||kind==="path")&&isEnd)return false;
   if(curveCh==="m")markAutoCurveAsManual();
   const original=selectedCurveOriginal||curveOriginalSnapshot();
   const sorted=pts.slice().sort((a,b)=>a.x-b.x),idx=sorted.indexOf(p);
-  [sorted[idx-1],p,sorted[idx+1]].filter(Boolean).forEach(q=>delete q.tangent);
+  // A path nudge follows the reference curve while retaining the point's
+  // existing vertical offset. No minimum-offset threshold is applied.
+  const originalOffset=kind==="path"?p.y-curveValueAt(original,p.x):0;
+  [sorted[idx-1],p,sorted[idx+1]].filter(Boolean).forEach(q=>{delete q.tangent;delete q.tangentIn;delete q.tangentOut;});
   if(kind==="x"||kind==="path"){
-    const others=pts.filter(q=>q!==p);
-    const lo=isEnd?0:Math.max(0,...others.filter(q=>q.x<p.x).map(q=>q.x))+.005;
-    const hi=isEnd?1:Math.min(1,...others.filter(q=>q.x>p.x).map(q=>q.x))-.005;
-    p.x=Math.max(lo,Math.min(hi,p.x+dir*step));
-    if(kind==="path")p.y=curveValueAt(original,p.x);
+    const bounds=curvePointXBounds(pts,p);
+    if(!bounds)return false;
+    p.x=Math.max(bounds.min,Math.min(bounds.max,p.x+dir*step));
+    if(kind==="path")p.y=clamp(curveValueAt(original,p.x)+originalOffset);
+    // buildGradeData and the project validator require points in x order.
+    pts.sort((a,b)=>a.x-b.x);
   }else if(kind==="y"){
     p.y=clamp(p.y+dir*step);
   }
@@ -3438,9 +3742,10 @@ function addCurvePointFromImage(e){
     let rightIndex=spline.p.findIndex(q=>q.x>cx);
     if(rightIndex<1)rightIndex=spline.p.length-1;
     const left=spline.p[rightIndex-1],right=spline.p[rightIndex];
+    const segment=rightIndex-1;
     const leftLive=pts.find(q=>q.x===left.x),rightLive=pts.find(q=>q.x===right.x);
-    if(leftLive)leftLive.tangent=spline.t[rightIndex-1];
-    if(rightLive)rightLive.tangent=spline.t[rightIndex];
+    if(leftLive)leftLive.tangentOut=spline.t0[segment];
+    if(rightLive)rightLive.tangentIn=spline.t1[segment];
     p={x:cx,y:split.y,tangent:split.slope};
     pts.push(p);pts.sort((a,b)=>a.x-b.x);
     if(curveCh==="m")markAutoCurveAsManual();
@@ -3473,7 +3778,13 @@ function beginCurveEditAt(px,py){
   if(curveCh==="m")markAutoCurveAsManual();
   const original=curveOriginalSnapshot();
   let p=nearestPoint(px,py);
-  if(!p){p={x:px2cx(px),y:px2cy(py)};curves[curveCh].push(p);}
+  if(!p){
+    const x=curvePointInsertionX(curves[curveCh],px2cx(px));
+    if(x===null)return;
+    p={x,y:px2cy(py)};
+    curves[curveCh].push(p);
+    curves[curveCh].sort((a,b)=>a.x-b.x);
+  }
   selectCurvePoint(p,original);
   dragPt=p;rebuildCurves();render();
 }
@@ -3481,16 +3792,23 @@ function moveCurveEditTo(px,py){
   if(!dragPt)return;
   const pts=curves[curveCh],isEnd=dragPt===pts.reduce((a,b)=>a.x<b.x?a:b)||dragPt===pts.reduce((a,b)=>a.x>b.x?a:b);
   const sorted=pts.slice().sort((a,b)=>a.x-b.x),idx=sorted.indexOf(dragPt);
-  [sorted[idx-1],dragPt,sorted[idx+1]].filter(Boolean).forEach(q=>delete q.tangent);
-  if(!isEnd){const o=pts.filter(q=>q!==dragPt),lo=Math.max(0,...o.filter(q=>q.x<=dragPt.x).map(q=>q.x))+.005,hi=Math.min(1,...o.filter(q=>q.x>dragPt.x).map(q=>q.x))-.005;dragPt.x=Math.max(lo,Math.min(hi,px2cx(px)));}
-  dragPt.y=px2cy(py);rebuildCurves();render();
+  [sorted[idx-1],dragPt,sorted[idx+1]].filter(Boolean).forEach(q=>{delete q.tangent;delete q.tangentIn;delete q.tangentOut;});
+  if(!isEnd){
+    const bounds=curvePointXBounds(pts,dragPt);
+    if(bounds)dragPt.x=Math.max(bounds.min,Math.min(bounds.max,px2cx(px)));
+  }
+  dragPt.y=px2cy(py);
+  // Keep the backing array sorted during every pointer move, not only at draw
+  // time. Undo snapshots and project validation consume this array directly.
+  pts.sort((a,b)=>a.x-b.x);
+  rebuildCurves();render();
 }
 ccv.addEventListener("pointerdown",e=>{
   if(e.pointerType==="touch"){
     curveTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
     try{ccv.setPointerCapture(e.pointerId);}catch(_){}
-    if(curveTouchPointers.size===1){curveTouchPending={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,original:curves[curveCh].map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}))};return;}
-    if(curveTouchPointers.size>=2){e.preventDefault();if(curveTouchPending&&curveTouchPending.moved){curves[curveCh]=curveTouchPending.original.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));rebuildCurves();render();}dragPt=null;curveTouchPending=null;curveGesture=curveGestureMetrics();curveGesture.view={...curveView};return;}
+    if(curveTouchPointers.size===1){curveTouchPending={id:e.pointerId,startX:e.clientX,startY:e.clientY,moved:false,original:curves[curveCh].map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}))};return;}
+    if(curveTouchPointers.size>=2){e.preventDefault();if(curveTouchPending&&curveTouchPending.moved){curves[curveCh]=curveTouchPending.original.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}));rebuildCurves();render();}dragPt=null;curveTouchPending=null;curveGesture=curveGestureMetrics();curveGesture.view={...curveView};return;}
   }
   const[px,py]=curvePos(e);beginCurveEditAt(px,py);ccv.setPointerCapture(e.pointerId);
 });
@@ -3534,7 +3852,14 @@ window.addEventListener("pointerup",()=>{if(dragPt){dragPt=null;pushHistory();}e
 ccv.addEventListener("dblclick",e=>{
   if(curveCh==="m")markAutoCurveAsManual();
   const[px,py]=curvePos(e),p=nearestPoint(px,py),pts=curves[curveCh];
-  if(p&&pts.length>2){curves[curveCh]=pts.filter(q=>q!==p);if(selectedCurvePoint===p){selectedCurvePoint=null;selectedCurveOriginal=null;}rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();}
+  if(p&&pts.length>2){
+    const removedIndex=pts.indexOf(p),previous=pts[removedIndex-1],next=pts[removedIndex+1];
+    if(previous){delete previous.tangentOut;delete previous.tangent;}
+    if(next){delete next.tangentIn;delete next.tangent;}
+    curves[curveCh]=pts.filter(q=>q!==p);
+    if(selectedCurvePoint===p){selectedCurvePoint=null;selectedCurveOriginal=null;}
+    rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();
+  }
 });
 ccv.addEventListener("wheel",zoomCurves,{passive:false});
 document.querySelectorAll(".chtabs button").forEach(b=>b.addEventListener("click",()=>{
@@ -3552,6 +3877,36 @@ $("curveMoveDiagBack").addEventListener("click",()=>curvePointNudge("path",-1));
 $("curveMoveDiagForward").addEventListener("click",()=>curvePointNudge("path",1));
 syncCurvePointTools();
 $("curveReset").addEventListener("click",()=>{if(curveCh==="m")markAutoCurveAsManual();curves[curveCh]=defCurve();selectedCurvePoint=null;selectedCurveOriginal=null;rebuildCurves();render();drawCurves();syncCurvePointTools();pushHistory();});
+const graduationSmoothnessSlider=$("graduationSmoothness");
+const graduationSmoothnessNumber=$("graduationSmoothnessValue");
+let graduationSmoothnessHistoryEdit=false;
+function beginGraduationSmoothnessHistoryEdit(){
+  if(graduationSmoothnessHistoryEdit)return;
+  // Record the pre-edit state before the first input event mutates state.
+  pushHistory();
+  graduationSmoothnessHistoryEdit=true;
+}
+function commitGraduationSmoothnessHistoryEdit(){
+  if(!graduationSmoothnessHistoryEdit)return;
+  graduationSmoothnessHistoryEdit=false;
+  pushHistory();
+}
+function setGraduationSmoothness(value,record=false){
+  const parsed=Number(value);
+  const next=Math.max(0,Math.min(100,Number.isFinite(parsed)?Math.round(parsed):50));
+  if(next!==Number(state.graduationSmoothness??50))beginGraduationSmoothnessHistoryEdit();
+  state.graduationSmoothness=next;
+  graduationSmoothnessSlider.value=String(next);
+  graduationSmoothnessNumber.value=String(next);
+  rebuildCurves();
+  drawCurves();
+  render();
+  if(record)commitGraduationSmoothnessHistoryEdit();
+}
+function resetGraduationSmoothness(){
+  setGraduationSmoothness(DEF.graduationSmoothness,true);
+}
+
 function autoCurveTransform(y,key){
   const d=state.curveAutoData[key]||{};
   if(key==="dynamic"){
@@ -3650,14 +4005,14 @@ function rebuildVisibleAutoCurve(){
   const active=AUTO_CURVE_KEYS.filter(k=>state.curveAuto[k]);
   if(!active.length){
     const base=state.curveAutoData.baseCurve;
-    if(Array.isArray(base))curves.m=base.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
+    if(Array.isArray(base))curves.m=base.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}));
     state.curveAutoData.baseCurve=null;
     rebuildCurves();drawCurves();return;
   }
   if(!Array.isArray(state.curveAutoData.baseCurve))
     // Stable manual baseline: every active auto contribution is regenerated
     // from this snapshot, never from the previous effective curve.
-    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}));
 
   // Keep the user's existing control points and add only the semantic anchors
   // needed by the active automatic transforms. This keeps the result editable
@@ -3806,7 +4161,7 @@ function markAutoCurveAsManual(){
 /* ================= one-shot Auto Grade tools ================= */
 let subjectGradeMode=false,subjectGradePoints=[],subjectGradeApplied=false,subjectGradeDrawing=false,subjectGradeClosed=false;
 let autoGradeBaselineCurve=null,autoGradeLastCurve=null,autoGradeImageIndex=-1,autoGradeAppliedMode=null;
-function cloneCurve(c){return Array.isArray(c)?c.map(p=>({x:+p.x,y:+p.y})):null;}
+function cloneCurve(c){return Array.isArray(c)?c.map(p=>({x:+p.x,y:+p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})})):null;}
 function curvesEqual(a,b){return !!a&&!!b&&a.length===b.length&&a.every((p,i)=>Math.abs(p.x-b[i].x)<1e-7&&Math.abs(p.y-b[i].y)<1e-7);}
 function clearAutoGradeState(){autoGradeBaselineCurve=null;autoGradeLastCurve=null;autoGradeImageIndex=-1;autoGradeAppliedMode=null;}
 function resetAutoGrade(mode){
@@ -3993,7 +4348,7 @@ function applyTonalAutoGrade(points=null,isSubject=false){
   const baseLut=buildCurveLUT(baseline);
   if(!roi||roi.count<100||!all){fail('The selected area is too small or contains no usable image pixels.');return false;}
   if(isSubject&&roi.coverage<.001){fail('The selection contains too few image pixels. Please draw a larger outline.');return false;}
-  if(roi.p999-roi.p001<.012){fail('The image region has insufficient tonal variation for reliable Auto Grade.');return false;}
+  if(roi.p999-roi.p001<.012){fail('The tonal range is too narrow for a reliable automatic adjustment.');return false;}
   // Subject and global modes use different histogram populations. For subject
   // mode, ROI defines the contrast pivot/strength; full-frame stats only guard extremes.
   // Keep the proven Global Auto Grade calculation unchanged. Subject mode has
@@ -4010,7 +4365,7 @@ function applyTonalAutoGrade(points=null,isSubject=false){
 $('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
 $('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode==='global')resetAutoGrade('global');setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
 function smoothSubjectPolygon(points,steps=4){
-  if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
+  if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
   // Closed Catmull-Rom interpolation: smooths hand-drawn corners while
   // retaining the user's outline. Clamp samples to normalized image bounds.
   const out=[],n=points.length;
@@ -4027,7 +4382,7 @@ function smoothSubjectPolygon(points,steps=4){
 $('subjectGradeApply').addEventListener('click',()=>{
   if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}
   const applyButton=$('subjectGradeApply');if(applyButton.disabled)return;
-  const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
+  const pts=smoothSubjectPolygon(subjectGradePoints).map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
   // Let the browser paint the shared progress indicator before the CPU-bound
   // histogram/curve analysis starts. This analysis is synchronous, so report
   // stages rather than pretending to have pixel-accurate progress updates.
@@ -4117,7 +4472,7 @@ function setOptimizeEnabled(on){
 // Source-pixel values sampled from the image preview. The same sample is
 // projected onto all three secondary-curve widgets while the pointer hovers.
 let hoverStripSample=null;
-function makeStrip(cvId,arr,n,periodic,bgFn){
+function makeStrip(cvId,arr,n,periodic,bgFn,smoothnessKey){
   const cv=$(cvId),c=cv.getContext("2d"),HP=8;
   let cssW=300,cssH=200,dpr=1,bgCanvas=null,bgContext=null;
   const hx=i=>HP+(i+0.5)/n*(cssW-2*HP);
@@ -4158,7 +4513,8 @@ function makeStrip(cvId,arr,n,periodic,bgFn){
     c.strokeStyle="#e8e2d4";c.lineWidth=2;c.beginPath();
     for(let x=0;x<=400;x++){
       const u=x/400;
-      const v=periodic?periodic8(arr,u*360):linear8(arr,u);
+      const smoothness=Number(state[smoothnessKey]??30);
+      const v=periodic?periodic8(arr,u*360,smoothness):linear8(arr,u,smoothness);
       const X=HP+u*(cssW-2*HP),Y=hy(v);
       x?c.lineTo(X,Y):c.moveTo(X,Y);
     }
@@ -4171,7 +4527,8 @@ function makeStrip(cvId,arr,n,periodic,bgFn){
       const isLuma=cvId==="lscv",isSampleColour=true;
       if(isLuma||hoverStripSample.hueValid){
         const u=isLuma?hoverStripSample.luma:hoverStripSample.hue/360;
-        const value=periodic?periodic8(arr,u*360):linear8(arr,u);
+        const smoothness=Number(state[smoothnessKey]??30);
+        const value=periodic?periodic8(arr,u*360,smoothness):linear8(arr,u,smoothness);
         const x=HP+clamp(u)*(cssW-2*HP),y=hy(value);
         const sampleRGB=hoverStripSample.rgb||[246/255,163/255,82/255];
         const sampleCss=isSampleColour?`rgb(${sampleRGB.map(v=>Math.round(clamp(v)*255)).join(",")})`:"#f6a352";
@@ -4274,10 +4631,41 @@ function makeStrip(cvId,arr,n,periodic,bgFn){
   const drawer=()=>draw();drawer.resize=resize;resize();
   return drawer;
 }
-const drawHueHue=makeStrip("huecv",hueShift,HUEN,true,(u,v)=>`hsl(${(u*360+v*60+360)%360} 68% 48%)`);
-const drawHueSat=makeStrip("hscv",hueSat,HUEN,true,(u,v)=>`hsl(${u*360} ${((v+1)*50).toFixed(1)}% 48%)`);
-const drawLumaSat=makeStrip("lscv",lumaSat,LUMN,false,u=>{const v=Math.round(u*255);return`rgb(${v},${v},${v})`;});
+const drawHueHue=makeStrip("huecv",hueShift,HUEN,true,(u,v)=>`hsl(${(u*360+v*60+360)%360} 68% 48%)`,"hueShiftSmoothness");
+const drawHueSat=makeStrip("hscv",hueSat,HUEN,true,(u,v)=>`hsl(${u*360} ${((v+1)*50).toFixed(1)}% 48%)`,"hueSatSmoothness");
+const drawLumaSat=makeStrip("lscv",lumaSat,LUMN,false,u=>{const v=Math.round(u*255);return`rgb(${v},${v},${v})`;},"lumaSatSmoothness");
 function drawStrips(){drawHueHue();drawHueSat();drawLumaSat();}
+const curveSmoothnessControls=[
+  {key:"hueShiftSmoothness",range:"hueShiftSmoothness",number:"hueShiftSmoothnessValue"},
+  {key:"hueSatSmoothness",range:"hueSatSmoothness",number:"hueSatSmoothnessValue"},
+  {key:"lumaSatSmoothness",range:"lumaSatSmoothness",number:"lumaSatSmoothnessValue"}
+];
+function syncCurveSmoothnessControls(){
+  curveSmoothnessControls.forEach(({key,range,number})=>{
+    const raw=Number(state[key]);
+    const value=Math.max(0,Math.min(100,Number.isFinite(raw)?Math.round(raw):30));
+    state[key]=value;
+    const slider=$(range),numeric=$(number);
+    if(slider)slider.value=String(value);
+    if(numeric)numeric.value=String(value);
+  });
+}
+curveSmoothnessControls.forEach(({key,range,number})=>{
+  const slider=$(range),numeric=$(number);
+  const apply=(raw,commit)=>{
+    const parsed=Number(raw);
+    const value=Math.max(0,Math.min(100,Number.isFinite(parsed)?Math.round(parsed):30));
+    state[key]=value;
+    slider.value=String(value);numeric.value=String(value);
+    render();
+    if(commit)pushHistory();
+  };
+  slider.addEventListener("input",()=>apply(slider.value,false));
+  slider.addEventListener("change",()=>{apply(slider.value,false);pushHistory();});
+  numeric.addEventListener("change",()=>apply(numeric.value,true));
+  numeric.addEventListener("keydown",e=>{if(e.key==="Enter"){apply(numeric.value,true);numeric.blur();}});
+});
+syncCurveSmoothnessControls();
 $("hueReset").addEventListener("click",()=>{
   hueShift.fill(0);
   state.autoCorrections.skin=false;
@@ -5722,6 +6110,10 @@ sliders.forEach(id=>{
   const num=el.parentElement.querySelector(".num");
   if(num){num.min=el.min;num.max=el.max;num.step=1;}
   el.addEventListener("input",()=>{
+    if(id==="graduationSmoothness"){
+      setGraduationSmoothness(el.value,false);
+      return;
+    }
     if(id==="highlights")markCorrectionAsManual("highlight");
     if(id==="shadows")markCorrectionAsManual("shadow");
     markAutoControlAsManual(id);
@@ -5730,8 +6122,16 @@ sliders.forEach(id=>{
     if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
     render();
   });
-  el.addEventListener("change",pushHistory);
-  el.addEventListener("dblclick",()=>{
+  el.addEventListener("change",()=>{
+    if(id==="graduationSmoothness"){commitGraduationSmoothnessHistoryEdit();return;}
+    pushHistory();
+  });
+  el.addEventListener("dblclick",e=>{
+    if(id==="graduationSmoothness"){
+      e.preventDefault();
+      resetGraduationSmoothness();
+      return;
+    }
     if(id==="highlights")markCorrectionAsManual("highlight");
     if(id==="shadows")markCorrectionAsManual("shadow");
     markAutoControlAsManual(id);
@@ -5743,6 +6143,10 @@ sliders.forEach(id=>{
   });
   if(num){
     const commit=()=>{
+      if(id==="graduationSmoothness"){
+        setGraduationSmoothness(num.value,true);
+        return;
+      }
       if(id==="highlights")markCorrectionAsManual("highlight");
       if(id==="shadows")markCorrectionAsManual("shadow");
       markAutoControlAsManual(id);
@@ -5750,13 +6154,25 @@ sliders.forEach(id=>{
       if(isNaN(v))v=state[id];
       v=Math.max(+el.min,Math.min(+el.max,Math.round(v)));
       num.value=v;el.value=v;state[id]=v;
-        if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
+      if(id==="exposure"&&state.curveAuto.recover)refreshActiveAutoControl("recover");
       render();pushHistory();
     };
     num.addEventListener("change",commit);
+    num.addEventListener("dblclick",()=>{
+      if(id==="graduationSmoothness")resetGraduationSmoothness();
+      else commit();
+    });
     num.addEventListener("keydown",e=>{if(e.key==="Enter"){commit();num.blur();}});
   }
 });
+// Some browsers/device combinations may not dispatch a final range change
+// event on pointer cancellation or focus loss. Close the history transaction
+// on every terminal interaction event as a fallback.
+graduationSmoothnessSlider.addEventListener("pointerup",commitGraduationSmoothnessHistoryEdit);
+graduationSmoothnessSlider.addEventListener("pointercancel",commitGraduationSmoothnessHistoryEdit);
+graduationSmoothnessSlider.addEventListener("keyup",commitGraduationSmoothnessHistoryEdit);
+graduationSmoothnessSlider.addEventListener("blur",commitGraduationSmoothnessHistoryEdit);
+graduationSmoothnessNumber.addEventListener("blur",commitGraduationSmoothnessHistoryEdit);
 $("shCol").addEventListener("input",e=>{state.shCol=hex2rgb(e.target.value);render();});
 $("shCol").addEventListener("change",pushHistory);
 $("hiCol").addEventListener("input",e=>{state.hiCol=hex2rgb(e.target.value);render();});
@@ -5828,9 +6244,7 @@ stageMenus.forEach(menu=>{
     closeStageMenus();
     if(!wasOpen){menu.classList.add("open");trigger.setAttribute("aria-expanded","true");}
   });
-  menu.querySelectorAll(".stage-menu-item").forEach(item=>item.addEventListener("click",()=>{
-    if(item.id!=="savephoto"&&item.id!=="saveallphotos")closeStageMenus();
-  }));
+  menu.querySelectorAll(".stage-menu-item").forEach(item=>item.addEventListener("click",closeStageMenus));
 });
 document.addEventListener("pointerdown",event=>{
   if(!event.target.closest("#stagebar [data-stage-menu]"))closeStageMenus();
@@ -5935,7 +6349,9 @@ view.addEventListener("pointerdown",e=>{
   imageTouchPointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   try{view.setPointerCapture(e.pointerId);}catch(_){}
   if(imageTouchPointers.size===2){
-    e.preventDefault();imageGesture=imageGestureMetrics();
+    e.preventDefault();
+    view.focus({preventScroll:true});
+    imageGesture=imageGestureMetrics();
     imageGesture.scale=previewZoom.scale;imageGesture.panX=previewZoom.x;imageGesture.panY=previewZoom.y;
     setOriginalPreview(false);wipeDragging=false;
   }
@@ -5972,6 +6388,7 @@ view.addEventListener("pointerdown",e=>{
   if(handlePick(e))return;
   if(e.pointerType==="mouse"&&e.button===0&&previewZoom.scale>1&&!$("wipeOn").checked){
     e.preventDefault();
+    view.focus({preventScroll:true});
     mousePan={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,
       originX:previewZoom.x,originY:previewZoom.y};
     try{view.setPointerCapture(e.pointerId);}catch(_){}
@@ -6059,6 +6476,7 @@ viewwrap.addEventListener("wheel",e=>{
   const oldScale=previewZoom.scale;
   const nextScale=Math.max(1,Math.min(20,oldScale*Math.pow(1.1,-e.deltaY/100)));
   if(nextScale===oldScale)return;
+  view.focus({preventScroll:true});
   // image point under the cursor (in unscaled canvas px)
   const cx=(px-previewZoom.x)/oldScale,cy=(py-previewZoom.y)/oldScale;
   previewZoom.scale=nextScale;
@@ -6496,9 +6914,9 @@ function lrApply(v){
   let gotCurve=false;
   for(const[nm,ch]of Object.entries(cmap)){
     const pts=v["_curve_"+nm];
-    if(pts&&pts.length>=2){curves[ch]=pts.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));gotCurve=true;}
+    if(pts&&pts.length>=2){curves[ch]=pts.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));gotCurve=true;}
   }
-  if(!gotCurve&&v._curve_ToneCurve)curves.m=v._curve_ToneCurve.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{})}));
+  if(!gotCurve&&v._curve_ToneCurve)curves.m=v._curve_ToneCurve.map(p=>({x:clamp(p.x),y:clamp(p.y),...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
 
   // ---- HSL -> our hue strips ----
   const hh=bw?null:lrResampleHSL(v,"HueAdjustment",1/100);   // ±100 -> ±1 (=±60 deg)
@@ -6666,6 +7084,13 @@ function normalizeGradePayload(p){
     if(value<min-1e-6||value>max+1e-6)throw new Error("Slider "+id+" is outside its supported range.");
     out.state[id]=value;
   }
+  const smoothnessDefaults={hueShiftSmoothness:30,hueSatSmoothness:30,lumaSatSmoothness:30,graduationSmoothness:50};
+  for(const [key,defaultValue] of Object.entries(smoothnessDefaults)){
+    const value=out.state[key]===undefined?defaultValue:out.state[key];
+    if(typeof value!=="number"||!Number.isFinite(value)||value<0||value>100)
+      throw new Error("Smoothness "+key+" must be between 0 and 100.");
+    out.state[key]=Math.round(value);
+  }
   const boolObject=(object,defaults,label)=>{
     const input=object===undefined?{}:object;
     if(!input||typeof input!=="object"||Array.isArray(input))throw new Error(label+" must be an object.");
@@ -6699,8 +7124,13 @@ function normalizeGradePayload(p){
         throw new Error("Curve "+ch+" point "+(index+1)+" has invalid coordinates.");
       if(point.x<0||point.x>1||point.y<0||point.y>1||point.x<=previous)throw new Error("Curve "+ch+" points must be sorted and have unique x/y values in [0,1].");
       previous=point.x;
-      if(point.tangent!==undefined&&(!Number.isFinite(point.tangent)||Math.abs(point.tangent)>10000))throw new Error("Curve "+ch+" contains an invalid tangent.");
-      return{x:point.x,y:point.y,...(Number.isFinite(point.tangent)?{tangent:point.tangent}:{})};
+      for(const tangentKey of ["tangent","tangentIn","tangentOut"])
+        if(point[tangentKey]!==undefined&&(!Number.isFinite(point[tangentKey])||Math.abs(point[tangentKey])>10000))
+          throw new Error("Curve "+ch+" contains an invalid "+tangentKey+".");
+      return{x:point.x,y:point.y,
+        ...(Number.isFinite(point.tangent)?{tangent:point.tangent}:{}),
+        ...(Number.isFinite(point.tangentIn)?{tangentIn:point.tangentIn}:{}),
+        ...(Number.isFinite(point.tangentOut)?{tangentOut:point.tangentOut}:{})};
     });
     if(normal[0].x!==0||normal[normal.length-1].x!==1)throw new Error("Curve "+ch+" must retain its x=0 and x=1 endpoints.");
     out.curves[ch]=normal;
@@ -6792,6 +7222,9 @@ function captureGradeRuntimeState(){
 }
 function restoreGradeRuntimeState(snap){
   for(const key of Object.keys(state))delete state[key];Object.assign(state,JSON.parse(JSON.stringify(snap.state)));
+  syncCurveSmoothnessControls();
+  $("graduationSmoothness").value=String(state.graduationSmoothness??50);
+  $("graduationSmoothnessValue").value=String(state.graduationSmoothness??50);
   for(const ch of ["m","r","g","b"])curves[ch]=JSON.parse(JSON.stringify(snap.curves[ch]));
   hueShift.splice(0,hueShift.length,...snap.hueShift);hueSat.splice(0,hueSat.length,...snap.hueSat);lumaSat.splice(0,lumaSat.length,...snap.lumaSat);
   for(const region of ["shadows","midtones","highlights"])cbState[region]={...snap.cbState[region]};
@@ -6825,12 +7258,20 @@ function applyDataSilent(p){
   state.shCol=hex2rgb(p.shCol||"#406080");
   state.hiCol=hex2rgb(p.hiCol||"#e0a060");
   state.logMode=!!p.logMode;
+  state.graduationSmoothness=p.state.graduationSmoothness??50;
+  const graduationSlider=$("graduationSmoothness"),graduationNumber=$("graduationSmoothnessValue");
+  if(graduationSlider)graduationSlider.value=String(state.graduationSmoothness);
+  if(graduationNumber)graduationNumber.value=String(state.graduationSmoothness);
+  state.hueShiftSmoothness=p.state.hueShiftSmoothness??30;
+  state.hueSatSmoothness=p.state.hueSatSmoothness??30;
+  state.lumaSatSmoothness=p.state.lumaSatSmoothness??30;
+  syncCurveSmoothnessControls();
   state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
   state.curveAuto={dynamic:false,contrast:false,film:false,shadowLift:false,midLift:false,curveShoulder:false,exposure:false,recover:false,colour:false,wb:false,...((p.state&&p.state.curveAuto)||{})};
   state.curveAutoData={dynamic:null,contrast:null,film:null,shadowLift:null,midLift:null,curveShoulder:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null,...((p.state&&p.state.curveAutoData)||{})};
   state.autoCorrections={highlight:false,shadow:false,skin:false,lumaSat:false,...((p.state&&p.state.autoCorrections)||{})};
   state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
-  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})})));
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
@@ -6935,6 +7376,14 @@ function applyGradeDataUnchecked(p){
   $("shCol").value=p.shCol||"#406080";state.shCol=hex2rgb($("shCol").value);
   $("hiCol").value=p.hiCol||"#e0a060";state.hiCol=hex2rgb($("hiCol").value);
   state.logMode=!!p.logMode;
+  state.graduationSmoothness=p.state.graduationSmoothness??50;
+  const graduationSlider=$("graduationSmoothness"),graduationNumber=$("graduationSmoothnessValue");
+  if(graduationSlider)graduationSlider.value=String(state.graduationSmoothness);
+  if(graduationNumber)graduationNumber.value=String(state.graduationSmoothness);
+  state.hueShiftSmoothness=p.state.hueShiftSmoothness??30;
+  state.hueSatSmoothness=p.state.hueSatSmoothness??30;
+  state.lumaSatSmoothness=p.state.lumaSatSmoothness??30;
+  syncCurveSmoothnessControls();
   state.enabled={...SECTION_DEFAULTS,...((p.state&&p.state.enabled)||{})};
   state.curveAuto={dynamic:false,contrast:false,film:false,shadowLift:false,midLift:false,curveShoulder:false,exposure:false,recover:false,colour:false,wb:false,...((p.state&&p.state.curveAuto)||{})};
   state.curveAutoData={dynamic:null,contrast:null,film:null,shadowLift:null,midLift:null,curveShoulder:null,exposure:null,recover:null,colour:null,wb:null,baseCurve:null,...((p.state&&p.state.curveAutoData)||{})};
@@ -6942,7 +7391,7 @@ function applyGradeDataUnchecked(p){
   state.autoCorrectionData={highlight:null,shadow:null,skin:null,lumaSat:null,...((p.state&&p.state.autoCorrectionData)||{})};
   if(Array.isArray(p.loadedLutData))restoreSavedLoadedLutData(p.loadedLutData);
   restoreLoadedLutSettings(p.loadedLuts);
-  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})})));
+  ["m","r","g","b"].forEach(ch=>curves[ch]=((p.curves&&p.curves[ch])||defCurve()).map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})})));
   hueShift.fill(0);(p.hueShift||[]).forEach((v,i)=>hueShift[i]=v);
   hueSat.fill(0);(p.hueSat||[]).forEach((v,i)=>hueSat[i]=v);
   lumaSat.fill(0);(p.lumaSat||[]).forEach((v,i)=>lumaSat[i]=v);
@@ -7041,48 +7490,122 @@ function restoreAutoGradeHistory(entry){
   $("autoGradeSubjectBtn").classList.toggle("on",subjectOn);$("autoGradeSubjectBtn").setAttribute("aria-pressed",subjectOn?"true":"false");
 }
 function restoreSnap(entry){
+  if(!entry||typeof entry.s!=="string")throw new Error("Undo history entry is invalid.");
   const g=JSON.parse(entry.s);
+  // Keep a full rollback point before touching the live LUT stack or base LUT.
+  // This prevents a failed restore from leaving a half-applied editor state.
+  const before=captureGradeRuntimeState();
+  const beforeAutoGrade={
+    baseline:cloneCurve(autoGradeBaselineCurve),
+    last:cloneCurve(autoGradeLastCurve),
+    imageIndex:autoGradeImageIndex,
+    appliedMode:autoGradeAppliedMode
+  };
+  const wasRestoring=restoring;
   restoring=true;
   try{
     if(entry.luts)loadedLuts.splice(0,loadedLuts.length,...entry.luts.map(cloneLoadedLutForHistory));
     if(entry.base){
       baseLUT=entry.base;
       baseOn=g.baseOn!==false;$("baseEnable").checked=baseOn;
-      $("basename").textContent=baseLUT.name+" ("+baseLUT.size+"\u00B3)";
+      $("basename").textContent=baseLUT.name+" ("+baseLUT.size+"³)";
       $("baseinfo").style.display="block";
-    }else{baseLUT=null;$("baseinfo").style.display="none";}
+    }else{
+      baseLUT=null;
+      $("baseinfo").style.display="none";
+    }
     applyGradeData(g);
     restoreAutoGradeHistory(entry);
     syncLoadedLutSection();
     if(typeof updateSecSwatch==="function")updateSecSwatch();
-  }finally{restoring=false;}
+  }catch(err){
+    try{
+      restoreGradeRuntimeState(before);
+      restoreAutoGradeHistory(beforeAutoGrade);
+      syncLoadedLutSection();
+    }catch(rollbackError){
+      console.error("Undo rollback failed:",rollbackError);
+    }
+    throw err;
+  }finally{
+    restoring=wasRestoring;
+  }
 }
 /**
  * Commits the current editable state to undo history.
  * Call after a complete user action, not on every intermediate pointer move.
  */
+function historySnapshotsEqual(a,b){
+  if(!a||!b||a.s!==b.s||a.base!==b.base)return false;
+  if(JSON.stringify(a.autoGrade||null)!==JSON.stringify(b.autoGrade||null))return false;
+  const al=a.luts||[],bl=b.luts||[];
+  if(al.length!==bl.length)return false;
+  for(let i=0;i<al.length;i++){
+    const x=al[i],y=bl[i];
+    if(x.slotId!==y.slotId||x.source!==y.source||x.type!==y.type||x.name!==y.name||
+       x.size!==y.size||x.active!==y.active||x.strength!==y.strength||x.data!==y.data)return false;
+    const xb=x.baked,yb=y.baked;
+    if(!!xb!==!!yb)return false;
+    if(xb&&(xb.size!==yb.size||xb.data!==yb.data||xb.gradeHash!==yb.gradeHash))return false;
+    if(JSON.stringify(x.gradeData||null)!==JSON.stringify(y.gradeData||null))return false;
+    if(JSON.stringify(x.loadedLutData||null)!==JSON.stringify(y.loadedLutData||null))return false;
+  }
+  return true;
+}
 function pushHistory(){
-  if(restoring)return;
+  if(restoring)return false;
   const snap=snapshot();
-  if(hpos>=0&&history[hpos].s===snap.s&&history[hpos].base===snap.base&&JSON.stringify(history[hpos].autoGrade||null)===JSON.stringify(snap.autoGrade||null))return;
+  if(hpos>=0&&historySnapshotsEqual(history[hpos],snap))return false;
   history=history.slice(0,hpos+1);
   history.push(snap);
   if(history.length>60)history.shift();
   hpos=history.length-1;
   updateUndoButtons();
+  return true;
 }
 function updateUndoButtons(){
   $("undoBtn").disabled=hpos<=0;
   $("redoBtn").disabled=hpos>=history.length-1;
 }
 /**
- * Restores the preceding history snapshot and refreshes the preview/UI.
+ * Restores the preceding committed state. First capture the live state so
+ * edits whose control did not emit a final change event are still undoable.
+ * The history cursor moves only after a successful restore.
  */
-function undo(){if(typeof batchSaving!=="undefined"&&batchSaving)return;if(hpos>0){hpos--;restoreSnap(history[hpos]);updateUndoButtons();}}
+function undo(){
+  if((typeof batchSaving!=="undefined"&&batchSaving)||restoring)return;
+  try{
+    pushHistory();
+    if(hpos<=0)return;
+    const target=hpos-1;
+    restoreSnap(history[target]);
+    hpos=target;
+    updateUndoButtons();
+  }catch(err){
+    console.error("Undo failed:",err);
+    updateUndoButtons();
+    fail("Undo failed: "+(err&&err.message?err.message:"the previous state could not be restored."));
+  }
+}
 /**
- * Reapplies the next history snapshot and refreshes the preview/UI.
+ * Reapplies the next committed state. As with undo, the cursor changes only
+ * after a successful transactional restore.
  */
-function redo(){if(typeof batchSaving!=="undefined"&&batchSaving)return;if(hpos<history.length-1){hpos++;restoreSnap(history[hpos]);updateUndoButtons();}}
+function redo(){
+  if((typeof batchSaving!=="undefined"&&batchSaving)||restoring)return;
+  try{
+    pushHistory();
+    if(hpos>=history.length-1)return;
+    const target=hpos+1;
+    restoreSnap(history[target]);
+    hpos=target;
+    updateUndoButtons();
+  }catch(err){
+    console.error("Redo failed:",err);
+    updateUndoButtons();
+    fail("Redo failed: "+(err&&err.message?err.message:"the next state could not be restored."));
+  }
+}
 $("undoBtn").addEventListener("click",undo);
 $("redoBtn").addEventListener("click",redo);
 document.addEventListener("keydown",e=>{
@@ -7598,7 +8121,7 @@ $("toneReset").addEventListener("click",e=>{
   ["exposure","recover"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});
   const hadAutoCurve=AUTO_CURVE_KEYS.some(k=>state.curveAuto[k]);
   AUTO_CURVE_KEYS.forEach(key=>state.curveAuto[key]=false);
-  if(Array.isArray(state.curveAutoData.baseCurve))curves.m=state.curveAutoData.baseCurve.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
+  if(Array.isArray(state.curveAutoData.baseCurve))curves.m=state.curveAutoData.baseCurve.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}));
   state.curveAutoData.baseCurve=null;
   if(hadAutoCurve){rebuildCurves();drawCurves();}
   syncAutoCurveButtons();syncIndependentCorrectionButtons();
@@ -7849,6 +8372,7 @@ function removeImage(idx){
     $("scopes").style.display="none";
     $("drop").style.display="block";
     $("export").disabled=true;
+    $("openExportDialog").disabled=true;
     setOptimizeEnabled(false);
     return;
   }
@@ -7889,44 +8413,47 @@ updateSlotCopyControl();
 
 /* ================= save photo ================= */
 function saveBlob(name,blob){
-  return blob.arrayBuffer().then(buf=>tauriSave(name,new Uint8Array(buf),true)).then(handled=>{
-    if(handled)return true;
-    try{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),3000);return true;}
-    catch(err){
-      return new Promise(resolve=>{
-        const reader=new FileReader();
-        reader.onerror=()=>resolve(false);
-        reader.onload=()=>{try{const a=document.createElement("a");a.href=reader.result;a.download=name;a.click();resolve(true);}catch(_){resolve(false);}};
-        reader.readAsDataURL(blob);
-      });
-    }
-  }).catch(err=>{console.error("Could not save graded photo:",err);return false;});
-}
-let photoFmtValue="jpg93";
-function askPhotoFormat(){
+  // Image exports always use the browser download API; never invoke tauriSave()
+  // because its native save dialog would interrupt the direct-download flow.
   return new Promise(resolve=>{
-    const modal=$("fmtModal"),ok=$("fmtOk"),cancel=$("fmtCancel");
-    modal.querySelectorAll('input[name="fmtChoice"]').forEach(r=>r.checked=(r.value===photoFmtValue));
-    modal.classList.add("show");ok.focus();
-    function done(v){
-      modal.classList.remove("show");
-      ok.removeEventListener("click",onOk);cancel.removeEventListener("click",onCancel);
-      modal.removeEventListener("mousedown",onBack);document.removeEventListener("keydown",onKey,true);
-      resolve(v);
+    let objectUrl=null;
+    try{
+      objectUrl=URL.createObjectURL(blob);
+      const anchor=document.createElement("a");
+      anchor.href=objectUrl;
+      anchor.download=name;
+      anchor.style.display="none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(()=>{if(objectUrl)URL.revokeObjectURL(objectUrl);},30000);
+      resolve(true);
+    }catch(err){
+      if(objectUrl)URL.revokeObjectURL(objectUrl);
+      console.error("Could not start image download:",err);
+      resolve(false);
     }
-    function onOk(){const c=modal.querySelector('input[name="fmtChoice"]:checked');photoFmtValue=c?c.value:"jpg93";done(true);}
-    function onCancel(){done(false);}
-    function onBack(e){if(e.target===modal)done(false);}
-    function onKey(e){if(e.key==="Escape"){e.preventDefault();e.stopPropagation();done(false);}else if(e.key==="Enter"&&e.target.tagName!=="BUTTON"){e.preventDefault();onOk();}}
-    ok.addEventListener("click",onOk);cancel.addEventListener("click",onCancel);
-    modal.addEventListener("mousedown",onBack);document.addEventListener("keydown",onKey,true);
   });
+}
+async function writeExportResult(destination,name,blob){
+  // destination is intentionally ignored: image export always starts a
+  // direct browser download without opening a file or folder picker.
+  return saveBlob(name,blob);
+}
+let photoFmtValue=(()=>{
+  try{
+    const saved=localStorage.getItem("lutmaster-photo-format");
+    return ["jpg93","jpg100","png"].includes(saved)?saved:"jpg93";
+  }catch(_){return "jpg93";}
+})();
+function persistPhotoFormat(){
+  try{localStorage.setItem("lutmaster-photo-format",photoFmtValue);}catch(_){}
 }
 function photoFmt(){const v=photoFmtValue;return v==="png"?{mime:"image/png",q:undefined,ext:".png"}:{mime:"image/jpeg",q:v==="jpg100"?1:0.93,ext:".jpg"};}
 function gradedFilename(imgName){
-  const base=(imgName||"photo").replace(/\.[^.]+$/,"");
-  const lut=($("lutname").value||"graded").replace(/[^\w-]+/g,"_");
-  return base+"_"+lut+photoFmt().ext;
+  const original=String(imgName||"photo");
+  const base=original.replace(/\.[^.]+$/,"")||"photo";
+  return base+photoFmt().ext;
 }
 function buildPhotoExportLut(normalisationSource){
   // Normalisation is image-dependent, so calculate it from the corresponding loaded preview.
@@ -7987,7 +8514,7 @@ function loadExportImageData(im){
     img.src=im.srcURL;
   });
 }
-async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
+async function encodeGradedPhoto(source,imgName,normalisationSource,signal,onProgress=null){
   const width=source.naturalWidth||source.videoWidth||source.width,height=source.naturalHeight||source.videoHeight||source.height;
   validateImageDimensions(width,height,"Export source "+(imgName||"photo"));
   assertExportActive(signal);
@@ -8008,8 +8535,11 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
   const totalTiles=Math.ceil(width/tileW)*Math.ceil(height/tileH),revision=++exportJobSerial;
   let releaseLock=null,session=null,plut=null,processed=0;
   const isCurrent=()=>!(signal&&signal.aborted);
-  const progress=(value,label)=>setBackgroundProgress("export",label||("Exporting "+(imgName||"photo")),value);
-  setBackgroundProgress("export","Preparing photo export",0);
+  const progress=(value,label)=>{
+    if(typeof onProgress==="function")onProgress(Math.max(0,Math.min(100,Number(value)||0)),label||"Processing image");
+    else setBackgroundProgress("export",label||("Exporting "+(imgName||"photo")),value);
+  };
+  if(typeof onProgress!=="function")setBackgroundProgress("export","Preparing photo export",0);
   try{
     // Capture a single immutable grading state before starting any asynchronous work.
     updateNormalisationGains(normalisationSource||null);
@@ -8023,7 +8553,7 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
       // every yielded chunk sees the same exact grading state.
       releaseLock=lockEditorForExport();
       if(workerError)console.warn("Photo export worker unavailable; using cooperative fallback:",workerError);
-      const result=await buildPhotoExportLutCooperative(normalisationSource||null,isCurrent,p=>progress(20*p/100,"Building photo export LUT"));
+      const result=await buildPhotoExportLutCooperative(normalisationSource||null,isCurrent,p=>progress(20*p/25,"Building photo export LUT"));
       if(!result)throw createAbortError();plut=result.plut;
     }
     const processTiles=async useWorker=>{
@@ -8041,7 +8571,7 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
             output=new ImageData(new Uint8ClampedArray(result.buffer),w,h);
             progress(20+75*(base+1/totalTiles),"Applying photo LUT");
           }else{
-            output=await applyLutCooperative(input,plut,N,isCurrent,p=>progress(20+75*(processed/totalTiles+p/100/totalTiles),"Applying photo LUT"),32768);
+            output=await applyLutCooperative(input,plut,N,isCurrent,p=>{const tileFraction=Math.max(0,Math.min(1,(p-25)/70));progress(20+75*(processed/totalTiles+tileFraction/totalTiles),"Applying photo LUT");},32768);
             if(!output)throw createAbortError();
           }
           outCtx.putImageData(output,x,y);processed++;
@@ -8059,7 +8589,7 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
         // state, rather than mixing partial worker output with another grade.
         console.error("Photo export worker failed; restarting cooperatively:",err);
         releaseLock=releaseLock||lockEditorForExport();
-        const fallback=await buildPhotoExportLutCooperative(normalisationSource||null,isCurrent,p=>progress(20*p/100,"Rebuilding photo export LUT"));
+        const fallback=await buildPhotoExportLutCooperative(normalisationSource||null,isCurrent,p=>progress(20*p/25,"Rebuilding photo export LUT"));
         if(!fallback)throw createAbortError();plut=fallback.plut;
         await processTiles(false);
       }
@@ -8076,118 +8606,323 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal){
     // Release the large backing stores deterministically after encoding or failure.
     if(cv){cv.width=1;cv.height=1;}
     if(tile){tile.width=1;tile.height=1;}
-    clearBackgroundProgress("export");
-  }
-}
-async function exportGradedFrom(source,imgName,btn,normalisationSource,signal){
-  try{
-    const {name,blob}=await encodeGradedPhoto(source,imgName,normalisationSource||null,signal);
-    const ok=await saveBlob(name,blob);
-    if(ok===false)fail("Couldn't save the graded photo.");
-  }catch(err){
-    if(err&&err.name!=="AbortError")fail(err.message||"Couldn't encode the graded photo.");
-  }finally{
-    clearBackgroundProgress("export");btn.disabled=false;btn.textContent="Save photo";
-    updateNormalisationGains(cur>=0?images[cur].data:null);
-    render();
+    if(typeof onProgress!=="function")clearBackgroundProgress("export");
   }
 }
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-$("savephoto").addEventListener("click",async()=>{
-  if(cur<0)return;
-  if(!(await askPhotoFormat()))return;
-  const im=images[cur],btn=$("savephoto"),controller=new AbortController();
-  activeExportController=controller;btn.disabled=true;btn.textContent="Saving…";
-  try{
-    const source=await loadExportImageData(im);
-    await exportGradedFrom(source,im.name,btn,im.data,controller.signal);
-  }catch(err){
-    if(err&&err.name!=="AbortError")fail(err.message||"Couldn't load the original-resolution photo.");
-    btn.disabled=false;btn.textContent="Save photo";
-    updateNormalisationGains(cur>=0?images[cur].data:null);render();
-  }finally{if(activeExportController===controller)activeExportController=null;clearBackgroundProgress("export");}
-});
 
-/* ================= save all photos ================= */
+/* ================= unified image export dialog ================= */
 let batchSaving=false;
-$("saveallphotos").addEventListener("click",async()=>{
-  if(batchSaving||!images.length)return;
-  if(!(await askPhotoFormat()))return;
-  if(batchSaving)return;
-  batchSaving=true;
-  const controller=new AbortController();activeExportController=controller;
-  const btn=$("saveallphotos"),singleBtn=$("savephoto");
-  btn.disabled=true;singleBtn.disabled=true;
-  const overlay=document.createElement("div");
-  overlay.style.cssText="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,10,9,.78);color:var(--text);font:12px var(--mono);text-align:center";
-  const box=document.createElement("div");
-  box.style.cssText="max-width:460px;width:100%;padding:20px;background:var(--panel);border:1px solid var(--line-hi);border-radius:5px;box-shadow:0 18px 48px rgba(0,0,0,.6)";
-  const title=document.createElement("div");
-  title.style.cssText="color:var(--orange-hi);font-size:13px;margin-bottom:10px;text-transform:uppercase";
-  title.textContent="Saving all graded photos";
-  const progress=document.createElement("div");progress.textContent="Preparing export…";
-  const filename=document.createElement("div");
-  filename.style.cssText="color:var(--dim);font-size:11px;margin-top:8px;overflow-wrap:anywhere";
-  box.append(title,progress,filename);overlay.appendChild(box);document.body.appendChild(overlay);
+let exportSelection=new Set();
+let exportThumbnailSize="medium";
+let exportDialogReturnFocus=null;
+
+function photoExportLabel(count){
+  return count===1?"Export image":`Export ${count} images`;
+}
+function updateExportDialogControls(){
+  const selectedCount=exportSelection.size;
+  const allSelected=images.length>0&&selectedCount===images.length;
+  const status=$("exportSelectionStatus"),all=$("exportSelectAll"),go=$("exportGo");
+  if(status)status.textContent=`${selectedCount} of ${images.length} selected`;
+  if(all)all.textContent=allSelected?"Deselect all":"Select all";
+  if(go){
+    go.textContent=photoExportLabel(selectedCount);
+    go.disabled=selectedCount===0||batchSaving;
+    go.title=selectedCount===0?"Select at least one image to export":`Export ${selectedCount} selected image${selectedCount===1?"":"s"}`;
+  }
+}
+function setExportFormat(format){
+  if(!["jpg93","jpg100","png"].includes(format))format="jpg93";
+  photoFmtValue=format;
+  persistPhotoFormat();
+  document.querySelectorAll("[data-export-format]").forEach(button=>{
+    const active=button.dataset.exportFormat===format;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+}
+function setExportThumbnailSize(size){
+  if(!["small","medium","large"].includes(size))size="medium";
+  exportThumbnailSize=size;
+  const grid=$("exportThumbnailGrid");
+  if(grid)grid.dataset.size=size;
+  document.querySelectorAll("[data-export-size]").forEach(button=>{
+    const active=button.dataset.exportSize===size;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+}
+function getExportThumbnailDataUrl(im){
+  if(im.thumbReady&&im.thumb&&im.thumb.width&&im.thumb.height){
+    try{return im.thumb.toDataURL("image/jpeg",0.88);}catch(_){}
+  }
+  const source=im.small||im.data;
+  if(!source||!source.width||!source.height)return "";
+  const full=document.createElement("canvas");
+  const scaled=document.createElement("canvas");
   try{
-    // Desktop app builds can save all files into a single user-selected folder.
-    const T=window.__TAURI__;
-    let targetDir=null;
-    if(T&&T.dialog&&typeof T.dialog.open==="function"&&T.fs&&typeof T.fs.writeFile==="function"){
-      const chosen=await T.dialog.open({directory:true,multiple:false});
-      if(chosen==null)return;
-      targetDir=Array.isArray(chosen)?chosen[0]:chosen;
-      if(!targetDir)return;
-    }
-    const usedNames=new Set();
-    const total=images.length;
+    full.width=source.width;full.height=source.height;
+    const fullCtx=full.getContext("2d");
+    if(!fullCtx)return "";
+    fullCtx.putImageData(source,0,0);
+    const width=Math.max(1,Math.min(240,source.width));
+    const height=Math.max(1,Math.round(source.height*width/source.width));
+    scaled.width=width;scaled.height=height;
+    const scaledCtx=scaled.getContext("2d");
+    if(!scaledCtx)return "";
+    scaledCtx.drawImage(full,0,0,width,height);
+    return scaled.toDataURL("image/jpeg",0.88);
+  }catch(err){
+    console.warn("Could not create export thumbnail for "+(im.name||"image")+":",err);
+    return "";
+  }finally{
+    full.width=1;full.height=1;
+  }
+}
+function renderExportThumbnailGrid(){
+  const grid=$("exportThumbnailGrid");
+  if(!grid)return;
+  grid.replaceChildren();
+  images.forEach((im,index)=>{
+    const card=document.createElement("button");
+    card.type="button";
+    card.className="export-thumbnail-card";
+    card.dataset.imageUid=im.uid;
+    card.setAttribute("aria-pressed",String(exportSelection.has(im.uid)));
+    card.title=`${im.name||"Image"} — click to ${exportSelection.has(im.uid)?"remove from":"add to"} export selection`;
+    card.setAttribute("aria-label",`Toggle export selection for ${im.name||"image"}`);
+    const preview=document.createElement("span");
+    preview.className="export-thumbnail-preview";
+    const image=document.createElement("img");
+    image.alt="";
+    image.loading="lazy";
+    image.draggable=false;
+    image.src=getExportThumbnailDataUrl(im);
+    preview.appendChild(image);
+    const filename=document.createElement("span");
+    filename.className="export-thumbnail-name";
+    filename.textContent=im.name||`Image ${index+1}`;
+    const check=document.createElement("span");
+    check.className="export-thumbnail-check";
+    check.setAttribute("aria-hidden","true");
+    check.textContent="✓";
+    card.append(preview,filename,check);
+    card.addEventListener("click",()=>{
+      if(exportSelection.has(im.uid))exportSelection.delete(im.uid);
+      else exportSelection.add(im.uid);
+      card.setAttribute("aria-pressed",String(exportSelection.has(im.uid)));
+      card.classList.toggle("selected",exportSelection.has(im.uid));
+      card.title=`${im.name||"Image"} — click to ${exportSelection.has(im.uid)?"remove from":"add to"} export selection`;
+      updateExportDialogControls();
+    });
+    card.classList.toggle("selected",exportSelection.has(im.uid));
+    grid.appendChild(card);
+  });
+  updateExportDialogControls();
+}
+function openExportDialog(){
+  if(!images.length||batchSaving)return;
+  exportDialogReturnFocus=$("openExportDialog");
+  exportSelection=new Set(cur>=0&&images[cur]?[images[cur].uid]:[]);
+  setExportFormat(photoFmtValue);
+  setExportThumbnailSize(exportThumbnailSize);
+  renderExportThumbnailGrid();
+  const modal=$("exportModal");
+  modal.classList.add("show");
+  modal.setAttribute("aria-hidden","false");
+  $("openExportDialog").setAttribute("aria-expanded","true");
+  $("exportGo").focus();
+}
+function closeExportDialog(returnFocus=true){
+  const modal=$("exportModal");
+  if(!modal)return;
+  modal.classList.remove("show");
+  modal.setAttribute("aria-hidden","true");
+  $("openExportDialog").setAttribute("aria-expanded","false");
+  if(returnFocus&&exportDialogReturnFocus)exportDialogReturnFocus.focus();
+}
+$("openExportDialog").addEventListener("click",openExportDialog);
+$("exportModalClose").addEventListener("click",()=>closeExportDialog(true));
+$("exportCancel").addEventListener("click",()=>closeExportDialog(true));
+$("exportModal").addEventListener("mousedown",event=>{
+  if(event.target===$("exportModal"))closeExportDialog(true);
+});
+$("exportSelectAll").addEventListener("click",()=>{
+  const allSelected=images.length>0&&exportSelection.size===images.length;
+  exportSelection=allSelected?new Set():new Set(images.map(im=>im.uid));
+  renderExportThumbnailGrid();
+});
+document.querySelectorAll("[data-export-format]").forEach(button=>{
+  button.addEventListener("click",()=>setExportFormat(button.dataset.exportFormat));
+});
+document.querySelectorAll("[data-export-size]").forEach(button=>{
+  button.addEventListener("click",()=>setExportThumbnailSize(button.dataset.exportSize));
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&$("exportModal").classList.contains("show")){
+    event.preventDefault();event.stopPropagation();closeExportDialog(true);
+  }
+},true);
+
+function uniqueExportName(name,usedNames){
+  if(!usedNames.has(name)){usedNames.add(name);return name;}
+  const dot=name.lastIndexOf("."),base=dot>=0?name.slice(0,dot):name,ext=dot>=0?name.slice(dot):"";
+  let n=2,candidate;
+  do{candidate=base+"_"+n+ext;n++;}while(usedNames.has(candidate));
+  usedNames.add(candidate);
+  return candidate;
+}
+async function runSelectedImageExport(selected){
+  if(batchSaving||!selected.length)return;
+  batchSaving=true;
+  const controller=new AbortController();
+  activeExportController=controller;
+
+  const overlay=document.createElement("div");
+  overlay.style.cssText="position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(8,10,9,.78);color:var(--text);font:12px var(--mono);text-align:left";
+  const box=document.createElement("div");
+  box.style.cssText="max-width:480px;width:100%;padding:22px;background:var(--panel);border:1px solid var(--line-hi);border-radius:5px;box-shadow:0 18px 48px rgba(0,0,0,.6)";
+  const title=document.createElement("div");
+  title.style.cssText="color:var(--orange-hi);font-size:13px;margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em";
+  title.textContent="Exporting selected images";
+
+  const currentFile=document.createElement("div");
+  currentFile.style.cssText="color:var(--text);font-size:11px;line-height:1.5;min-height:17px;overflow-wrap:anywhere";
+  currentFile.textContent="Preparing browser downloads…";
+
+  const meta=document.createElement("div");
+  meta.style.cssText="display:flex;justify-content:space-between;gap:12px;margin-top:14px;color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums";
+  const count=document.createElement("span");
+  count.textContent=`0 / ${selected.length}`;
+  const percent=document.createElement("span");
+  percent.textContent="0%";
+  meta.append(count,percent);
+
+  const track=document.createElement("div");
+  track.setAttribute("role","progressbar");
+  track.setAttribute("aria-label","Image export progress");
+  track.setAttribute("aria-valuemin","0");
+  track.setAttribute("aria-valuemax","100");
+  track.setAttribute("aria-valuenow","0");
+  track.style.cssText="height:7px;margin-top:8px;overflow:hidden;border:1px solid var(--line);border-radius:4px;background:rgba(154,160,152,.12)";
+  const fill=document.createElement("div");
+  fill.style.cssText="width:0%;height:100%;border-radius:3px;background:var(--orange-hi);transition:width .16s ease";
+  track.appendChild(fill);
+
+  const detail=document.createElement("div");
+  detail.style.cssText="color:var(--dim);font-size:10px;margin-top:12px;min-height:14px";
+  detail.textContent="The selected images will be downloaded individually.";
+
+  box.append(title,currentFile,meta,track,detail);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  let lastDisplayedProgress=0;
+  const setProgress=(value,completed,total,fileName,stage)=>{
+    const numeric=Math.max(lastDisplayedProgress,Math.max(0,Math.min(100,Number(value)||0)));
+    lastDisplayedProgress=numeric;
+    fill.style.width=numeric.toFixed(1)+"%";
+    percent.textContent=Math.round(numeric)+"%";
+    count.textContent=`${completed} / ${total}`;
+    track.setAttribute("aria-valuenow",String(Math.round(numeric)));
+    if(fileName)currentFile.textContent=fileName;
+    if(stage)detail.textContent=stage;
+  };
+
+  const usedNames=new Set();
+  try{
+    const destination={kind:"downloads"};
+    const total=selected.length;
     for(let i=0;i<total;i++){
       assertExportActive(controller.signal);
-      const im=images[i];
-      progress.textContent=`Photo ${i+1} of ${total}`;
-      filename.textContent=im.name||"photo";
-      // Keep the current UI grade, but calculate image-dependent normalisation for this photo.
+      const im=selected[i];
+      const displayName=im.name||"photo";
+      setProgress((i/total)*100,i,total,displayName,"Preparing original-resolution image…");
       updateNormalisationGains(im.data);
       const source=await loadExportImageData(im);
-      const result=await encodeGradedPhoto(source,im.name,im.data,controller.signal);
-      let name=result.name;
-      if(usedNames.has(name)){
-        const dot=name.lastIndexOf("."),base=dot>=0?name.slice(0,dot):name,ext=dot>=0?name.slice(dot):"";
-        let n=2;while(usedNames.has(base+"_"+n+ext))n++;
-        name=base+"_"+n+ext;
-      }
-      usedNames.add(name);
-      if(targetDir){
-        const bytes=new Uint8Array(await result.blob.arrayBuffer());
-        const sep=targetDir.includes("\\")?"\\":"/";
-        await T.fs.writeFile(targetDir+sep+name,bytes);
-      }else{
-        const ok=await saveBlob(name,result.blob);
-        if(ok===false)throw new Error("Failed to save "+name+".");
-        // Give browsers time to register each download before triggering the next.
-        if(i<total-1)await wait(500);
-      }
-      progress.textContent=`Saved ${i+1} of ${total}`;
+      const result=await encodeGradedPhoto(
+        source,im.name,im.data,controller.signal,
+        (imagePercent,stage)=>{
+          const aggregate=((i+imagePercent/100)/total)*100;
+          setProgress(aggregate,i,total,displayName,stage||"Processing image…");
+        }
+      );
+      const name=uniqueExportName(result.name,usedNames);
+      const ok=await writeExportResult(destination,name,result.blob);
+      if(ok===false)throw new Error("Could not save "+name+".");
+      const completed=i+1;
+      setProgress((completed/total)*100,completed,total,displayName,
+        completed===total?"All selected images have been sent to browser downloads.":"Preparing the next image…");
+      if(i<total-1)await wait(350);
     }
     title.textContent="Export complete";
-    progress.textContent=`Saved ${total} graded photo${total===1?"":"s"}.`;
-    filename.textContent=targetDir?targetDir:"Check your browser’s download location.";
-    await wait(900);
+    currentFile.textContent="All selected images were exported.";
+    count.textContent=`${total} / ${total}`;
+    percent.textContent="100%";
+    fill.style.width="100%";
+    track.setAttribute("aria-valuenow","100");
+    detail.textContent="Check your browser’s download location.";
+    await wait(700);
   }catch(err){
     if(!err||err.name!=="AbortError"){
-      console.error("Save all photos failed:",err);
-      fail("Save all photos failed: "+(err&&err.message?err.message:"unknown error"));
+      title.textContent="Export failed";
+      detail.textContent=err&&err.message?err.message:"Unknown export error.";
+      console.error("Image export failed:",err);
+      fail("Image export failed: "+(err&&err.message?err.message:"unknown error"));
+      await wait(900);
+    }else{
+      title.textContent="Export cancelled";
+      detail.textContent="The current export was cancelled.";
+      await wait(500);
     }
   }finally{
     if(activeExportController===controller)activeExportController=null;
-    clearBackgroundProgress("export");overlay.remove();
-    btn.disabled=false;singleBtn.disabled=cur<0;
+    clearBackgroundProgress("export");
+    overlay.remove();
     batchSaving=false;
     updateNormalisationGains(cur>=0?images[cur].data:null);
     render();
   }
+}
+$("exportGo").addEventListener("click",()=>{
+  const selected=images.filter(im=>exportSelection.has(im.uid));
+  if(!selected.length)return;
+  // Close the selection window before starting the direct browser downloads.
+  closeExportDialog(true);
+  runSelectedImageExport(selected);
 });
 
+/* ================= global button tooltips ================= */
+
+function ensureButtonTooltips(root=document){
+  const buttons=root.querySelectorAll?root.querySelectorAll("button"): [];
+  buttons.forEach(button=>{
+    let tip=button.getAttribute("title")||button.getAttribute("aria-label");
+    if(!tip){
+      tip=(button.innerText||button.textContent||"").replace(/\s+/g," ").trim();
+      if(!tip&&button.id)tip=button.id.replace(/([a-z0-9])([A-Z])/g,"$1 $2").replace(/[_-]+/g," ").trim();
+    }
+    if(tip){
+      if(!button.hasAttribute("title"))button.setAttribute("title",tip);
+      if(!button.hasAttribute("aria-description"))button.setAttribute("aria-description",tip);
+    }else{
+      button.setAttribute("title","Button action");
+      button.setAttribute("aria-description","Button action");
+    }
+  });
+}
+ensureButtonTooltips();
+const buttonTooltipObserver=new MutationObserver(records=>{
+  for(const record of records){
+    record.addedNodes.forEach(node=>{
+      if(node.nodeType!==1)return;
+      if(node.matches&&node.matches("button"))ensureButtonTooltips({querySelectorAll:()=>[node]});
+      ensureButtonTooltips(node);
+    });
+  }
+});
+buttonTooltipObserver.observe(document.documentElement,{childList:true,subtree:true});
 /* ================= LUT export ================= */
 function buildCurrentGradeCubeData(N){
   const data=new Float32Array(N*N*N*3);
@@ -8888,7 +9623,7 @@ function migrateLegacyAutoAdjustments(){
   }
   const active=AUTO_CURVE_KEYS.some(k=>state.curveAuto[k]);
   if(active&&!Array.isArray(state.curveAutoData.baseCurve)){
-    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{})}));
+    state.curveAutoData.baseCurve=curves.m.map(q=>({x:q.x,y:q.y,...(Number.isFinite(q.tangent)?{tangent:q.tangent}:{}),...(Number.isFinite(q.tangentIn)?{tangentIn:q.tangentIn}:{}),...(Number.isFinite(q.tangentOut)?{tangentOut:q.tangentOut}:{})}));
     rebuildVisibleAutoCurve();
   }
 }
@@ -9057,6 +9792,7 @@ pushHistory();
   #appHeader .topbar-icon-btn:hover:not(:disabled),#appHeader .topbar-menu.open>.topbar-menu-trigger{color:var(--orange-hi);border-color:var(--orange);background:var(--panel3)}
   #appHeader .topbar-icon-btn:focus-visible,#appHeader .topbar-menu-item:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
   #appHeader .topbar-icon-btn:disabled{opacity:.35;cursor:not-allowed}
+  #appHeader .topbar-icon-btn.reset-all-btn:hover:not(:disabled){color:var(--red);border-color:var(--red);background:var(--panel3)}
   #appHeader .topbar-icon-btn[aria-pressed="true"]{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
   #appHeader .topbar-menu{position:relative;display:flex;align-items:center}
   #appHeader .topbar-popover{display:none;position:absolute;z-index:120;right:0;top:calc(100% + 9px);min-width:224px;max-width:min(300px,calc(100vw - 20px));padding:7px;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r-sm);box-shadow:0 12px 32px rgba(0,0,0,.48);color:var(--text)}
