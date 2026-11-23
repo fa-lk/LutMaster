@@ -5,12 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>LutMaster</title>
-<!-- LutMaster 138: worker-based grading, asynchronous colour harmony, priority-coalesced rendering and background progress. -->
-<!-- LutMaster 120: removed tonal-mask visualization and hardened shared-wheel marker visibility. -->
-<!-- LutMaster 169: Double-height secondary colour curve widgets for more precise editing. -->
-<!-- LutMaster 172: Fixed-height portrait thumbnails and accessible icon toggles for preview tools. -->
-<!-- LutMaster 174: Compact non-scrolling preview action grid and editable percentage controls. -->
-<!-- LutMaster 142: 5px circular image sampling for curve point insertion and live graduation-curve hover. -->
+<!-- LutMaster v252 — Zones tooltip aligned with Subject. -->
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&amp;family=Archivo:wght@400;500&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -654,7 +649,6 @@
   }
 
 </style>
-
 <style id="preview-quality-indicator-styles">
   #appHeader #previewQualityBtn.preview-quality-btn{width:48px;min-width:48px;padding:0;border-radius:var(--r-sm)}
   #appHeader #previewQualityBtn .quality-glyph{display:inline-flex;align-items:center;justify-content:center;min-width:31px;height:21px;padding:0 3px;border:1px solid currentColor;border-radius:3px;font:700 10px/1 var(--mono);letter-spacing:-.035em}
@@ -662,7 +656,6 @@
   #appHeader #previewQualityBtn:disabled .quality-glyph{opacity:.75}
   @media(max-width:420px){#appHeader #previewQualityBtn.preview-quality-btn{width:40px;min-width:40px}}
 </style>
-
 <style id="export-dialog-styles">
   #appHeader .topbar-export-group #openExportDialog{width:40px;height:40px;min-width:40px;min-height:40px;margin:0}
   @media(max-width:760px){#appHeader .topbar-export-group #openExportDialog{width:36px;height:36px;min-width:36px;min-height:36px}}
@@ -714,8 +707,6 @@
     #exportModal .export-thumbnail-grid[data-size="large"]{--export-card-min:170px;--export-preview-height:136px}
   }
 </style>
-
-
 <style id="image-load-modal-styles">
   #imageLoadModal.image-load-modal{position:fixed;inset:0;z-index:900;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,6,.72);backdrop-filter:blur(3px)}
   #imageLoadModal.image-load-modal.visible{display:flex}
@@ -727,82 +718,336 @@
   #imageLoadModal .image-load-footer{display:flex;justify-content:space-between;gap:10px;color:var(--dim);font:10px var(--mono);font-variant-numeric:tabular-nums}
   @media(max-width:600px){#imageLoadModal .image-load-dialog{padding:18px 16px 15px}}
 </style>
+<style id="topbar-ux-refinement-styles">
+  #appHeader{display:flex;align-items:center;gap:8px;min-width:0}
+  #appHeader .spacer{flex:1 1 auto}
+  #appHeader .topbar-direct-group{display:flex;align-items:center;gap:5px;padding:0 6px;border-right:1px solid var(--line)}
+  #appHeader .topbar-icon-btn{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel2);color:var(--dim);cursor:pointer;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
+  #appHeader .topbar-icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  #appHeader .topbar-icon-btn:hover:not(:disabled),#appHeader .topbar-menu.open>.topbar-menu-trigger{color:var(--orange-hi);border-color:var(--orange);background:var(--panel3)}
+  #appHeader .topbar-icon-btn:focus-visible,#appHeader .topbar-menu-item:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
+  #appHeader .topbar-icon-btn:disabled{opacity:.35;cursor:not-allowed}
+  #appHeader .topbar-icon-btn.reset-all-btn:hover:not(:disabled){color:var(--red);border-color:var(--red);background:var(--panel3)}
+  #appHeader .topbar-icon-btn[aria-pressed="true"]{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
+  #appHeader .topbar-menu{position:relative;display:flex;align-items:center}
+  #appHeader .topbar-popover{display:none;position:absolute;z-index:120;right:0;top:calc(100% + 9px);min-width:224px;max-width:min(300px,calc(100vw - 20px));padding:7px;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r-sm);box-shadow:0 12px 32px rgba(0,0,0,.48);color:var(--text)}
+  #appHeader .topbar-menu.open .topbar-popover{display:block}
+  #appHeader .topbar-menu-heading{padding:5px 8px 8px;margin-bottom:5px;border-bottom:1px solid var(--line);color:var(--dim);font:10px var(--mono);letter-spacing:.09em;text-transform:uppercase}
+  #appHeader .topbar-menu-item{width:100%;min-height:40px;height:auto;padding:8px 9px;display:flex;align-items:center;gap:10px;border:1px solid transparent;border-radius:3px;background:transparent;color:var(--text);font:12px var(--body);letter-spacing:0;text-transform:none;text-align:left;white-space:normal;cursor:pointer}
+  #appHeader .topbar-menu-item:hover:not(:disabled){background:var(--panel3);border-color:var(--line);color:var(--text)}
+  #appHeader .topbar-menu-item svg{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  #appHeader .topbar-menu-item:disabled{opacity:.4;cursor:not-allowed}
+  #appHeader .topbar-menu-item.danger{color:#e39a83}
+  #appHeader #previewQualityBtn[aria-pressed="true"]{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
+  #appHeader .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  #stagebar .stage-copy-btn{width:auto;min-width:78px;padding:0 8px;gap:6px;font:600 10px var(--mono);white-space:nowrap}
+  #stagebar .stage-copy-btn svg{width:18px;height:18px;flex:0 0 18px}
+  @media(max-width:760px){
+    #appHeader{gap:5px;padding:9px 10px;flex-wrap:wrap}
+    #appHeader h1{font-size:18px}
+    #appHeader p{display:none}
+    #appHeader .spacer{display:block;flex:1 1 auto}
+    #appHeader .topbar-direct-group{gap:3px;padding:0 4px}
+    #appHeader .topbar-icon-btn{width:40px;height:40px;min-width:40px;min-height:40px}
+    #appHeader .topbar-popover{right:0}
+  }
+  @media(max-width:420px){#appHeader{gap:4px;padding:8px}#appHeader h1{font-size:17px}#appHeader .topbar-icon-btn{width:36px;height:36px;min-width:36px;min-height:36px}}
 
+/* Unified top toolbar: relocated image-view and grade-slot controls. */
+#appHeader .toolbar-view-group,
+#appHeader .toolbar-grade-group{display:flex;align-items:center;gap:5px;padding:0 7px;border-right:1px solid var(--line);flex:0 0 auto}
+#appHeader .toolbar-view-group .topbar-icon-btn,
+#appHeader .toolbar-grade-group .topbar-icon-btn{width:38px;height:38px;min-width:38px;min-height:38px}
+#appHeader .toolbar-grade-group .stage-menu-slotrow{display:flex;align-items:center;gap:3px}
+#appHeader .toolbar-grade-group .stage-menu-slotrow button{width:32px;height:32px;min-width:32px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel2);color:var(--dim);font:600 12px var(--mono);cursor:pointer}
+#appHeader .toolbar-grade-group .stage-menu-slotrow button.on{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
+#appHeader .toolbar-grade-group .stage-copy-btn{width:auto;min-width:62px;padding:0 7px;gap:4px}
+#appHeader .toolbar-grade-group .stage-copy-btn svg{width:17px;height:17px}
+#appHeader .toolbar-grade-group #slotCopyLabel{font:10px var(--mono);white-space:nowrap}
+@media(max-width:760px){
+ #appHeader .toolbar-view-group,#appHeader .toolbar-grade-group{gap:3px;padding:0 4px}
+ #appHeader .toolbar-view-group .topbar-icon-btn,#appHeader .toolbar-grade-group .topbar-icon-btn{width:34px;height:34px;min-width:34px;min-height:34px}
+ #appHeader .toolbar-grade-group .stage-menu-slotrow button{width:29px;height:29px;min-width:29px}
+ #appHeader .toolbar-grade-group .stage-copy-btn{min-width:54px;padding:0 4px}
+}
+
+/* Match the vertical separators between toolbar control groups. */
+
+/* Consistent topbar group rhythm and separators. */
+#appHeader .topbar-direct-group,
+#appHeader .topbar-menu{
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:48px;
+  padding:0 12px;
+  margin:0;
+  border-right:1px solid var(--line);
+  flex:0 0 auto;
+}
+#appHeader .topbar-menu{position:relative}
+#appHeader .topbar-direct-group:last-of-type,
+#appHeader .topbar-export-group{margin-right:0}
+#appHeader .topbar-direct-group .topbar-icon-btn,
+#appHeader .topbar-menu > .topbar-menu-trigger{
+  width:40px;height:40px;min-width:40px;min-height:40px;
+  margin:0;
+}
+#appHeader .toolbar-grade-group .stage-menu-slotrow{gap:6px}
+#appHeader .toolbar-grade-group .stage-copy-btn{margin-left:2px}
+@media(max-width:760px){
+  #appHeader .topbar-direct-group,
+  #appHeader .topbar-menu{gap:5px;padding:0 7px;min-height:42px}
+  #appHeader .topbar-direct-group .topbar-icon-btn,
+  #appHeader .topbar-menu > .topbar-menu-trigger{
+    width:36px;height:36px;min-width:36px;min-height:36px;
+  }
+}
+
+/* Right-side action cluster: Project, Workspace and Export. */
+#appHeader .topbar-menu[data-topbar-menu]:has(#saveProj){
+  margin-left:0;
+}
+#appHeader .topbar-menu[data-topbar-menu]:has(#newimg),
+#appHeader .topbar-export-group{
+  margin-left:0;
+}
+#appHeader .topbar-menu[data-topbar-menu]:has(#saveProj),
+#appHeader .topbar-menu[data-topbar-menu]:has(#newimg),
+#appHeader .topbar-export-group{
+  border-right:1px solid var(--line);
+}
+#appHeader .topbar-export-group{border-right:0}
+
+/* Unified right-side action cluster: Project + Workspace + Export. */
+#appHeader .topbar-action-cluster{
+  display:flex;
+  align-items:center;
+  gap:0;
+  min-height:48px;
+  padding:0 8px;
+  margin:0;
+  border-left:0;
+  flex:0 0 auto;
+}
+#appHeader .topbar-action-cluster > .topbar-menu{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  min-height:40px;
+  padding:0 8px;
+  margin:0;
+  border:0;
+  flex:0 0 auto;
+}
+#appHeader .topbar-action-cluster .topbar-menu-trigger{
+  width:40px;height:40px;min-width:40px;min-height:40px;
+}
+@media(max-width:760px){
+  #appHeader .topbar-action-cluster{min-height:42px;padding:0 4px}
+  #appHeader .topbar-action-cluster > .topbar-menu{padding:0 5px;min-height:36px}
+  #appHeader .topbar-action-cluster .topbar-menu-trigger{width:36px;height:36px;min-width:36px;min-height:36px}
+}
+
+/* One consistent control height across the complete top toolbar. */
+#appHeader .topbar-icon-btn,
+#appHeader .topbar-menu-trigger,
+#appHeader .toolbar-grade-group .stage-menu-slotrow button{
+  box-sizing:border-box;
+  height:40px !important;
+  min-height:40px !important;
+  max-height:40px !important;
+  align-self:center;
+}
+#appHeader .topbar-icon-btn,
+#appHeader .topbar-menu-trigger{
+  width:40px;
+  min-width:40px;
+}
+#appHeader .toolbar-grade-group .stage-menu-slotrow button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+@media(max-width:760px){
+  #appHeader .topbar-icon-btn,
+  #appHeader .topbar-menu-trigger,
+  #appHeader .toolbar-grade-group .stage-menu-slotrow button{
+    height:36px !important;
+    min-height:36px !important;
+    max-height:36px !important;
+  }
+  #appHeader .topbar-icon-btn,
+  #appHeader .topbar-menu-trigger{
+    width:36px;
+    min-width:36px;
+  }
+  #appHeader .toolbar-grade-group .stage-menu-slotrow button{
+    width:36px;
+    min-width:36px;
+  }
+}
+
+/* Compact the trailing edge of the toolbar. */
+#appHeader{padding-right:12px !important}
+#appHeader .topbar-action-cluster{padding-right:0}
+
+/* Project / Workspace / Export form one uninterrupted action cluster. */
+#appHeader .topbar-action-cluster > .topbar-menu,
+#appHeader .topbar-action-cluster > .topbar-menu:not(:last-child),
+#appHeader .topbar-action-cluster > .topbar-menu:last-child{
+  border:0 !important;
+  box-shadow:none !important;
+}
+#appHeader .topbar-action-cluster > .topbar-menu::before,
+#appHeader .topbar-action-cluster > .topbar-menu::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* Toolbar spacing refinement: consistent rhythm within and between groups. */
+#appHeader{
+  column-gap:0;
+}
+#appHeader > .topbar-direct-group{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding-left:10px;
+  padding-right:10px;
+  margin:0;
+  box-sizing:border-box;
+}
+#appHeader > .topbar-direct-group .topbar-icon-btn{
+  margin:0;
+  flex:0 0 auto;
+}
+#appHeader > .toolbar-view-group,
+#appHeader > .toolbar-grade-group{
+  padding-left:10px;
+  padding-right:10px;
+}
+#appHeader .toolbar-grade-group .stage-menu-slotrow{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:0;
+}
+#appHeader .toolbar-grade-group .stage-copy-btn{
+  margin:0 0 0 2px;
+}
+#appHeader > .topbar-action-cluster{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  padding-left:12px;
+  padding-right:0;
+  margin:0;
+  box-sizing:border-box;
+}
+#appHeader .topbar-action-cluster > .topbar-menu{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0;
+  margin:0;
+}
+#appHeader .topbar-action-cluster .topbar-menu-trigger{
+  margin:0;
+}
+@media(max-width:760px){
+  #appHeader > .topbar-direct-group{
+    gap:5px;
+    padding-left:6px;
+    padding-right:6px;
+  }
+  #appHeader > .toolbar-view-group,
+  #appHeader > .toolbar-grade-group{
+    padding-left:6px;
+    padding-right:6px;
+  }
+  #appHeader .toolbar-grade-group .stage-menu-slotrow{gap:4px}
+  #appHeader .toolbar-grade-group .stage-copy-btn{margin-left:1px}
+  #appHeader > .topbar-action-cluster{
+    gap:6px;
+    padding-left:8px;
+    padding-right:0;
+  }
+}
+</style>
 </head>
 <body>
 <header id="appHeader">
 <h1>LutMaster</h1>
-
 <span class="spacer"></span>
-<div class="topbar-direct-group" role="group" aria-label="History">
-  <button class="topbar-icon-btn" disabled id="undoBtn" type="button" aria-label="Undo" title="Undo (Ctrl/Cmd+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/></svg></button>
-  <button class="topbar-icon-btn" disabled id="redoBtn" type="button" aria-label="Redo" title="Redo (Ctrl/Cmd+Shift+Z)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"/></svg></button>
-  <button id="resetAll" class="topbar-icon-btn reset-all-btn" type="button" aria-label="Reset all adjustments" title="Reset all adjustments"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v7m4-7v7M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></button>
+<div aria-label="History" class="topbar-direct-group" role="group">
+<button aria-label="Undo" class="topbar-icon-btn" disabled="" id="undoBtn" title="Undo (Ctrl/Cmd+Z)" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"></path></svg></button>
+<button aria-label="Redo" class="topbar-icon-btn" disabled="" id="redoBtn" title="Redo (Ctrl/Cmd+Shift+Z)" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="m15 14 5-5-5-5m5 5H10a6 6 0 0 0 0 12h2"></path></svg></button>
+<button aria-label="Reset all adjustments" class="topbar-icon-btn reset-all-btn" id="resetAll" title="Reset all adjustments" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 7h16M10 11v7m4-7v7M6 7l1 14h10l1-14M9 7V4h6v3"></path></svg></button>
 </div>
-
-
-
-<div class="topbar-direct-group toolbar-view-group" role="group" aria-label="View controls">
-  <input hidden id="wipeOn" type="checkbox" aria-label="Split compare" />
-  <button class="topbar-icon-btn stage-toggle" id="wipeToggle" type="button" aria-label="Split comparison" aria-pressed="false" aria-controls="view" title="Show original on the left and graded image on the right; drag the divider to compare."><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M12 4v16M7.5 9v6M16.5 9v6"/></svg></button>
-  <input hidden id="clipOn" type="checkbox" aria-label="Clipping warnings" />
-  <button class="topbar-icon-btn stage-toggle" id="clipToggle" type="button" aria-label="Clipping warnings" aria-pressed="false" aria-controls="view" title="Mark pixels clipped to pure black or white."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 20H2L12 3Z"/><path d="M12 9v5M12 17.2v.1"/></svg></button>
-  <input hidden id="scopeOn" type="checkbox" aria-label="Histogram" />
-  <button class="topbar-icon-btn stage-toggle" id="scopeToggle" type="button" aria-label="Histogram" aria-pressed="false" aria-controls="scopes" title="Show the RGB histogram of the graded image."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V4M3 20h18"/><path d="M6 17v-5h3v5M11 17V7h3v10M16 17v-8h3v8"/></svg></button>
+<div aria-label="View controls" class="topbar-direct-group toolbar-view-group" role="group">
+<input aria-label="Split compare" hidden="" id="wipeOn" type="checkbox"/>
+<button aria-controls="view" aria-label="Split comparison" aria-pressed="false" class="topbar-icon-btn stage-toggle" id="wipeToggle" title="Show original on the left and graded image on the right; drag the divider to compare." type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="16" rx="1.5" width="18" x="3" y="4"></rect><path d="M12 4v16M7.5 9v6M16.5 9v6"></path></svg></button>
+<input aria-label="Clipping warnings" hidden="" id="clipOn" type="checkbox"/>
+<button aria-controls="view" aria-label="Clipping warnings" aria-pressed="false" class="topbar-icon-btn stage-toggle" id="clipToggle" title="Mark pixels clipped to pure black or white." type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 3 22 20H2L12 3Z"></path><path d="M12 9v5M12 17.2v.1"></path></svg></button>
+<input aria-label="Histogram" hidden="" id="scopeOn" type="checkbox"/>
+<button aria-controls="scopes" aria-label="Histogram" aria-pressed="false" class="topbar-icon-btn stage-toggle" id="scopeToggle" title="Show the RGB histogram of the graded image." type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M3 20V4M3 20h18"></path><path d="M6 17v-5h3v5M11 17V7h3v10M16 17v-8h3v8"></path></svg></button>
 </div>
-<div class="topbar-direct-group toolbar-grade-group" role="group" aria-label="Grade slots">
-  <div class="stage-menu-slotrow"><button class="on" id="slotA" type="button" aria-label="Switch to grade slot A" title="Switch to grade slot A">A</button><button id="slotB" type="button" aria-label="Switch to grade slot B" title="Switch to grade slot B">B</button></div>
-  <button id="slotCopy" class="topbar-icon-btn stage-copy-btn" type="button" aria-label="Copy grade from A to B" title="Copy all adjustments from A to B"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="10" height="13" rx="1.5"/><rect x="10.5" y="7" width="10" height="13" rx="1.5"/><path d="M8 11h8m-3-3 3 3-3 3"/></svg><span id="slotCopyLabel">A→B</span></button>
+<div aria-label="Grade slots" class="topbar-direct-group toolbar-grade-group" role="group">
+<div class="stage-menu-slotrow"><button aria-label="Switch to grade slot A" class="on" id="slotA" title="Switch to grade slot A" type="button">A</button><button aria-label="Switch to grade slot B" id="slotB" title="Switch to grade slot B" type="button">B</button></div>
+<button aria-label="Copy grade from A to B" class="topbar-icon-btn stage-copy-btn" id="slotCopy" title="Copy all adjustments from A to B" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="13" rx="1.5" width="10" x="3.5" y="5"></rect><rect height="13" rx="1.5" width="10" x="10.5" y="7"></rect><path d="M8 11h8m-3-3 3 3-3 3"></path></svg><span id="slotCopyLabel">A→B</span></button>
 </div>
-<div class="topbar-direct-group" role="group" aria-label="Display controls">
-  <button id="previewQualityBtn" class="topbar-icon-btn preview-quality-btn" type="button" role="switch" aria-checked="false" aria-pressed="false" aria-label="Standard preview" title="Standard preview — faster editing. Activate for full-resolution preview." disabled><span class="quality-glyph" aria-hidden="true">STD</span><span class="sr-only">Standard preview</span></button>
-  <button id="fullscreenBtn" class="topbar-icon-btn" type="button" aria-label="Enter fullscreen" title="Enter fullscreen mode" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg><span class="sr-only">Enter fullscreen</span></button>
-  <button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" id="helpBtn" class="topbar-icon-btn" type="button" title="Quick help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1-1.8 1.4-1.8 3M12 17.5v.1"/></svg></button>
+<div aria-label="Display controls" class="topbar-direct-group" role="group">
+<button aria-checked="false" aria-label="Standard preview" aria-pressed="false" class="topbar-icon-btn preview-quality-btn" disabled="" id="previewQualityBtn" role="switch" title="Standard preview — faster editing. Activate for full-resolution preview." type="button"><span aria-hidden="true" class="quality-glyph">STD</span><span class="sr-only">Standard preview</span></button>
+<button aria-label="Enter fullscreen" aria-pressed="false" class="topbar-icon-btn" id="fullscreenBtn" title="Enter fullscreen mode" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"></path></svg><span class="sr-only">Enter fullscreen</span></button>
+<button aria-controls="helpModal" aria-haspopup="dialog" aria-label="Quick help" class="topbar-icon-btn" id="helpBtn" title="Quick help" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9a2.5 2.5 0 1 1 4.2 1.8c-1.2 1-1.8 1.4-1.8 3M12 17.5v.1"></path></svg></button>
 </div>
-<div class="topbar-action-cluster" role="group" aria-label="Project, workspace and export">
-<div class="topbar-menu" data-topbar-menu>
-  <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Add images" title="Add images" aria-haspopup="true" aria-expanded="false" aria-controls="stageMenuAdd">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8.5" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/><circle cx="18" cy="6" r="4.25"/><path d="M18 3.8v4.4M15.8 6h4.4"/></svg>
-  </button>
-  <div class="topbar-popover" id="stageMenuAdd" role="group" aria-label="Add images">
-    <div class="topbar-menu-heading">Workspace</div>
-    <button id="newimg" class="topbar-menu-item" type="button" title="Add more photos to the workspace"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg><span>Add photos…</span></button>
-    <button id="chartbtn2" class="topbar-menu-item" type="button" title="Load the built-in test chart"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M9 4v16M15 4v16M3 14h18"/></svg><span>Load test chart</span></button>
-  </div>
+<div aria-label="Project, workspace and export" class="topbar-action-cluster" role="group">
+<div class="topbar-menu" data-topbar-menu="">
+<button aria-controls="stageMenuAdd" aria-expanded="false" aria-haspopup="true" aria-label="Add images" class="topbar-icon-btn topbar-menu-trigger" title="Add images" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="2" width="18" x="3" y="3"></rect><circle cx="8" cy="8.5" r="1.5"></circle><path d="m4 17 5-5 3 3 3-4 5 6"></path><circle cx="18" cy="6" r="4.25"></circle><path d="M18 3.8v4.4M15.8 6h4.4"></path></svg>
+</button>
+<div aria-label="Add images" class="topbar-popover" id="stageMenuAdd" role="group">
+<div class="topbar-menu-heading">Workspace</div>
+<button class="topbar-menu-item" id="newimg" title="Add more photos to the workspace" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 4v16M4 12h16"></path></svg><span>Add photos…</span></button>
+<button class="topbar-menu-item" id="chartbtn2" title="Load the built-in test chart" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="16" rx="1.5" width="18" x="3" y="4"></rect><path d="M3 9h18M9 4v16M15 4v16M3 14h18"></path></svg><span>Load test chart</span></button>
 </div>
-<div class="topbar-menu" data-topbar-menu>
-  <button class="topbar-icon-btn topbar-menu-trigger" type="button" aria-label="Project actions" title="Project actions" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h1z"/><path d="M7 3v6h10V3M7 21v-7h10v7M14.5 5.5h.01"/></svg></button>
-  <div class="topbar-popover" role="menu" aria-label="Project actions">
-    <div class="topbar-menu-heading">Project</div>
-    <button id="saveProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8"/></svg><span>Save project</span></button>
-    <button id="loadProj" class="topbar-menu-item" type="button" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"/></svg><span>Load project</span></button>
-
-  </div>
+</div>
+<div class="topbar-menu" data-topbar-menu="">
+<button aria-expanded="false" aria-haspopup="true" aria-label="Project actions" class="topbar-icon-btn topbar-menu-trigger" title="Project actions" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M5 3h12l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h1z"></path><path d="M7 3v6h10V3M7 21v-7h10v7M14.5 5.5h.01"></path></svg></button>
+<div aria-label="Project actions" class="topbar-popover" role="menu">
+<div class="topbar-menu-heading">Project</div>
+<button class="topbar-menu-item" id="saveProj" role="menuitem" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M5 3h12l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8"></path></svg><span>Save project</span></button>
+<button class="topbar-menu-item" id="loadProj" role="menuitem" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4"></path></svg><span>Load project</span></button>
+</div>
 </div>
 <div class="topbar-menu topbar-export-group">
-  <button id="openExportDialog" class="topbar-icon-btn" type="button" disabled aria-label="Export images" title="Open the image export dialog" aria-haspopup="dialog" aria-expanded="false" aria-controls="exportModal">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/></svg>
-  </button>
+<button aria-controls="exportModal" aria-expanded="false" aria-haspopup="dialog" aria-label="Export images" class="topbar-icon-btn" disabled="" id="openExportDialog" title="Open the image export dialog" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"></path></svg>
+</button>
 </div>
 </div>
-<input hidden id="projfile" type="file" accept=".lutmaster" title="Select a LutMaster project file to load">
+<input accept=".lutmaster" hidden="" id="projfile" title="Select a LutMaster project file to load" type="file"/>
 </header>
-<div id="imageLoadModal" class="image-load-modal" role="dialog" aria-modal="true" aria-labelledby="imageLoadTitle" aria-hidden="true">
-  <div class="image-load-dialog">
-    <div id="imageLoadTitle" class="image-load-title">Loading images</div>
-    <div id="imageLoadStatus" class="image-load-status" aria-live="polite">Preparing images…</div>
-    <div class="image-load-track" role="progressbar" aria-label="Image loading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <div id="imageLoadFill" class="image-load-fill"></div>
-    </div>
-    <div class="image-load-footer">
-      <span id="imageLoadCount">0 of 0 images</span>
-      <span id="imageLoadPercent">0%</span>
-    </div>
-  </div>
+<div aria-hidden="true" aria-labelledby="imageLoadTitle" aria-modal="true" class="image-load-modal" id="imageLoadModal" role="dialog">
+<div class="image-load-dialog">
+<div class="image-load-title" id="imageLoadTitle">Loading images</div>
+<div aria-live="polite" class="image-load-status" id="imageLoadStatus">Preparing images…</div>
+<div aria-label="Image loading progress" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="image-load-track" role="progressbar">
+<div class="image-load-fill" id="imageLoadFill"></div>
 </div>
-<div id="backgroundProgress" role="progressbar" aria-label="Background processing" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-  <div class="progress-meta"><span class="progress-label">Processing</span><span class="progress-value">0%</span><button id="backgroundProgressCancel" class="progress-cancel" type="button" aria-label="Cancel export" hidden>×</button></div>
-  <div class="progress-track"><div class="progress-fill"></div></div>
+<div class="image-load-footer">
+<span id="imageLoadCount">0 of 0 images</span>
+<span id="imageLoadPercent">0%</span>
+</div>
+</div>
+</div>
+<div aria-label="Background processing" aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" id="backgroundProgress" role="progressbar">
+<div class="progress-meta"><span class="progress-label">Processing</span><span class="progress-value">0%</span><button aria-label="Cancel export" class="progress-cancel" hidden="" id="backgroundProgressCancel" type="button">×</button></div>
+<div class="progress-track"><div class="progress-fill"></div></div>
 </div>
 <main>
 <div id="thumbs"></div>
@@ -811,20 +1056,20 @@
 <strong>Drop one or more photos here</strong>
       or click to choose example images. They never leave your device.
       <p class="tiny">Limits: 100 MP · 20,000 px per edge · 250 MiB per file. Actual import/export depends on browser and canvas allocation limits.</p>
-      <div class="or">No photo to hand?<br/><button id="chartbtn1" title="Load the built-in test chart as a sample image" type="button">Use the built-in test chart</button></div>
+<div class="or">No photo to hand?<br/><button id="chartbtn1" title="Load the built-in test chart as a sample image" type="button">Use the built-in test chart</button></div>
 <div id="droperr"></div>
-<input accept="image/*" hidden="" id="file" multiple="" type="file"/ title="Select image files to add to the workspace">
+<input accept="image/*" hidden="" id="file" multiple="" title="Select image files to add to the workspace" type="file"/>
 </div>
 <div id="previewArea">
 <div id="filmframe">
 <div class="sprockets"></div>
 <div class="rebate"><span>LutMaster · colour lab</span><span id="rebatename">MY_GRADE ▸ 33</span></div>
 <div id="viewwrap">
-<canvas id="view" tabindex="0" aria-label="Image preview" title="Image preview; hold to compare with the original and drag to inspect the wipe"></canvas>
+<canvas aria-label="Image preview" id="view" tabindex="0" title="Image preview; hold to compare with the original and drag to inspect the wipe"></canvas>
 <div aria-hidden="true" id="hiresLayer"></div>
 <canvas aria-hidden="true" id="subjectSelectionOverlay"></canvas>
 <div id="wipeline"></div>
-<div id="curveSampleOverlay" aria-hidden="true"><div id="curveSampleCircle"></div></div>
+<div aria-hidden="true" id="curveSampleOverlay"><div id="curveSampleCircle"></div></div>
 </div>
 <div class="sprockets" style="margin-top:6px"></div>
 </div>
@@ -832,28 +1077,24 @@
 <div id="scopes">
 <canvas height="80" id="histo" title="RGB histogram of the graded output (independent of Original preview)" width="220"></canvas>
 </div>
-<div id="stagebar" aria-label="Image workspace tools">
+<div aria-label="Image workspace tools" id="stagebar">
 <span id="pixinfo" style="font:11px var(--mono);color:var(--dim);min-width:170px" title="Pixel under the cursor: original → graded"></span>
-
-
-
-
 </div>
 </div>
 <div aria-label="Resize sidebar" aria-orientation="vertical" id="asideResize" role="separator"></div>
 <aside>
 <section id="sidebar-pipeline">
-<h2 tabindex="0" aria-expanded="false">Applied LUTs</h2>
-<input hidden="" id="lutfile" type="file"/ title="Select a Cube LUT file">
+<h2 aria-expanded="false" tabindex="0">Applied LUTs</h2>
+<input hidden="" id="lutfile" title="Select a Cube LUT file" type="file"/>
 <div id="baseinfo"><label class="toggle" style="margin:0 0 4px"><input checked="" id="baseEnable" title="Use base LUT" type="checkbox"/> Use base LUT</label>Base LUT: <span id="basename"></span> <button aria-label="Remove the base LUT" class="ldel remove-control" id="baseclear" title="Remove the base LUT" type="button">×</button></div>
 <div id="loadedLuts"></div>
 </section>
 <section id="sidebar-my-luts">
-<h2 tabindex="0" aria-expanded="false">My LUTs</h2>
+<h2 aria-expanded="false" tabindex="0">My LUTs</h2>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="saveLook" title="Save the current grade as a reusable look">Save</button>
 <button class="btn" id="addLookCube" title="Import one or more .cube LUT files">Add .cube file…</button>
-<input accept=".cube" hidden="" id="lookCubeFile" multiple="" type="file"/ title="Select one or more Cube LUT files to import">
+<input accept=".cube" hidden="" id="lookCubeFile" multiple="" title="Select one or more Cube LUT files to import" type="file"/>
 </div>
 <div class="close" id="looksDD">
 <button id="looksToggle" title="Show or hide your saved looks" type="button"><span id="looksCount">Saved LUTs (0)</span><span class="caret">▾</span></button>
@@ -863,106 +1104,99 @@
 </div>
 </div>
 <p class="tiny">Pick a look from the list to apply it. Looks are stored in this browser.</p>
-
-<section id="sidebar-lightroom-import" class="closed">
-<h2 tabindex="0" aria-expanded="false">Import Lightroom preset</h2>
+<section class="closed" id="sidebar-lightroom-import">
+<h2 aria-expanded="false" tabindex="0">Import Lightroom preset</h2>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="lrImport" title="Import colour settings from a Lightroom preset">Choose .xmp or .lrtemplate…</button>
-<input hidden="" id="lrFile" type="file"/ title="Select a Lightroom preset file to import">
+<input hidden="" id="lrFile" title="Select a Lightroom preset file to import" type="file"/>
 </div>
 <p class="tiny" id="lrReport">Pick any .xmp or .lrtemplate file (the picker shows all files, because iPadOS hides unknown types when filtered). Converts the colour parts of a Lightroom preset into these controls, so you can export it as a LUT. Approximate: Lightroom works on raw data, a LUT works on rendered pixels.</p>
 </section>
-<section id="sidebar-extract-look" class="closed">
-<h2 tabindex="0" aria-expanded="false">Extract look from photo</h2>
+<section class="closed" id="sidebar-extract-look">
+<h2 aria-expanded="false" tabindex="0">Extract look from photo</h2>
 <div style="display:flex;gap:8px;flex-wrap:wrap">
 <button class="btn" id="exSingle" title="Analyse a reference photo and estimate its grading settings">Estimate from one photo…</button>
-<input accept="image/*" hidden="" id="exSingleF" type="file"/ title="Reference photo used to estimate grading settings">
+<input accept="image/*" hidden="" id="exSingleF" title="Reference photo used to estimate grading settings" type="file"/>
 </div>
 <p class="tiny">Single-photo mode analyses tone, white balance, saturation and split toning, then sets the controls to approximate that look — a starting point to refine.</p>
 </section>
 </section>
-
-
 <section id="sidebar-auto-corrections">
-<h2 tabindex="0" aria-expanded="false">Automated Corrections</h2>
+<h2 aria-expanded="false" tabindex="0">Automated Corrections</h2>
 <div class="auto-correction-groups">
-  <div class="auto-correction-block" aria-label="Input transform">
-    <div class="auto-correction-heading">Input transform</div>
-    <div class="auto-correction-group">
-      <button aria-pressed="false" class="btn" disabled="" id="logMode" title="Toggle V-Log input conversion to Rec.709 before applying the grade">Vlog</button>
-    </div>
-  </div>
-
-  <div class="auto-correction-block" aria-label="Automatic tonal grading">
-    <div class="auto-correction-heading">Tune Luminance</div>
-    <div class="auto-correction-group auto-grade-tools">
-      <button class="btn" id="autoGradeBtn" type="button" disabled aria-pressed="false" title="Automatically optimize global tonal parameters from the whole image">Auto Grade</button>
-      <button class="btn" id="autoGradeSubjectBtn" type="button" disabled aria-pressed="false" title="Draw around a subject; preserve scene brightness while increasing subject contrast">Auto Grade – Subject</button>
-    </div>
-    <div id="subjectGradeControls" style="display:none;gap:6px;align-items:center;margin:0 0 8px">
-      <span class="tiny" id="subjectGradeHint">Draw a closed outline around the subject. Double-click to finish.</span>
-      <button class="btn" id="subjectGradeApply" type="button" disabled title="Apply the subject-based correction to the current grade">Apply</button>
-      <button class="btn" id="subjectGradeCancel" type="button" title="Cancel subject selection without applying the correction">Cancel</button>
-    </div>
-  </div>
-
-  <div id="legacyColorHarmonyControls" hidden aria-hidden="true">
-    <div class="row harmony-intensity-control"><label for="colorHarmonyIntensity">Grading intensity</label>
-      <input id="colorHarmonyIntensity" type="range" min="0" max="100" step="1" value="40">
-      <span class="percent-value"><input id="colorHarmonyIntensityValue" class="num percent-input" type="number" min="0" max="100" step="1" value="40"><span>%</span></span>
-    </div>
-    <div class="row harmony-preservation-control"><label for="colorHuePreservation">Protect Hue</label>
-      <input id="colorHuePreservation" type="range" min="0" max="100" step="1" value="0">
-      <span class="percent-value"><input id="colorHuePreservationValue" class="num percent-input" type="number" min="0" max="100" step="1" value="0"><span>%</span></span>
-    </div>
-    <div class="row harmony-skin-protection-control"><label for="skinProtection">Protect Skin</label>
-      <input id="skinProtection" type="range" min="0" max="100" value="70">
-      <span class="percent-value"><input id="skinProtectionValue" class="num percent-input" type="number" min="0" max="100" step="1" value="70"><span>%</span></span>
-    </div>
-  </div>
-
-  <div class="auto-correction-block" aria-label="Tone parameters">
-    <div class="auto-correction-heading">Tone parameters</div>
-    <div class="auto-correction-group">
-      <button class="btn" disabled="" id="autoExp" title="Exposure so the median tone sits at a natural mid-grey">Exposure</button>
-      <button class="btn" disabled="" id="autoRec" title="Pull back blown highlights, lift crushed shadows, set black point">Recover</button>
-      <button class="btn" disabled="" id="autoShadow" aria-pressed="false" title="Lift recoverable shadow detail while keeping the black point anchored">Shadow detail</button>
-      <button class="btn" disabled="" id="autoHighlight" aria-pressed="false" title="Compress bright tones with a smooth shoulder while retaining highlight detail">Highlight roll-off</button>
-    </div>
-  </div>
-
-  <div class="auto-correction-block" aria-label="Master RGB curve">
-    <div class="auto-correction-heading">Master RGB curve</div>
-    <div class="auto-correction-group">
-      <button class="btn" disabled="" id="optDynamic" title="Set black and white points directly in the master RGB curve">Dynamic</button>
-      <button class="btn" disabled="" id="optContrast" title="Add a restrained midtone contrast adjustment to the master RGB curve">Contrast</button>
-      <button class="btn" disabled="" id="optFilm" title="Apply a gentle faded film-style adjustment to the master RGB curve">Filmish</button>
-      <button class="btn" disabled="" id="optShadowLift" title="Lift deep shadows with a localized toe curve while preserving the endpoints">Shadow lift</button>
-      <button class="btn" disabled="" id="optMidLift" title="Lift middle luminance values without changing black or white endpoints">Midtone lift</button>
-      <button class="btn" disabled="" id="optCurveShoulder" title="Shape upper midtones with a smooth highlight shoulder; preserve the white endpoint">Curve shoulder</button>
-    </div>
-  </div>
-
-  <div class="auto-correction-block" aria-label="Colour parameters">
-    <div class="auto-correction-heading">Colour parameters</div>
-    <div class="auto-correction-group">
-      <button class="btn" disabled="" id="autoCol" title="Vibrance from the image's average colourfulness, with skin protection">Colour</button>
-      <button class="btn" disabled="" id="autoWBbtn" title="Grey-world white balance">White bal.</button>
-    </div>
-  </div>
-
-  <div class="auto-correction-block" aria-label="Secondary curves">
-    <div class="auto-correction-heading">Secondary curves</div>
-    <div class="auto-correction-group">
-      <button class="btn" disabled="" id="autoSkin" aria-pressed="false" title="Detect likely skin-colour pixels and gently correct their hue towards a natural tone">Skin tone</button>
-      <button class="btn" disabled="" id="autoLumaSat" aria-pressed="false" title="Balance saturation across shadows, midtones and highlights">Luma saturation</button>
-    </div>
-  </div>
+<div aria-label="Input transform" class="auto-correction-block">
+<div class="auto-correction-heading">Input transform</div>
+<div class="auto-correction-group">
+<button aria-pressed="false" class="btn" disabled="" id="logMode" title="Toggle V-Log input conversion to Rec.709 before applying the grade">Vlog</button>
+</div>
+</div>
+<div aria-label="Automatic tonal grading" class="auto-correction-block">
+<div class="auto-correction-heading">Auto Grade</div>
+<div class="auto-correction-group auto-grade-tools">
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeBtn" title="Optimize tone and contrast across the entire image." type="button">Global</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeSubjectBtn" title="Select the subject manually; grade it while preserving scene brightness." type="button">Manual</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeSharpBtn" title="Detect subject, then optimize tone and contrast." type="button">Subject</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeAdaptiveBtn" title="Detect zones, then optimize tone and contrast." type="button">Zones</button>
+</div>
+<div id="subjectGradeControls" style="display:none;gap:6px;align-items:center;margin:0 0 8px">
+<span class="tiny" id="subjectGradeHint">Draw a closed outline around the subject. Double-click to finish.</span>
+<button class="btn" disabled="" id="subjectGradeApply" title="Apply the subject-based correction to the current grade" type="button">Apply</button>
+<button class="btn" id="subjectGradeCancel" title="Cancel subject selection without applying the correction" type="button">Cancel</button>
+</div>
+</div>
+<div aria-hidden="true" hidden="" id="legacyColorHarmonyControls">
+<div class="row harmony-intensity-control"><label for="colorHarmonyIntensity">Grading intensity</label>
+<input id="colorHarmonyIntensity" max="100" min="0" step="1" type="range" value="40"/>
+<span class="percent-value"><input class="num percent-input" id="colorHarmonyIntensityValue" max="100" min="0" step="1" type="number" value="40"/><span>%</span></span>
+</div>
+<div class="row harmony-preservation-control"><label for="colorHuePreservation">Protect Hue</label>
+<input id="colorHuePreservation" max="100" min="0" step="1" type="range" value="0"/>
+<span class="percent-value"><input class="num percent-input" id="colorHuePreservationValue" max="100" min="0" step="1" type="number" value="0"/><span>%</span></span>
+</div>
+<div class="row harmony-skin-protection-control"><label for="skinProtection">Protect Skin</label>
+<input id="skinProtection" max="100" min="0" type="range" value="70"/>
+<span class="percent-value"><input class="num percent-input" id="skinProtectionValue" max="100" min="0" step="1" type="number" value="70"/><span>%</span></span>
+</div>
+</div>
+<div aria-label="Tone parameters" class="auto-correction-block">
+<div class="auto-correction-heading">Tone parameters</div>
+<div class="auto-correction-group">
+<button class="btn" disabled="" id="autoExp" title="Exposure so the median tone sits at a natural mid-grey">Exposure</button>
+<button class="btn" disabled="" id="autoRec" title="Pull back blown highlights, lift crushed shadows, set black point">Recover</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoShadow" title="Lift recoverable shadow detail while keeping the black point anchored">Shadow detail</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoHighlight" title="Compress bright tones with a smooth shoulder while retaining highlight detail">Highlight roll-off</button>
+</div>
+</div>
+<div aria-label="Master RGB curve" class="auto-correction-block">
+<div class="auto-correction-heading">Master RGB curve</div>
+<div class="auto-correction-group">
+<button class="btn" disabled="" id="optDynamic" title="Set black and white points directly in the master RGB curve">Dynamic</button>
+<button class="btn" disabled="" id="optContrast" title="Add a restrained midtone contrast adjustment to the master RGB curve">Contrast</button>
+<button class="btn" disabled="" id="optFilm" title="Apply a gentle faded film-style adjustment to the master RGB curve">Filmish</button>
+<button class="btn" disabled="" id="optShadowLift" title="Lift deep shadows with a localized toe curve while preserving the endpoints">Shadow lift</button>
+<button class="btn" disabled="" id="optMidLift" title="Lift middle luminance values without changing black or white endpoints">Midtone lift</button>
+<button class="btn" disabled="" id="optCurveShoulder" title="Shape upper midtones with a smooth highlight shoulder; preserve the white endpoint">Curve shoulder</button>
+</div>
+</div>
+<div aria-label="Colour parameters" class="auto-correction-block">
+<div class="auto-correction-heading">Colour parameters</div>
+<div class="auto-correction-group">
+<button class="btn" disabled="" id="autoCol" title="Vibrance from the image's average colourfulness, with skin protection">Colour</button>
+<button class="btn" disabled="" id="autoWBbtn" title="Grey-world white balance">White bal.</button>
+</div>
+</div>
+<div aria-label="Secondary curves" class="auto-correction-block">
+<div class="auto-correction-heading">Secondary curves</div>
+<div class="auto-correction-group">
+<button aria-pressed="false" class="btn" disabled="" id="autoSkin" title="Detect likely skin-colour pixels and gently correct their hue towards a natural tone">Skin tone</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoLumaSat" title="Balance saturation across shadows, midtones and highlights">Luma saturation</button>
+</div>
+</div>
 </div>
 <p class="tiny curve-optimization-note">Analysed from the currently selected photo. These are editable starting points, not a substitute for checking exposure, skin tones and clipping.</p>
 </section>
 <section id="sidebar-tone">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Tone" checked="" data-enable="tone" title="Enable or disable Tone" type="checkbox"/></label>Tone <button class="reset" id="toneReset" title="Reset all tone adjustments">reset</button></h2>
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Tone" checked="" data-enable="tone" title="Enable or disable Tone" type="checkbox"/></label>Tone <button class="reset" id="toneReset" title="Reset all tone adjustments">reset</button></h2>
 <div class="row"><label>Exposure</label><input id="exposure" max="100" min="-100" title="Exposure compensation: shift the overall image brightness." type="range" value="0"/><input class="num" title="Exposure compensation: shift the overall image brightness." type="number" value="0"/></div>
 <div class="row"><label>Contrast</label><input id="contrast" max="100" min="-100" title="Contrast: change separation between darker and brighter tones." type="range" value="0"/><input class="num" title="Contrast: change separation between darker and brighter tones." type="number" value="0"/></div>
 <div class="row"><label>Highlights</label><input id="highlights" max="100" min="-100" title="Adjust the highlight tint strength." type="range" value="0"/><input class="num" title="Adjust the highlight tint strength." type="number" value="0"/></div>
@@ -971,7 +1205,7 @@
 <div class="row"><label>Gamma</label><input id="gamma" max="100" min="-100" title="Gamma: reshape midtone brightness without moving both endpoints equally." type="range" value="0"/><input class="num" title="Gamma: reshape midtone brightness without moving both endpoints equally." type="number" value="0"/></div>
 <div class="row"><label>Fade blacks</label><input id="fade" max="100" min="0" title="Fade blacks: raise the black floor for a faded look." type="range" value="0"/><input class="num" title="Fade blacks: raise the black floor for a faded look." type="number" value="0"/></div>
 </section>
-<section id="sidebar-colour"><h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Colour" checked="" data-enable="colour" title="Enable or disable Colour" type="checkbox"/></label>Colour <button class="reset" id="colReset" title="Reset all colour adjustments">reset</button></h2><div class="auto-correction-heading">White balance</div>
+<section id="sidebar-colour"><h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Colour" checked="" data-enable="colour" title="Enable or disable Colour" type="checkbox"/></label>Colour <button class="reset" id="colReset" title="Reset all colour adjustments">reset</button></h2><div class="auto-correction-heading">White balance</div>
 <button class="btn pickbtn" id="wbPick" title="Sample a neutral area in the photo to set white balance">⌖ Pick Whitebalance</button>
 <div class="auto-correction-heading">Tonal normalisation</div>
 <div class="row"><label for="normHighlights" title="Image-adaptive RGB neutralisation strength in highlights. Uses a fixed, smooth tonal transition and is applied before the colour wheels.">Normalisation · Highlights</label><input id="normHighlights" max="100" min="0" title="Normalisation strength in highlights" type="range" value="0"/><input class="num" title="Normalisation strength in highlights" type="number" value="0"/></div>
@@ -985,7 +1219,7 @@
 <div class="row"><label>Protect skin</label><input id="skin" max="100" min="0" title="Skin protection: reduce the effect of colour adjustments on likely skin tones." type="range" value="0"/><input class="num" title="Skin protection: reduce the effect of colour adjustments on likely skin tones." type="number" value="0"/></div>
 </section>
 <section id="sidebar-curves">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Curves" checked="" data-enable="curves" title="Enable or disable Curves" type="checkbox"/></label>Curves <button class="reset" id="curveReset" title="Reset the active curve channel">reset channel</button></h2>
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Curves" checked="" data-enable="curves" title="Enable or disable Curves" type="checkbox"/></label>Curves <button class="reset" id="curveReset" title="Reset the active curve channel">reset channel</button></h2>
 <div class="chtabs">
 <button class="on" data-ch="m" title="RGB">RGB</button>
 <button data-ch="r" title="Red">Red</button>
@@ -993,82 +1227,82 @@
 <button data-ch="b" title="Blue">Blue</button>
 </div>
 <canvas height="210" id="curves" title="Edit the active tone curve by adding or dragging control points" width="300"></canvas>
-<div class="curve-point-move-tools" id="curvePointMoveTools" aria-label="Move selected curve point">
-  <button class="btn" id="curveMoveLeft" type="button" title="Move selected point horizontally to the left" aria-label="Move point left">←</button>
-  <button class="btn" id="curveMoveRight" type="button" title="Move selected point horizontally to the right" aria-label="Move point right">→</button>
-  <button class="btn" id="curveMoveDown" type="button" title="Move selected point vertically down" aria-label="Move point down">↓</button>
-  <button class="btn" id="curveMoveUp" type="button" title="Move selected point vertically up" aria-label="Move point up">↑</button>
-  <button class="btn" id="curveMoveDiagBack" type="button" title="Move selected point along the original curve towards lower input values" aria-label="Move point along original curve towards lower input values">↙</button>
-  <button class="btn" id="curveMoveDiagForward" type="button" title="Move selected point along the original curve towards higher input values" aria-label="Move point along original curve towards higher input values">↗</button>
+<div aria-label="Move selected curve point" class="curve-point-move-tools" id="curvePointMoveTools">
+<button aria-label="Move point left" class="btn" id="curveMoveLeft" title="Move selected point horizontally to the left" type="button">←</button>
+<button aria-label="Move point right" class="btn" id="curveMoveRight" title="Move selected point horizontally to the right" type="button">→</button>
+<button aria-label="Move point down" class="btn" id="curveMoveDown" title="Move selected point vertically down" type="button">↓</button>
+<button aria-label="Move point up" class="btn" id="curveMoveUp" title="Move selected point vertically up" type="button">↑</button>
+<button aria-label="Move point along original curve towards lower input values" class="btn" id="curveMoveDiagBack" title="Move selected point along the original curve towards lower input values" type="button">↙</button>
+<button aria-label="Move point along original curve towards higher input values" class="btn" id="curveMoveDiagForward" title="Move selected point along the original curve towards higher input values" type="button">↗</button>
 </div>
 <div class="curve-tools" id="curvePointTools">
-  <button class="btn" id="curveImagePick" type="button" aria-pressed="false" title="Click a pixel in the image to add a point on the active curve">⌖ Add point from image</button>
+<button aria-pressed="false" class="btn" id="curveImagePick" title="Click a pixel in the image to add a point on the active curve" type="button">⌖ Add point from image</button>
 </div>
 <p class="tiny">Click to add a point, drag to shape, double-click a point to remove it. Image picker uses the sampled pixel value as input and the current curve output as the point's output.</p>
 <div class="row curve-smoothness-row">
-  <label for="graduationSmoothness">Smoothness</label>
-  <input id="graduationSmoothness" type="range" min="0" max="100" step="1" value="50" title="0 = linear segments; 50 = current PCHIP interpolation; 100 = strong smoothing"/>
-  <input class="num" id="graduationSmoothnessValue" type="number" min="0" max="100" step="1" value="50" aria-label="Gradation Curve Smoothness value"/>
+<label for="graduationSmoothness">Smoothness</label>
+<input id="graduationSmoothness" max="100" min="0" step="1" title="0 = linear segments; 50 = current PCHIP interpolation; 100 = strong smoothing" type="range" value="50"/>
+<input aria-label="Gradation Curve Smoothness value" class="num" id="graduationSmoothnessValue" max="100" min="0" step="1" type="number" value="50"/>
 </div>
 </section>
-<section id="sidebar-colour-grading" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Color Grading" checked="" data-enable="colorBalance" title="Enable or disable Color Grading" type="checkbox"/></label>Color grading <button class="reset" id="cbReset" title="Reset all three colour wheels to neutral and restore Blending to 50 and Balance to 0.">reset</button></h2>
+<section class="closed" id="sidebar-colour-grading">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Color Grading" checked="" data-enable="colorBalance" title="Enable or disable Color Grading" type="checkbox"/></label>Color grading <button class="reset" id="cbReset" title="Reset all three colour wheels to neutral and restore Blending to 50 and Balance to 0.">reset</button></h2>
 <div class="cbwheels">
 <div class="cbwheel-wrap" id="cbWheelWrap"><canvas class="cbwheel" height="320" id="cbWheel" title="Shared colour wheel. Drag any tonal marker directly, even when no range is selected. Tap a marker to select it; tap the active marker again to exit edit mode. Double-click to reset the active marker." width="320"></canvas></div>
-<div class="cbwheel-label" id="cbWheelActiveLabel" aria-live="polite">No range selected</div>
-<div class="cbwheel-legend" aria-label="Marker outline legend">
+<div aria-live="polite" class="cbwheel-label" id="cbWheelActiveLabel">No range selected</div>
+<div aria-label="Marker outline legend" class="cbwheel-legend">
 <span><i class="cb-legend-dot cb-legend-shadow"></i>Shadows</span>
 <span><i class="cb-legend-dot cb-legend-mid"></i>Mids</span>
 <span><i class="cb-legend-dot cb-legend-highlight"></i>Highlights</span>
 </div>
-<div class="cbwheel-nudges" id="cbWheelNudges" aria-label="Adjust selected tonal range">
-<button type="button" data-move="hue-up" title="Rotate selected hue 5° counter-clockwise without changing saturation.">↶ Hue</button>
-<button type="button" data-move="hue-down" title="Rotate selected hue 5° clockwise without changing saturation.">Hue ↷</button>
-<button type="button" data-move="sat-up" title="Increase selected saturation by a small step; hue stays unchanged.">＋ Sat</button>
-<button type="button" data-move="sat-down" title="Decrease selected saturation by a small step; hue stays unchanged.">－ Sat</button>
+<div aria-label="Adjust selected tonal range" class="cbwheel-nudges" id="cbWheelNudges">
+<button data-move="hue-up" title="Rotate selected hue 5° counter-clockwise without changing saturation." type="button">↶ Hue</button>
+<button data-move="hue-down" title="Rotate selected hue 5° clockwise without changing saturation." type="button">Hue ↷</button>
+<button data-move="sat-up" title="Increase selected saturation by a small step; hue stays unchanged." type="button">＋ Sat</button>
+<button data-move="sat-down" title="Decrease selected saturation by a small step; hue stays unchanged." type="button">－ Sat</button>
 </div>
 </div>
 <div class="row"><label>Blending</label><input id="cbBlending" max="100" min="0" title="Control how much the shadow, midtone and highlight grading ranges overlap. Lower values separate the ranges; higher values create smoother transitions." type="range" value="50"/><input class="num" title="Adjust overlap between tonal ranges." type="number" value="50"/></div>
 <div class="row"><label>Balance</label><input id="cbBalance" max="100" min="-100" title="Shift color grading emphasis toward shadows (negative) or highlights (positive)." type="range" value="0"/><input class="num" title="Shift the overall colour-grading emphasis: negative values favour shadows, positive values favour highlights, and 0 is neutral." type="number" value="0"/></div>
 <p class="tiny">Blending controls overlap between tinted tonal ranges. Balance shifts the grade's emphasis toward shadows or highlights. Drag any tonal marker directly to tint that region; selecting it first is optional. Tap a marker to toggle edit mode for touch controls; center = no change.</p>
 </section>
-<section id="sidebar-split-toning" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Split Toning" checked="" data-enable="splitToning" title="Enable or disable Split Toning" type="checkbox"/></label>Split toning <button class="reset" id="splitReset" title="Reset split toning adjustments">reset</button></h2>
+<section class="closed" id="sidebar-split-toning">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Split Toning" checked="" data-enable="splitToning" title="Enable or disable Split Toning" type="checkbox"/></label>Split toning <button class="reset" id="splitReset" title="Reset split toning adjustments">reset</button></h2>
 <div class="row"><label>Shadows</label><input id="shCol" title="Choose the shadows colour" type="color" value="#406080"/><input id="shAmt" max="100" min="0" title="Adjust the shadow tint strength." type="range" value="0"/><input class="num" title="Adjust the shadow tint strength." type="number" value="0"/></div>
 <div class="row"><label>Highlights</label><input id="hiCol" title="Choose the highlights colour" type="color" value="#e0a060"/><input id="hiAmt" max="100" min="0" title="Adjust the highlight tint strength." type="range" value="0"/><input class="num" title="Adjust the highlight tint strength." type="number" value="0"/></div>
 </section>
-<section id="sidebar-hue-vs-hue" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Hue" checked="" data-enable="hueShift" title="Enable or disable Hue vs Hue" type="checkbox"/></label>Hue vs hue <button class="reset" id="hueReset" title="Reset hue vs hue adjustments">reset</button></h2>
+<section class="closed" id="sidebar-hue-vs-hue">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Hue vs Hue" checked="" data-enable="hueShift" title="Enable or disable Hue vs Hue" type="checkbox"/></label>Hue vs hue <button class="reset" id="hueReset" title="Reset hue vs hue adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="huecv" title="Adjust hue by dragging the colour-band handles" width="300"></canvas>
 <p class="tiny">Drag a handle to rotate that hue (±60°).</p>
 <div class="row curve-smoothness-row">
-  <label for="hueShiftSmoothness">Smoothness</label>
-  <input id="hueShiftSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
-  <input class="num" id="hueShiftSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Hue vs Hue Smoothness value"/>
+<label for="hueShiftSmoothness">Smoothness</label>
+<input id="hueShiftSmoothness" max="100" min="0" step="1" title="0 = current curve interpolation; 100 = strong smoothing" type="range" value="30"/>
+<input aria-label="Hue vs Hue Smoothness value" class="num" id="hueShiftSmoothnessValue" max="100" min="0" step="1" type="number" value="30"/>
 </div>
 </section>
-<section id="sidebar-hue-vs-saturation" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Hue vs Saturation" checked="" data-enable="hueSat" title="Enable or disable Hue vs Saturation" type="checkbox"/></label>Hue vs saturation <button class="reset" id="hsReset" title="Reset hue vs saturation adjustments">reset</button></h2>
+<section class="closed" id="sidebar-hue-vs-saturation">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Hue vs Saturation" checked="" data-enable="hueSat" title="Enable or disable Hue vs Saturation" type="checkbox"/></label>Hue vs saturation <button class="reset" id="hsReset" title="Reset hue vs saturation adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="hscv" title="Adjust saturation by hue by dragging the colour-band handles" width="300"></canvas>
 <p class="tiny">Drag up to boost, down to mute, that hue's saturation.</p>
 <div class="row curve-smoothness-row">
-  <label for="hueSatSmoothness">Smoothness</label>
-  <input id="hueSatSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
-  <input class="num" id="hueSatSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Hue vs Saturation Smoothness value"/>
+<label for="hueSatSmoothness">Smoothness</label>
+<input id="hueSatSmoothness" max="100" min="0" step="1" title="0 = current curve interpolation; 100 = strong smoothing" type="range" value="30"/>
+<input aria-label="Hue vs Saturation Smoothness value" class="num" id="hueSatSmoothnessValue" max="100" min="0" step="1" type="number" value="30"/>
 </div>
 </section>
-<section id="sidebar-luma-vs-saturation" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Luma vs Saturation" checked="" data-enable="lumaSat" title="Enable or disable Luma vs Saturation" type="checkbox"/></label>Luma vs saturation <button class="reset" id="lsReset" title="Reset luma vs saturation adjustments">reset</button></h2>
+<section class="closed" id="sidebar-luma-vs-saturation">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Luma vs Saturation" checked="" data-enable="lumaSat" title="Enable or disable Luma vs Saturation" type="checkbox"/></label>Luma vs saturation <button class="reset" id="lsReset" title="Reset luma vs saturation adjustments">reset</button></h2>
 <canvas class="strip" height="200" id="lscv" title="Adjust saturation across the luminance range" width="300"></canvas>
 <p class="tiny">Saturation by brightness — left is shadows, right is highlights.</p>
 <div class="row curve-smoothness-row">
-  <label for="lumaSatSmoothness">Smoothness</label>
-  <input id="lumaSatSmoothness" type="range" min="0" max="100" step="1" value="30" title="0 = current curve interpolation; 100 = strong smoothing"/>
-  <input class="num" id="lumaSatSmoothnessValue" type="number" min="0" max="100" step="1" value="30" aria-label="Luma vs Saturation Smoothness value"/>
+<label for="lumaSatSmoothness">Smoothness</label>
+<input id="lumaSatSmoothness" max="100" min="0" step="1" title="0 = current curve interpolation; 100 = strong smoothing" type="range" value="30"/>
+<input aria-label="Luma vs Saturation Smoothness value" class="num" id="lumaSatSmoothnessValue" max="100" min="0" step="1" type="number" value="30"/>
 </div>
 </section>
-<section id="sidebar-secondary-colour" class="closed">
-<h2 tabindex="0" aria-expanded="false" class="has-enable"><label class="section-enable"><input aria-label="Enable Secondary Colour" checked="" data-enable="secondary" title="Enable or disable Secondary Colour" type="checkbox"/></label>Secondary colour <button class="reset" id="secReset" title="Reset secondary colour adjustments">reset</button></h2>
+<section class="closed" id="sidebar-secondary-colour">
+<h2 aria-expanded="false" class="has-enable" tabindex="0"><label class="section-enable"><input aria-label="Enable Secondary Colour" checked="" data-enable="secondary" title="Enable or disable Secondary Colour" type="checkbox"/></label>Secondary colour <button class="reset" id="secReset" title="Reset secondary colour adjustments">reset</button></h2>
 <div class="row"><label style="flex:0 0 70px">Target hue</label><span id="secSwatch"></span><input id="secHueC" max="360" min="0" title="Set the centre hue of the secondary-colour selection" type="range" value="0"/><input class="num" title="Set the centre hue of the secondary-colour selection" type="number" value="0"/></div>
 <div class="row"><label>Range</label><input id="secRange" max="120" min="5" title="Set the hue range included in the secondary-colour selection" type="range" value="40"/><input class="num" title="Set the hue range included in the secondary-colour selection" type="number" value="40"/></div>
 <div class="row"><label>Softness</label><input id="secSoft" max="100" min="0" title="Soften the edges of the secondary-colour selection" type="range" value="50"/><input class="num" title="Soften the edges of the secondary-colour selection" type="number" value="50"/></div>
@@ -1078,12 +1312,12 @@
 <button class="btn pickbtn" id="secPick" title="Sample a colour in the photo for secondary colour adjustments">⌖ Pick target colour from photo</button>
 <p class="tiny">Grades only the chosen colour range — everything else is untouched.</p>
 </section>
-<section id="sidebar-transfer-ramp" class="closed">
-<h2 tabindex="0" aria-expanded="false">Transfer ramp</h2>
+<section class="closed" id="sidebar-transfer-ramp">
+<h2 aria-expanded="false" tabindex="0">Transfer ramp</h2>
 <canvas height="26" id="ramp" title="Preview the current colour transfer ramp" width="290"></canvas>
 </section>
-<section id="sidebar-cube-analysis" class="closed">
-<h2 tabindex="0" aria-expanded="false">Cube analysis</h2>
+<section class="closed" id="sidebar-cube-analysis">
+<h2 aria-expanded="false" tabindex="0">Cube analysis</h2>
 <div id="cubePanelWrap">
 <div class="panel-title">
 <span id="cubePanelLabel">Output 17³ preview</span>
@@ -1147,184 +1381,180 @@
 <div class="acts"><button class="btn" id="nameModalCancel" title="Cancel saving this look" type="button">Cancel</button><button class="btn" id="nameModalOk" title="Save the look with this name" type="button">Save</button></div>
 </div>
 </div>
-<div id="exportModal" class="export-modal" role="dialog" aria-labelledby="exportModalTitle" aria-modal="true" aria-hidden="true">
-  <div class="export-dialog">
-    <div class="export-dialog-header">
-      <h3 id="exportModalTitle">Export images</h3>
-      <button id="exportModalClose" class="export-close-btn" type="button" title="Close the export window" aria-label="Close export window">×</button>
-    </div>
-    <div class="export-toolbar-row">
-      <div class="export-control-group" role="group" aria-label="Thumbnail size">
-        <span class="export-control-label">Thumbnail size</span>
-        <div class="export-button-group export-size-group">
-          <button class="export-tool-btn" type="button" data-export-size="small" title="Show small thumbnails" aria-label="Small thumbnails" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="7" width="11" height="10" rx="1.2"/><path d="m7.5 15 3-3 2 2 2-2 2 3"/></svg>
-          </button>
-          <button class="export-tool-btn active" type="button" data-export-size="medium" title="Show medium thumbnails" aria-label="Medium thumbnails" aria-pressed="true">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="1.4"/><path d="m4.5 16.5 4.2-4.2 3 3 3.1-3.6 4.7 5"/></svg>
-          </button>
-          <button class="export-tool-btn" type="button" data-export-size="large" title="Show large thumbnails" aria-label="Large thumbnails" aria-pressed="false">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="3" width="21" height="18" rx="1.5"/><path d="m2.5 17.5 5-5 3.4 3.3 4-4.5 6.6 6.7"/></svg>
-          </button>
-        </div>
-      </div>
-      <div class="export-control-group export-format-control" role="group" aria-label="Export format">
-        <span class="export-control-label">Format</span>
-        <div class="export-button-group export-format-group">
-          <button class="export-format-btn active" type="button" data-export-format="jpg93" title="JPG - High: JPEG quality 93, good image quality with smaller files" aria-pressed="true">JPG - High</button>
-          <button class="export-format-btn" type="button" data-export-format="jpg100" title="JPG - Highest: JPEG quality 100, maximum JPEG quality" aria-pressed="false">JPG - Highest</button>
-          <button class="export-format-btn" type="button" data-export-format="png" title="Uncompressed PNG: lossless PNG export with larger files" aria-pressed="false">Uncompressed PNG</button>
-        </div>
-      </div>
-    </div>
-    <div class="export-selection-bar">
-      <span id="exportSelectionStatus" aria-live="polite">0 selected</span>
-      <button id="exportSelectAll" class="export-secondary-btn" type="button" title="Select all loaded images">Select all</button>
-    </div>
-    <div id="exportThumbnailGrid" class="export-thumbnail-grid" data-size="medium" aria-label="Loaded images"></div>
-    <div class="export-dialog-footer">
-      <button id="exportCancel" class="export-secondary-btn" type="button" title="Cancel image export">Cancel</button>
-      <button id="exportGo" class="export-primary-btn" type="button" title="Export the selected images" disabled>Export image</button>
-    </div>
-  </div>
+<div aria-hidden="true" aria-labelledby="exportModalTitle" aria-modal="true" class="export-modal" id="exportModal" role="dialog">
+<div class="export-dialog">
+<div class="export-dialog-header">
+<h3 id="exportModalTitle">Export images</h3>
+<button aria-label="Close export window" class="export-close-btn" id="exportModalClose" title="Close the export window" type="button">×</button>
+</div>
+<div class="export-toolbar-row">
+<div aria-label="Thumbnail size" class="export-control-group" role="group">
+<span class="export-control-label">Thumbnail size</span>
+<div class="export-button-group export-size-group">
+<button aria-label="Small thumbnails" aria-pressed="false" class="export-tool-btn" data-export-size="small" title="Show small thumbnails" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="10" rx="1.2" width="11" x="6.5" y="7"></rect><path d="m7.5 15 3-3 2 2 2-2 2 3"></path></svg>
+</button>
+<button aria-label="Medium thumbnails" aria-pressed="true" class="export-tool-btn active" data-export-size="medium" title="Show medium thumbnails" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="14" rx="1.4" width="17" x="3.5" y="5"></rect><path d="m4.5 16.5 4.2-4.2 3 3 3.1-3.6 4.7 5"></path></svg>
+</button>
+<button aria-label="Large thumbnails" aria-pressed="false" class="export-tool-btn" data-export-size="large" title="Show large thumbnails" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="18" rx="1.5" width="21" x="1.5" y="3"></rect><path d="m2.5 17.5 5-5 3.4 3.3 4-4.5 6.6 6.7"></path></svg>
+</button>
+</div>
+</div>
+<div aria-label="Export format" class="export-control-group export-format-control" role="group">
+<span class="export-control-label">Format</span>
+<div class="export-button-group export-format-group">
+<button aria-pressed="true" class="export-format-btn active" data-export-format="jpg93" title="JPG - High: JPEG quality 93, good image quality with smaller files" type="button">JPG - High</button>
+<button aria-pressed="false" class="export-format-btn" data-export-format="jpg100" title="JPG - Highest: JPEG quality 100, maximum JPEG quality" type="button">JPG - Highest</button>
+<button aria-pressed="false" class="export-format-btn" data-export-format="png" title="Uncompressed PNG: lossless PNG export with larger files" type="button">Uncompressed PNG</button>
+</div>
+</div>
+</div>
+<div class="export-selection-bar">
+<span aria-live="polite" id="exportSelectionStatus">0 selected</span>
+<button class="export-secondary-btn" id="exportSelectAll" title="Select all loaded images" type="button">Select all</button>
+</div>
+<div aria-label="Loaded images" class="export-thumbnail-grid" data-size="medium" id="exportThumbnailGrid"></div>
+<div class="export-dialog-footer">
+<button class="export-secondary-btn" id="exportCancel" title="Cancel image export" type="button">Cancel</button>
+<button class="export-primary-btn" disabled="" id="exportGo" title="Export the selected images" type="button">Export image</button>
+</div>
+</div>
 </div>
 <div aria-hidden="true" id="helpModal">
 <div aria-labelledby="helpTitle" aria-modal="true" class="help-box" role="dialog" tabindex="-1">
-  <div class="help-head">
-    <div>
-      <h3 id="helpTitle">LutMaster Help</h3>
-      <p class="help-subtitle">Choose a chapter. Each guide explains what the controls do and when to use them.</p>
-    </div>
-    <button aria-label="Close help" class="help-close" id="helpClose" title="Close help" type="button">×</button>
-  </div>
-  <div class="help-layout">
-    <nav class="help-nav" role="tablist" aria-label="Help chapters">
-      <button class="help-tab" id="helpTabStart" type="button" role="tab" aria-selected="true" aria-controls="helpPanelStart"><span class="help-no">01</span> Photos &amp; preview</button>
-      <button class="help-tab" id="helpTabBasic" type="button" role="tab" aria-selected="false" aria-controls="helpPanelBasic"><span class="help-no">02</span> Basic adjustments</button>
-      <button class="help-tab" id="helpTabAuto" type="button" role="tab" aria-selected="false" aria-controls="helpPanelAuto"><span class="help-no">03</span> Auto corrections</button>
-      <button class="help-tab" id="helpTabCurves" type="button" role="tab" aria-selected="false" aria-controls="helpPanelCurves"><span class="help-no">04</span> Curves &amp; colour selection</button>
-      <button class="help-tab" id="helpTabGrade" type="button" role="tab" aria-selected="false" aria-controls="helpPanelGrade"><span class="help-no">05</span> Color grading</button>
-      <button class="help-tab" id="helpTabLooks" type="button" role="tab" aria-selected="false" aria-controls="helpPanelLooks"><span class="help-no">06</span> Looks &amp; pipeline</button>
-      <button class="help-tab" id="helpTabExport" type="button" role="tab" aria-selected="false" aria-controls="helpPanelExport"><span class="help-no">07</span> Export &amp; projects</button>
-      <button class="help-tab" id="helpTabKeys" type="button" role="tab" aria-selected="false" aria-controls="helpPanelKeys"><span class="help-no">08</span> Keyboard shortcuts</button>
-    </nav>
-    <div class="help-content">
-      <section class="help-panel" id="helpPanelStart" role="tabpanel" aria-labelledby="helpTabStart" tabindex="0">
-        <h4>Photos &amp; preview</h4>
-        <ul>
-          <li><strong>Add photos:</strong> Drop image files onto the empty workspace, or click it. Use <strong>Add photos</strong> to add more later. The built-in test chart is a sample image for trying the controls.</li>
-          <li><strong>Choose a photo:</strong> Click its thumbnail. <strong>Remove photo</strong> removes the selected photo from the workspace.</li>
-          <li><strong>Zoom and move:</strong> Use the mouse wheel to zoom, then drag the image to look around. On a touchscreen, pinch to zoom and drag with one finger. Double-click the image to fit it in the preview again.</li>
-          <li><strong>Before / after:</strong> Hold <kbd>Space</kbd> to see the original photo; release it to return to your edit. Press <kbd>S</kbd> for a movable split line between original and edited.</li>
-          <li><strong>Warnings and histogram:</strong> <kbd>C</kbd> marks areas pushed to pure black or white. <kbd>H</kbd> shows a graph of how much dark, bright and coloured information the photo contains.</li>
-          <li><strong>Preview quality:</strong> <strong>Std</strong> is faster while editing. <strong>Full</strong> uses the original image resolution where possible; it needs more memory and processing.</li>
-          <li><strong>Fullscreen:</strong> The ⛶ button expands LutMaster to fill the screen.</li>
-        </ul>
-        <div class="help-note">Your photos are processed in the browser. They are not uploaded by LutMaster.</div>
-      </section>
-
-      <section class="help-panel" id="helpPanelBasic" role="tabpanel" aria-labelledby="helpTabBasic" tabindex="0" hidden>
-        <h4>Basic adjustments</h4>
-        <p>Start with <strong>Tone</strong> for brightness and contrast, then use <strong>Colour</strong> to adjust the overall colour. Small changes are usually easier to control.</p>
-        <ul>
-          <li><strong>Section checkbox:</strong> Temporarily turns that whole section on or off. Your slider values stay there. <strong>Reset</strong> clears only that section; <strong>Reset all</strong> returns the current edit to its defaults. It does not delete the looks you have saved.</li>
-          <li><strong>Sliders and numbers:</strong> Drag a slider for a quick change, or type a number for precision. Double-click a value or slider to return it to its default.</li>
-          <li><strong>Exposure:</strong> Makes the whole photo lighter or darker.</li>
-          <li><strong>Contrast:</strong> Makes dark and bright parts further apart or closer together.</li>
-          <li><strong>Highlights / Shadows:</strong> Adjust the bright parts / dark parts without changing the whole image as much.</li>
-          <li><strong>Blacks:</strong> Changes the darkest tones. <strong>Gamma</strong> mainly changes the middle brightness. <strong>Fade blacks</strong> raises the darkest tones for a faded look.</li>
-          <li><strong>Temperature:</strong> Moves the image between cooler blue and warmer yellow. <strong>Tint</strong> moves between green and magenta.</li>
-          <li><strong>Saturation:</strong> Makes all colours stronger or weaker. <strong>Vibrance</strong> mainly boosts or reduces colours that are not already strong.</li>
-          <li><strong>Protect skin:</strong> Reduces the effect of the Colour adjustments on likely skin tones. <strong>Normalisation</strong> independently balances RGB channels in shadows, midtones and highlights before the Color Grading wheels.</li>
-          <li><strong>A / B:</strong> Keep two edit versions for comparison. Switch with the A and B buttons (or arrow keys when no point is selected). <strong>copy →</strong> copies the current version into the other slot.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelAuto" role="tabpanel" aria-labelledby="helpTabAuto" tabindex="0" hidden>
-        <h4>Automatic corrections</h4>
-        <p>These buttons analyse the selected photo and suggest settings. They are starting points: check the result and adjust it yourself.</p>
-        <ul>
-          <li><strong>Auto Grade:</strong> Automatically adjusts the overall tone. Click it again to remove that automatic result.</li>
-          <li><strong>Auto Grade – Subject:</strong> Draw a closed line around the subject, double-click or press <kbd>Enter</kbd> to finish, then press <strong>Apply</strong>. LutMaster increases contrast on the subject while trying to keep the rest of the scene's brightness. <strong>Cancel</strong> discards the selection.</li>
-          <li><strong>Exposure:</strong> Finds a starting overall brightness. <strong>Recover</strong> tries to bring back bright and dark detail.</li>
-          <li><strong>Shadow detail / Highlight roll-off:</strong> Opens up dark detail / softens very bright tones.</li>
-          <li><strong>Colour / White bal.:</strong> Estimates colour strength / removes an overall colour cast.</li>
-          <li><strong>Skin tone / Luma saturation:</strong> Gently adjusts likely skin colours / balances colour strength from shadows to highlights.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelCurves" role="tabpanel" aria-labelledby="helpTabCurves" tabindex="0" hidden>
-        <h4>Curves &amp; colour selection</h4>
-        <ul>
-          <li><strong>RGB / Red / Green / Blue curve:</strong> Choose RGB to change brightness, or a colour channel to change that colour. The left-to-right position is the original value; the up-and-down position is the result. Above the diagonal makes it brighter; below makes it darker.</li>
-          <li><strong>Add or move a point:</strong> Click the curve to add a point, then drag it. Double-click a point to remove it. The two end points stay fixed.</li>
-          <li><strong>Add point from image:</strong> Press <kbd>G</kbd> or click the button, then click the photo. The small circle shows the sampled area. The new point starts on the existing curve, so adding it alone does not change the picture.</li>
-          <li><strong>Hue vs Hue:</strong> Changes the actual colour of a colour range (for example, shift yellow leaves towards green).</li>
-          <li><strong>Hue vs Saturation:</strong> Makes a chosen colour stronger or weaker without changing the other colours as much.</li>
-          <li><strong>Luma vs Saturation:</strong> Changes colour strength according to brightness, from dark areas on the left to bright areas on the right.</li>
-          <li><strong>Secondary colour:</strong> Pick a target colour in the photo. <strong>Range</strong> decides which nearby colours are included; <strong>Softness</strong> makes the edge gentler. Then adjust its hue, saturation or luminance.</li>
-          <li><strong>White balance picker:</strong> Press <kbd>W</kbd> or click the picker, then click something that should be neutral grey or white. Press <kbd>W</kbd> again to turn the picker off.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelGrade" role="tabpanel" aria-labelledby="helpTabGrade" tabindex="0" hidden>
-        <h4>Color grading</h4>
-        <ul>
-          <li><strong>Color wheel:</strong> Adds a colour tint to <strong>Shadows</strong> (dark areas), <strong>Mids</strong> (middle tones) or <strong>Highlights</strong> (bright areas). Drag a marker to change that range. The centre means no tint.</li>
-          <li><strong>Select a range:</strong> Tap a marker to select it for touch controls; tap it again to leave edit mode. You can also drag any marker directly without selecting it first.</li>
-          <li><strong>Arrow keys:</strong> When a wheel marker is selected, the arrow keys move it. Left/right changes its horizontal position; up/down changes its vertical position.</li>
-          <li><strong>Hue / Sat buttons:</strong> Rotate the selected colour or increase/decrease its strength in small steps.</li>
-          <li><strong>Blending:</strong> Controls how smoothly the Shadows, Mids and Highlights ranges overlap. Lower values separate them; higher values make the transition smoother.</li>
-          <li><strong>Balance:</strong> Shifts the overall grading emphasis towards shadows (negative) or highlights (positive).</li>
-          <li><strong>Split toning:</strong> Adds one chosen colour to dark areas and another to bright areas. Pick the two colours and raise their strength sliders to see the effect.</li>
-          <li><strong>Transfer ramp:</strong> Shows the current edit applied to a simple black-to-white gradient, from dark on the left to bright on the right.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelLooks" role="tabpanel" aria-labelledby="helpTabLooks" tabindex="0" hidden>
-        <h4>Looks &amp; pipeline</h4>
-        <ul>
-          <li><strong>Pipeline:</strong> Shows the transforms used to make the final image. The <strong>Base LUT</strong> is applied first; the layers below it are applied in order.</li>
-          <li><strong>Layer controls:</strong> Untick a layer to switch it off without deleting it. Drag the <strong>⋮</strong> handle to change its order. Change its strength to blend it in. Press <strong>×</strong> to remove it.</li>
-          <li><strong>Save:</strong> Saves your current adjustments as a reusable look inside LutMaster. It does not download a file. Saved looks stay in this browser.</li>
-          <li><strong>Add .cube file:</strong> Imports a LUT file made by another app or downloaded from elsewhere. Select a saved look or imported LUT to add it to the Pipeline.</li>
-          <li><strong>Estimate from one photo:</strong> Analyses a reference photo and creates approximate starting settings for tone, white balance, colour and split toning.</li>
-          <li><strong>Import Lightroom preset:</strong> Reads supported colour settings from an <kbd>.xmp</kbd> or <kbd>.lrtemplate</kbd> preset. The result is an approximation because Lightroom edits camera RAW data, while a LUT changes an already-rendered image.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelExport" role="tabpanel" aria-labelledby="helpTabExport" tabindex="0" hidden>
-        <h4>Export &amp; projects</h4>
-        <ul>
-          <li><strong>Save photo:</strong> Exports the selected photo with the current edit. JPG 93 is a good smaller file; JPG 100 keeps more detail but is larger; PNG is lossless and usually largest. The hard source limits are 100 MP, 20,000 px per edge and 250 MiB. Import and export are not blocked by an estimated RAM budget; actual browser, canvas and encoder allocation limits can still prevent an operation on some devices.</li>
-          <li><strong>Save all photos:</strong> Exports every photo in the workspace using the same current settings.</li>
-          <li><strong>Export LUT (.cube):</strong> Creates a reusable colour transform for other software or supported cameras. <strong>Look strength</strong> controls how much of the edit is included. Choose a name and size: 17 is smaller, 33 is a common quality/size balance, and 65 is larger and more detailed.</li>
-          <li><strong>Base Photo Style:</strong> For compatible Lumix cameras, choose the Photo Style used when the footage was recorded. The LUT can then carry that information with it.</li>
-          <li><strong>Export look pack:</strong> Downloads all saved looks as separate .cube files.</li>
-          <li><strong>Cube analysis:</strong> Shows a visual summary of the current colour transform. Change the 17³ / 33³ / 65³ view size to inspect it at different detail levels.</li>
-          <li><strong>Save project / Load project:</strong> Saves or restores your editing setup, including adjustments and the Pipeline. Use this to continue working later. It is not the same as exporting a finished photo or LUT.</li>
-          <li><strong>Undo / Redo:</strong> Undo reverses the last edit; Redo brings it back. <strong>Reset all</strong> resets the current edit.</li>
-        </ul>
-      </section>
-
-      <section class="help-panel" id="helpPanelKeys" role="tabpanel" aria-labelledby="helpTabKeys" tabindex="0" hidden>
-        <h4>Keyboard shortcuts</h4>
-        <ul>
-          <li><kbd>Space</kbd> hold: show the original photo. Release to return to the edit.</li>
-          <li><kbd>S</kbd>: toggle Split Compare. <kbd>C</kbd>: toggle Clipping. <kbd>H</kbd>: toggle Histogram.</li>
-          <li><kbd>↑</kbd> / <kbd>↓</kbd>: previous / next photo when no editing point is selected.</li>
-          <li><kbd>←</kbd> / <kbd>→</kbd>: switch to A / B settings when no editing point is selected.</li>
-          <li><kbd>G</kbd>: turn Add point from image on or off. Then click the photo to add a curve point.</li>
-          <li><kbd>W</kbd>: turn the White Balance picker on or off. Then click a neutral area in the photo.</li>
-          <li><strong>When a curve point is selected:</strong> arrow keys move the point. Left/right changes its input position; up/down changes its output.</li>
-          <li><strong>When a Color Grading point is selected:</strong> arrow keys move the marker on the colour wheel.</li>
-          <li><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Z</kbd>: Undo. Add <kbd>Shift</kbd> for Redo; <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Y</kbd> also redoes.</li>
-          <li><kbd>Enter</kbd> finishes the subject outline and applies its correction; <kbd>Esc</kbd> cancels it. In save/export dialogs, Enter confirms and Esc cancels.</li>
-        </ul>
-        <div class="help-note">Arrow keys edit the selected point first. Photo navigation and A/B switching work only when no curve or Color Grading point is selected. Keyboard shortcuts are ignored while typing in text fields.</div>
-      </section>
-    </div>
-  </div>
+<div class="help-head">
+<div>
+<h3 id="helpTitle">LutMaster Help</h3>
+<p class="help-subtitle">Choose a chapter. Each guide explains what the controls do and when to use them.</p>
+</div>
+<button aria-label="Close help" class="help-close" id="helpClose" title="Close help" type="button">×</button>
+</div>
+<div class="help-layout">
+<nav aria-label="Help chapters" class="help-nav" role="tablist">
+<button aria-controls="helpPanelStart" aria-selected="true" class="help-tab" id="helpTabStart" role="tab" type="button"><span class="help-no">01</span> Photos &amp; preview</button>
+<button aria-controls="helpPanelBasic" aria-selected="false" class="help-tab" id="helpTabBasic" role="tab" type="button"><span class="help-no">02</span> Basic adjustments</button>
+<button aria-controls="helpPanelAuto" aria-selected="false" class="help-tab" id="helpTabAuto" role="tab" type="button"><span class="help-no">03</span> Auto corrections</button>
+<button aria-controls="helpPanelCurves" aria-selected="false" class="help-tab" id="helpTabCurves" role="tab" type="button"><span class="help-no">04</span> Curves &amp; colour selection</button>
+<button aria-controls="helpPanelGrade" aria-selected="false" class="help-tab" id="helpTabGrade" role="tab" type="button"><span class="help-no">05</span> Color grading</button>
+<button aria-controls="helpPanelLooks" aria-selected="false" class="help-tab" id="helpTabLooks" role="tab" type="button"><span class="help-no">06</span> Looks &amp; pipeline</button>
+<button aria-controls="helpPanelExport" aria-selected="false" class="help-tab" id="helpTabExport" role="tab" type="button"><span class="help-no">07</span> Export &amp; projects</button>
+<button aria-controls="helpPanelKeys" aria-selected="false" class="help-tab" id="helpTabKeys" role="tab" type="button"><span class="help-no">08</span> Keyboard shortcuts</button>
+</nav>
+<div class="help-content">
+<section aria-labelledby="helpTabStart" class="help-panel" id="helpPanelStart" role="tabpanel" tabindex="0">
+<h4>Photos &amp; preview</h4>
+<ul>
+<li><strong>Add photos:</strong> Drop image files onto the empty workspace, or click it. Use <strong>Add photos</strong> to add more later. The built-in test chart is a sample image for trying the controls.</li>
+<li><strong>Choose a photo:</strong> Click its thumbnail. <strong>Remove photo</strong> removes the selected photo from the workspace.</li>
+<li><strong>Zoom and move:</strong> Use the mouse wheel to zoom, then drag the image to look around. On a touchscreen, pinch to zoom and drag with one finger. Double-click the image to fit it in the preview again.</li>
+<li><strong>Before / after:</strong> Hold <kbd>Space</kbd> to see the original photo; release it to return to your edit. Press <kbd>S</kbd> for a movable split line between original and edited.</li>
+<li><strong>Warnings and histogram:</strong> <kbd>C</kbd> marks areas pushed to pure black or white. <kbd>H</kbd> shows a graph of how much dark, bright and coloured information the photo contains.</li>
+<li><strong>Preview quality:</strong> <strong>Std</strong> is faster while editing. <strong>Full</strong> uses the original image resolution where possible; it needs more memory and processing.</li>
+<li><strong>Fullscreen:</strong> The ⛶ button expands LutMaster to fill the screen.</li>
+</ul>
+<div class="help-note">Your photos are processed in the browser. They are not uploaded by LutMaster.</div>
+</section>
+<section aria-labelledby="helpTabBasic" class="help-panel" hidden="" id="helpPanelBasic" role="tabpanel" tabindex="0">
+<h4>Basic adjustments</h4>
+<p>Start with <strong>Tone</strong> for brightness and contrast, then use <strong>Colour</strong> to adjust the overall colour. Small changes are usually easier to control.</p>
+<ul>
+<li><strong>Section checkbox:</strong> Temporarily turns that whole section on or off. Your slider values stay there. <strong>Reset</strong> clears only that section; <strong>Reset all</strong> returns the current edit to its defaults. It does not delete the looks you have saved.</li>
+<li><strong>Sliders and numbers:</strong> Drag a slider for a quick change, or type a number for precision. Double-click a value or slider to return it to its default.</li>
+<li><strong>Exposure:</strong> Makes the whole photo lighter or darker.</li>
+<li><strong>Contrast:</strong> Makes dark and bright parts further apart or closer together.</li>
+<li><strong>Highlights / Shadows:</strong> Adjust the bright parts / dark parts without changing the whole image as much.</li>
+<li><strong>Blacks:</strong> Changes the darkest tones. <strong>Gamma</strong> mainly changes the middle brightness. <strong>Fade blacks</strong> raises the darkest tones for a faded look.</li>
+<li><strong>Temperature:</strong> Moves the image between cooler blue and warmer yellow. <strong>Tint</strong> moves between green and magenta.</li>
+<li><strong>Saturation:</strong> Makes all colours stronger or weaker. <strong>Vibrance</strong> mainly boosts or reduces colours that are not already strong.</li>
+<li><strong>Protect skin:</strong> Reduces the effect of the Colour adjustments on likely skin tones. <strong>Normalisation</strong> independently balances RGB channels in shadows, midtones and highlights before the Color Grading wheels.</li>
+<li><strong>A / B:</strong> Keep two edit versions for comparison. Switch with the A and B buttons (or arrow keys when no point is selected). <strong>copy →</strong> copies the current version into the other slot.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabAuto" class="help-panel" hidden="" id="helpPanelAuto" role="tabpanel" tabindex="0">
+<h4>Automatic corrections</h4>
+<p>These buttons analyse the selected photo and suggest settings. They are starting points: check the result and adjust it yourself.</p>
+<ul>
+<li><strong>Global:</strong> Automatically adjusts the overall tone. Click it again to remove that automatic result.</li>
+<li><strong>Auto Grade – Sharp Region:</strong> Briefly flashes spatial regions with the highest microcontrast as an amber overlay for one second, then automatically applies a Master gradation curve based on their luminance distribution while protecting full-frame shadows/highlights. It estimates a detail-rich subject; it does not perform semantic object recognition. Click again to remove the result.</li>
+<li><strong>Zones:</strong> Segments the luminance histogram into one to six contiguous tonal zones. The zone count is selected from peak separation, valley depth and the pixel share of each region; weak or insignificant peaks are merged. A restrained global contrast adjustment is combined with smooth, zone-weighted local contrast. Click again to remove the result.</li>
+<li><strong>Manual:</strong> Draw a closed line around the subject, double-click or press <kbd>Enter</kbd> to finish, then press <strong>Apply</strong>. LutMaster increases contrast on the subject while trying to keep the rest of the scene's brightness. <strong>Cancel</strong> discards the selection.</li>
+<li><strong>Exposure:</strong> Finds a starting overall brightness. <strong>Recover</strong> tries to bring back bright and dark detail.</li>
+<li><strong>Shadow detail / Highlight roll-off:</strong> Opens up dark detail / softens very bright tones.</li>
+<li><strong>Colour / White bal.:</strong> Estimates colour strength / removes an overall colour cast.</li>
+<li><strong>Skin tone / Luma saturation:</strong> Gently adjusts likely skin colours / balances colour strength from shadows to highlights.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabCurves" class="help-panel" hidden="" id="helpPanelCurves" role="tabpanel" tabindex="0">
+<h4>Curves &amp; colour selection</h4>
+<ul>
+<li><strong>RGB / Red / Green / Blue curve:</strong> Choose RGB to change brightness, or a colour channel to change that colour. The left-to-right position is the original value; the up-and-down position is the result. Above the diagonal makes it brighter; below makes it darker.</li>
+<li><strong>Add or move a point:</strong> Click the curve to add a point, then drag it. Double-click a point to remove it. The two end points stay fixed.</li>
+<li><strong>Add point from image:</strong> Press <kbd>G</kbd> or click the button, then click the photo. The small circle shows the sampled area. The new point starts on the existing curve, so adding it alone does not change the picture.</li>
+<li><strong>Hue vs Hue:</strong> Changes the actual colour of a colour range (for example, shift yellow leaves towards green).</li>
+<li><strong>Hue vs Saturation:</strong> Makes a chosen colour stronger or weaker without changing the other colours as much.</li>
+<li><strong>Luma vs Saturation:</strong> Changes colour strength according to brightness, from dark areas on the left to bright areas on the right.</li>
+<li><strong>Secondary colour:</strong> Pick a target colour in the photo. <strong>Range</strong> decides which nearby colours are included; <strong>Softness</strong> makes the edge gentler. Then adjust its hue, saturation or luminance.</li>
+<li><strong>White balance picker:</strong> Press <kbd>W</kbd> or click the picker, then click something that should be neutral grey or white. Press <kbd>W</kbd> again to turn the picker off.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabGrade" class="help-panel" hidden="" id="helpPanelGrade" role="tabpanel" tabindex="0">
+<h4>Color grading</h4>
+<ul>
+<li><strong>Color wheel:</strong> Adds a colour tint to <strong>Shadows</strong> (dark areas), <strong>Mids</strong> (middle tones) or <strong>Highlights</strong> (bright areas). Drag a marker to change that range. The centre means no tint.</li>
+<li><strong>Select a range:</strong> Tap a marker to select it for touch controls; tap it again to leave edit mode. You can also drag any marker directly without selecting it first.</li>
+<li><strong>Arrow keys:</strong> When a wheel marker is selected, the arrow keys move it. Left/right changes its horizontal position; up/down changes its vertical position.</li>
+<li><strong>Hue / Sat buttons:</strong> Rotate the selected colour or increase/decrease its strength in small steps.</li>
+<li><strong>Blending:</strong> Controls how smoothly the Shadows, Mids and Highlights ranges overlap. Lower values separate them; higher values make the transition smoother.</li>
+<li><strong>Balance:</strong> Shifts the overall grading emphasis towards shadows (negative) or highlights (positive).</li>
+<li><strong>Split toning:</strong> Adds one chosen colour to dark areas and another to bright areas. Pick the two colours and raise their strength sliders to see the effect.</li>
+<li><strong>Transfer ramp:</strong> Shows the current edit applied to a simple black-to-white gradient, from dark on the left to bright on the right.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabLooks" class="help-panel" hidden="" id="helpPanelLooks" role="tabpanel" tabindex="0">
+<h4>Looks &amp; pipeline</h4>
+<ul>
+<li><strong>Pipeline:</strong> Shows the transforms used to make the final image. The <strong>Base LUT</strong> is applied first; the layers below it are applied in order.</li>
+<li><strong>Layer controls:</strong> Untick a layer to switch it off without deleting it. Drag the <strong>⋮</strong> handle to change its order. Change its strength to blend it in. Press <strong>×</strong> to remove it.</li>
+<li><strong>Save:</strong> Saves your current adjustments as a reusable look inside LutMaster. It does not download a file. Saved looks stay in this browser.</li>
+<li><strong>Add .cube file:</strong> Imports a LUT file made by another app or downloaded from elsewhere. Select a saved look or imported LUT to add it to the Pipeline.</li>
+<li><strong>Estimate from one photo:</strong> Analyses a reference photo and creates approximate starting settings for tone, white balance, colour and split toning.</li>
+<li><strong>Import Lightroom preset:</strong> Reads supported colour settings from an <kbd>.xmp</kbd> or <kbd>.lrtemplate</kbd> preset. The result is an approximation because Lightroom edits camera RAW data, while a LUT changes an already-rendered image.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabExport" class="help-panel" hidden="" id="helpPanelExport" role="tabpanel" tabindex="0">
+<h4>Export &amp; projects</h4>
+<ul>
+<li><strong>Export images:</strong> Opens the export window. Select images by clicking their thumbnails, or use <strong>Select all</strong>. Choose <strong>JPG - High</strong> (quality 93), <strong>JPG - Highest</strong> (quality 100), or <strong>Uncompressed PNG</strong>. The last format and thumbnail size are remembered; exported files retain their original names and receive the matching extension.</li>
+<li><strong>Export progress:</strong> The centred progress window shows the current filename, completed image count and overall processing progress. Each selected image is downloaded separately.</li>
+<li><strong>Image limits:</strong> Source files are limited to 100 MP, 20,000 px per edge and 250 MiB. LutMaster does not impose an estimated RAM budget; actual browser, canvas and encoder allocation limits still apply.</li>
+<li><strong>Export LUT (.cube):</strong> Creates a reusable colour transform for other software or supported cameras. <strong>Look strength</strong> controls how much of the edit is included. Choose a name and size: 17 is smaller, 33 is a common quality/size balance, and 65 is larger and more detailed.</li>
+<li><strong>Base Photo Style:</strong> For compatible Lumix cameras, choose the Photo Style used when the footage was recorded. The LUT can then carry that information with it.</li>
+<li><strong>Export look pack:</strong> Downloads all saved looks as separate .cube files.</li>
+<li><strong>Cube analysis:</strong> Shows a visual summary of the current colour transform. Change the 17³ / 33³ / 65³ view size to inspect it at different detail levels.</li>
+<li><strong>Save project / Load project:</strong> Saves or restores your editing setup, including adjustments and the Pipeline. Use this to continue working later. It is not the same as exporting a finished photo or LUT.</li>
+<li><strong>Undo / Redo:</strong> Undo reverses the last edit; Redo brings it back. <strong>Reset all</strong> resets the current edit.</li>
+</ul>
+</section>
+<section aria-labelledby="helpTabKeys" class="help-panel" hidden="" id="helpPanelKeys" role="tabpanel" tabindex="0">
+<h4>Keyboard shortcuts</h4>
+<ul>
+<li><kbd>Space</kbd> hold: show the original photo. Release to return to the edit.</li>
+<li><kbd>S</kbd>: toggle Split Compare. <kbd>C</kbd>: toggle Clipping. <kbd>H</kbd>: toggle Histogram.</li>
+<li><kbd>↑</kbd> / <kbd>↓</kbd>: previous / next photo when no editing point is selected.</li>
+<li><kbd>←</kbd> / <kbd>→</kbd>: switch to A / B settings when no editing point is selected.</li>
+<li><kbd>G</kbd>: turn Add point from image on or off. Then click the photo to add a curve point.</li>
+<li><kbd>W</kbd>: turn the White Balance picker on or off. Then click a neutral area in the photo.</li>
+<li><strong>When a curve point is selected:</strong> arrow keys move the point. Left/right changes its input position; up/down changes its output.</li>
+<li><strong>When a Color Grading point is selected:</strong> arrow keys move the marker on the colour wheel.</li>
+<li><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Z</kbd>: Undo. Add <kbd>Shift</kbd> for Redo; <kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>Y</kbd> also redoes.</li>
+<li><kbd>Enter</kbd> finishes the subject outline and applies its correction; <kbd>Esc</kbd> cancels it. In save/export dialogs, Enter confirms and Esc cancels.</li>
+</ul>
+<div class="help-note">Arrow keys edit the selected point first. Photo navigation and A/B switching work only when no curve or Color Grading point is selected. Keyboard shortcuts are ignored while typing in text fields.</div>
+</section>
+</div>
+</div>
 </div>
 </div>
 <script>
@@ -2320,6 +2550,7 @@ function resetPreviewZoom(){
   subjectSelectionOverlay.style.display="none";
   hiresLayer.replaceChildren();
   viewwrap.style.width="";viewwrap.style.height="";
+  if(sharpRegionPending)requestAnimationFrame(drawSharpRegionPreview);
 }
 function fitPreviewToStage(){
   if(cur<0)return;
@@ -2343,6 +2574,7 @@ function fitPreviewToStage(){
   subjectSelectionOverlay.style.width=view.style.width;subjectSelectionOverlay.style.height=view.style.height;
   previewAvail.w=Math.max(0,Math.floor(width));previewAvail.h=Math.max(0,Math.floor(height));
   applyPreviewZoom();
+  if(sharpRegionPending)drawSharpRegionPreview();
 }
 /* While zoomed in, the visible window is no longer limited to the fitted image
    rectangle: it grows with the zoom until it fills all the space the stage offers
@@ -2378,7 +2610,6 @@ function previewPoint(e){
     y:Math.max(0,Math.min(view.offsetHeight,(e.clientY-r.top-previewZoom.y)/previewZoom.scale))
   };
 }
-
 
 function clearHiresTileCache(){
   clearTimeout(hiresRenderTimer);hiresRenderTimer=null;hiresRenderToken++;
@@ -2732,6 +2963,7 @@ function refreshUIAfterLoad(){
 }
 function selectImage(i){
   if(typeof cancelIndependentCorrectionTask==="function")cancelIndependentCorrectionTask();
+  if(typeof clearSharpRegionPreview==="function"&&sharpRegionPending)clearSharpRegionPreview();
   showOriginal=false;
   cur=i;
   clearHiresTileCache();
@@ -3767,13 +3999,6 @@ function curveGestureMetrics(){
   return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2,
     distance:Math.max(1,Math.hypot(pts[1].x-pts[0].x,pts[1].y-pts[0].y))};
 }
-function zoomCurveAt(px,py,factor){
-  const x=px2cx(px),y=px2cy(py);
-  let x0=x+(curveView.x0-x)*factor,x1=x+(curveView.x1-x)*factor;
-  let y0=y+(curveView.y0-y)*factor,y1=y+(curveView.y1-y)*factor;
-  [x0,x1]=clampCurveRange(x0,x1);[y0,y1]=clampCurveRange(y0,y1);
-  curveView={x0,x1,y0,y1};drawCurves();
-}
 function beginCurveEditAt(px,py){
   if(curveCh==="m")markAutoCurveAsManual();
   const original=curveOriginalSnapshot();
@@ -4161,9 +4386,66 @@ function markAutoCurveAsManual(){
 /* ================= one-shot Auto Grade tools ================= */
 let subjectGradeMode=false,subjectGradePoints=[],subjectGradeApplied=false,subjectGradeDrawing=false,subjectGradeClosed=false;
 let autoGradeBaselineCurve=null,autoGradeLastCurve=null,autoGradeImageIndex=-1,autoGradeAppliedMode=null;
+let sharpRegionPending=null;
 function cloneCurve(c){return Array.isArray(c)?c.map(p=>({x:+p.x,y:+p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})})):null;}
-function curvesEqual(a,b){return !!a&&!!b&&a.length===b.length&&a.every((p,i)=>Math.abs(p.x-b[i].x)<1e-7&&Math.abs(p.y-b[i].y)<1e-7);}
 function clearAutoGradeState(){autoGradeBaselineCurve=null;autoGradeLastCurve=null;autoGradeImageIndex=-1;autoGradeAppliedMode=null;}
+function drawSharpRegionPreview(){
+  if(!subjectSelectionCtx)return;
+  const c=subjectSelectionOverlay,ox=subjectSelectionCtx,pending=sharpRegionPending;
+  ox.clearRect(0,0,c.width,c.height);
+  if(!pending||pending.imageRef!==images[cur]||!pending.info?.previewMask){
+    c.style.display="none";return;
+  }
+  const mask=pending.info.previewMask;
+  const mini=document.createElement("canvas");
+  mini.width=mask.cols;mini.height=mask.rows;
+  const mctx=mini.getContext("2d");
+  if(!mctx){c.style.display="none";return;}
+  const image=mctx.createImageData(mask.cols,mask.rows);
+  if(pending.kind==="zones"){
+    const palette=[
+      [255,126,45],[35,190,220],[150,105,245],
+      [105,205,95],[238,85,145],[245,205,65]
+    ];
+    for(let i=0;i<mask.cells.length;i++){
+      const zoneIndex=mask.cells[i];
+      if(zoneIndex===255||zoneIndex<0||zoneIndex>=palette.length)continue;
+      const p=i*4,colour=palette[zoneIndex];
+      image.data[p]=colour[0];image.data[p+1]=colour[1];
+      image.data[p+2]=colour[2];image.data[p+3]=142;
+    }
+  }else{
+    for(let i=0;i<mask.cells.length;i++){
+      if(!mask.cells[i])continue;
+      const p=i*4;
+      image.data[p]=255;image.data[p+1]=157;image.data[p+2]=54;image.data[p+3]=150;
+    }
+  }
+  mctx.putImageData(image,0,0);
+  c.style.width=view.style.width;c.style.height=view.style.height;c.style.display="block";
+  ox.save();
+  ox.fillStyle="rgba(5,8,12,.22)";
+  ox.fillRect(0,0,c.width,c.height);
+  ox.imageSmoothingEnabled=true;
+  ox.drawImage(mini,0,0,c.width,c.height);
+  ox.restore();
+}
+function clearSharpRegionPreview(){
+  const pending=sharpRegionPending;
+  if(pending&&pending.timer)clearTimeout(pending.timer);
+  sharpRegionPending=null;
+  if(subjectSelectionCtx){
+    subjectSelectionCtx.clearRect(0,0,subjectSelectionOverlay.width,subjectSelectionOverlay.height);
+    subjectSelectionOverlay.style.display="none";
+  }
+  if(pending?.kind==="zones"&&autoGradeAppliedMode!=="adaptive"){
+    $("autoGradeAdaptiveBtn").classList.remove("on");
+    $("autoGradeAdaptiveBtn").setAttribute("aria-pressed","false");
+  }else if(pending?.kind!=="zones"&&autoGradeAppliedMode!=="sharp"){
+    $("autoGradeSharpBtn").classList.remove("on");
+    $("autoGradeSharpBtn").setAttribute("aria-pressed","false");
+  }
+}
 function resetAutoGrade(mode){
   if(!autoGradeBaselineCurve||autoGradeAppliedMode!==mode)return false;
   // The Master RGB curve is shared by the project, not owned by the image
@@ -4173,14 +4455,21 @@ function resetAutoGrade(mode){
   clearAutoGradeState();
   $('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');
   $('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');
+  $('autoGradeSharpBtn').classList.remove('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','false');
+  $('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');
   rebuildCurves();drawCurves();render();pushHistory();return true;
 }
 function setAutoGradeMode(mode){
+  if(mode!=='sharp'&&sharpRegionPending)clearSharpRegionPreview();
   subjectGradeMode=mode==='subject';
   $('autoGradeBtn').classList.toggle('on',mode==='global');
   $('autoGradeSubjectBtn').classList.toggle('on',subjectGradeMode);
+  $('autoGradeSharpBtn').classList.toggle('on',mode==='sharp');
+  $('autoGradeAdaptiveBtn').classList.toggle('on',mode==='adaptive');
   $('autoGradeBtn').setAttribute('aria-pressed',mode==='global'?'true':'false');
   $('autoGradeSubjectBtn').setAttribute('aria-pressed',subjectGradeMode?'true':'false');
+  $('autoGradeSharpBtn').setAttribute('aria-pressed',mode==='sharp'?'true':'false');
+  $('autoGradeAdaptiveBtn').setAttribute('aria-pressed',mode==='adaptive'?'true':'false');
   $('subjectGradeControls').style.display=subjectGradeMode?'flex':'none';
   view.classList.toggle('subject-select',subjectGradeMode);
   subjectGradePoints=[];subjectGradeApplied=false;subjectGradeClosed=false;subjectGradeDrawing=false;render();
@@ -4220,6 +4509,39 @@ function tonalSamples(src,points=null,baseLut=null){
   let smoothMode=0,smoothPeak=-1;
   for(let i=1;i<255;i++){const v=hist[i-1]+2*hist[i]+hist[i+1];if(v>smoothPeak){smoothPeak=v;smoothMode=i;}}
   return {count,hist,mode:smoothMode/255,p001:pct(.001),p01:pct(.01),p05:pct(.05),p10:pct(.10),p15:pct(.15),p25:pct(.25),p50:pct(.50),p75:pct(.75),p85:pct(.85),p90:pct(.90),p95:pct(.95),p99:pct(.99),p999:pct(.999),coverage:count/total};
+}
+/**
+ * Converts adaptive histogram zones into a spatial preview mask.
+ * Each sampled pixel is classified by the same luminance boundaries used by
+ * Auto Zone Grading; colors indicate tonal zone membership, not objects.
+ */
+function buildAdaptiveZonePreviewMask(src,baseLut,zones,maxDimension=640){
+  if(!src||!src.data||!src.width||!src.height||!Array.isArray(zones)||!zones.length)return null;
+  const w=src.width,h=src.height;
+  const stride=Math.max(1,Math.ceil(Math.max(w,h)/maxDimension));
+  const cols=Math.ceil(w/stride),rows=Math.ceil(h/stride);
+  const cells=new Uint8Array(cols*rows),data=src.data;
+  const upperBins=zones.map(zone=>Math.round(zone.upper*255));
+  for(let gy=0;gy<rows;gy++){
+    const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
+    for(let gx=0;gx<cols;gx++){
+      const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
+      const i=(sy*w+sx)*4,mi=gy*cols+gx;
+      if(data[i+3]<16){cells[mi]=255;continue;}
+      let r=data[i]/255,g=data[i+1]/255,b=data[i+2]/255;
+      if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+      if(baseLut){
+        r=baseLut[Math.round(clamp(r)*255)];
+        g=baseLut[Math.round(clamp(g)*255)];
+        b=baseLut[Math.round(clamp(b)*255)];
+      }
+      const bin=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
+      let zoneIndex=upperBins.findIndex(upper=>bin<=upper);
+      if(zoneIndex<0)zoneIndex=zones.length-1;
+      cells[mi]=zoneIndex;
+    }
+  }
+  return {cols,rows,cells,zoneCount:zones.length};
 }
 function selectWellSpacedCurveAnchors(candidates, protectedXs=[], minGap=.09){
   // Keep automatically generated handles comfortably separated. Existing
@@ -4287,6 +4609,420 @@ function autoLevelsCurve(baseLut,globalStats,roiStats,isSubject,baselineCurve){
   pts.push(last?{x:last.x,y:last.y}:{x:1,y:baseLut[255]});
   return pts;
 }
+/**
+ * Finds spatial regions with the strongest microcontrast and derives their
+ * luminance distribution. The image is sampled on a bounded analysis grid;
+ * local high-pass energy and gradient energy form a spatial detail score.
+ *
+ * This is a sharpness/detail proxy, not semantic subject recognition.
+ * Connected high-scoring cells form the region mask used for tonal analysis.
+ */
+function detectSharpRegionLuminanceStats(src,baseLut){
+  if(!src||!src.data||!src.width||!src.height)return null;
+  const data=src.data,w=src.width,h=src.height,total=w*h;
+  // Bound analysis cost while retaining enough spatial resolution for detail.
+  const stride=Math.max(1,Math.ceil(Math.max(w,h)/1200));
+  const gw=Math.ceil(w/stride),gh=Math.ceil(h/stride);
+  if(gw<12||gh<12)return null;
+
+  const gray=new Float32Array(gw*gh),valid=new Uint8Array(gw*gh);
+  let validSamples=0;
+  for(let gy=0;gy<gh;gy++){
+    const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
+    for(let gx=0;gx<gw;gx++){
+      const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
+      const si=(sy*w+sx)*4,gi=gy*gw+gx;
+      if(data[si+3]<16)continue;
+      let r=data[si]/255,g=data[si+1]/255,b=data[si+2]/255;
+      if(state.logMode){r=vlog2rec709(r);g=vlog2rec709(g);b=vlog2rec709(b);}
+      if(baseLut){
+        r=baseLut[Math.round(clamp(r)*255)];
+        g=baseLut[Math.round(clamp(g)*255)];
+        b=baseLut[Math.round(clamp(b)*255)];
+      }
+      gray[gi]=clamp(.2126*r+.7152*g+.0722*b);
+      valid[gi]=1;validSamples++;
+    }
+  }
+  if(validSamples<5000)return null;
+
+  // Adaptive tile dimensions keep the spatial map comparable across sizes.
+  const cols=Math.min(36,Math.max(8,Math.round(gw/28)));
+  const rows=Math.min(28,Math.max(8,Math.round(gh/28)));
+  const tileW=Math.ceil(gw/cols),tileH=Math.ceil(gh/rows);
+  const tileCount=cols*rows;
+  const energy=new Float64Array(tileCount),energyCount=new Uint32Array(tileCount);
+
+  // Local high-pass residual measures fine detail; gradient energy captures
+  // crisp edges. Combining both is less sensitive to broad luminance changes.
+  for(let y=1;y<gh-1;y++){
+    const row=y*gw;
+    for(let x=1;x<gw-1;x++){
+      const i=row+x;
+      if(!valid[i]||!valid[i-1]||!valid[i+1]||!valid[i-gw]||!valid[i+gw])continue;
+      const c=gray[i],l=gray[i-1],r=gray[i+1],u=gray[i-gw],d=gray[i+gw];
+      const ul=gray[i-gw-1],ur=gray[i-gw+1],dl=gray[i+gw-1],dr=gray[i+gw+1];
+      const blur=(4*c+2*(l+r+u+d)+(ul+ur+dl+dr))/16;
+      const highpass=c-blur;
+      const gx=(r-l)*.5,gy=(d-u)*.5;
+      const gradient=Math.hypot(gx,gy)*.45;
+      const detailEnergy=highpass*highpass*.72+gradient*gradient*.28;
+      const tx=Math.min(cols-1,Math.floor(x/tileW));
+      const ty=Math.min(rows-1,Math.floor(y/tileH));
+      const ti=ty*cols+tx;
+      energy[ti]+=detailEnergy;energyCount[ti]++;
+    }
+  }
+
+  const rawScores=new Float64Array(tileCount);
+  for(let i=0;i<tileCount;i++)rawScores[i]=energyCount[i]?Math.sqrt(energy[i]/energyCount[i]):0;
+
+  // Smooth the tile map so isolated noisy cells do not become "subjects".
+  const scores=new Float64Array(tileCount);
+  for(let ty=0;ty<rows;ty++)for(let tx=0;tx<cols;tx++){
+    let sum=0,weight=0;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+      const nx=tx+dx,ny=ty+dy;
+      if(nx<0||nx>=cols||ny<0||ny>=rows)continue;
+      const wt=(dx===0?2:1)*(dy===0?2:1);
+      sum+=rawScores[ny*cols+nx]*wt;weight+=wt;
+    }
+    scores[ty*cols+tx]=sum/weight;
+  }
+
+  const ordered=Array.from(scores).sort((a,b)=>a-b);
+  const quantile=q=>ordered[Math.min(ordered.length-1,Math.max(0,Math.floor((ordered.length-1)*q)))];
+  const q35=quantile(.35),q50=quantile(.50),q70=quantile(.70),q80=quantile(.80),q90=quantile(.90);
+  // Reject globally flat or uniformly noisy images: no distinct sharp region
+  // can be inferred reliably from their spatial detail distribution.
+  if(q90<.0038||q90-q50<.00115)return null;
+
+  let threshold=Math.max(q70,q50+(q90-q50)*.32,.0038);
+  let mask=new Uint8Array(tileCount);
+  for(let i=0;i<tileCount;i++)if(scores[i]>=threshold)mask[i]=1;
+  let selectedCount=mask.reduce((a,b)=>a+b,0);
+  if(selectedCount>tileCount*.42){
+    threshold=Math.max(threshold,q80);
+    mask=new Uint8Array(tileCount);
+    for(let i=0;i<tileCount;i++)if(scores[i]>=threshold)mask[i]=1;
+    selectedCount=mask.reduce((a,b)=>a+b,0);
+  }
+  if(selectedCount<Math.max(2,Math.ceil(tileCount*.025)))return null;
+
+  // Keep connected high-detail areas in descending detail-energy order.
+  const visited=new Uint8Array(tileCount),components=[];
+  for(let seed=0;seed<tileCount;seed++){
+    if(!mask[seed]||visited[seed])continue;
+    const stack=[seed],cells=[];
+    visited[seed]=1;
+    let sumScore=0;
+    while(stack.length){
+      const current=stack.pop(),cx=current%cols,cy=Math.floor(current/cols);
+      cells.push(current);sumScore+=scores[current];
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        if(dx===0&&dy===0)continue;
+        const nx=cx+dx,ny=cy+dy;
+        if(nx<0||nx>=cols||ny<0||ny>=rows)continue;
+        const ni=ny*cols+nx;
+        if(mask[ni]&&!visited[ni]){visited[ni]=1;stack.push(ni);}
+      }
+    }
+    components.push({cells,energy:sumScore,mean:sumScore/cells.length});
+  }
+  components.sort((a,b)=>b.energy-a.energy);
+  const selectedMask=new Uint8Array(tileCount);
+  const maxCells=Math.floor(tileCount*.42);
+  const totalEnergy=components.reduce((s,c)=>s+c.energy,0);
+  let keptCells=0,keptEnergy=0,regionCount=0;
+  for(const component of components){
+    // A one-tile component is kept only when it is among the strongest detail
+    // cells; tiny isolated texture/noise spikes are otherwise ignored.
+    if(component.cells.length===1&&component.mean<quantile(.95))continue;
+    if(keptCells+component.cells.length>maxCells)continue;
+    component.cells.forEach(i=>selectedMask[i]=1);
+    keptCells+=component.cells.length;keptEnergy+=component.energy;regionCount++;
+    if(keptEnergy>=totalEnergy*.88)break;
+  }
+  if(keptCells<Math.max(2,Math.ceil(tileCount*.025)))return null;
+
+  // Build a luminance histogram from pixels inside the spatially selected
+  // sharp regions. The same input transform and manual baseline curve used by
+  // the other Auto Grade modes are applied before luminance is measured.
+  const hist=new Uint32Array(256);
+  let count=0;
+  for(let gy=0;gy<gh;gy++){
+    const ty=Math.min(rows-1,Math.floor(gy/tileH));
+    for(let gx=0;gx<gw;gx++){
+      const tx=Math.min(cols-1,Math.floor(gx/tileW));
+      if(!selectedMask[ty*cols+tx])continue;
+      const gi=gy*gw+gx;
+      if(!valid[gi])continue;
+      hist[Math.round(clamp(gray[gi])*255)]++;count++;
+    }
+  }
+  if(count<Math.max(1000,validSamples*.025))return null;
+
+  const pct=q=>curvePercentile(hist,count,q);
+  let mode=0;for(let i=1;i<256;i++)if(hist[i]>hist[mode])mode=i;
+  let smoothMode=0,smoothPeak=-1;
+  for(let i=1;i<255;i++){
+    const v=hist[i-1]+2*hist[i]+hist[i+1];
+    if(v>smoothPeak){smoothPeak=v;smoothMode=i;}
+  }
+  return {
+    stats:{
+      count,hist,mode:smoothMode/255,
+      p001:pct(.001),p01:pct(.01),p05:pct(.05),p10:pct(.10),
+      p15:pct(.15),p25:pct(.25),p50:pct(.50),p75:pct(.75),
+      p85:pct(.85),p90:pct(.90),p95:pct(.95),p99:pct(.99),p999:pct(.999),
+      coverage:count/validSamples
+    },
+    coverage:count/validSamples,
+    regionCount,
+    previewMask:{
+      cols,rows,gridWidth:gw,gridHeight:gh,tileWidth:tileW,tileHeight:tileH,
+      cells:Array.from(selectedMask)
+    },
+    microcontrastMedian:q50,
+    microcontrastP90:q90,
+    microcontrastSpread:q90-q35
+  };
+}
+
+/**
+ * Uses the luminance distribution of the sharpest spatial regions as the
+ * grading target, while full-frame percentiles provide global shadow/highlight
+ * protection. The Master curve remains global and editable.
+ */
+function sharpRegionPriorityCurve(baseLut,globalStats,sharpStats,baselineCurve){
+  const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const pivot=clampRange(sharpStats.mode*.25+sharpStats.p50*.75,.12,.88);
+  const sharpSpan=Math.max(.03,sharpStats.p85-sharpStats.p15);
+  const gain=clampRange(1.18+(0.34-sharpSpan)*.30,1.12,1.30);
+  // Use the complete frame as a safety envelope, not as the tonal target.
+  const lowGuard=clampRange(globalStats.p001-.015,0,.20);
+  const highGuard=clampRange(globalStats.p999+.015,.80,1);
+  const toe=.035,shoulder=.035;
+  const mapSharp=value=>{
+    const z=clamp(value);
+    let y=pivot+(z-pivot)*gain;
+    if(y<lowGuard)y=lowGuard-toe*(1-Math.exp(-(lowGuard-y)/toe));
+    if(y>highGuard)y=highGuard+shoulder*(1-Math.exp(-(y-highGuard)/shoulder));
+    return clamp(y);
+  };
+  const baseline=Array.isArray(baselineCurve)?baselineCurve:curves.m;
+  const protectedXs=Array.isArray(baseline)?baseline.filter(p=>p.x>0&&p.x<1).map(p=>p.x):[];
+  const candidates=[
+    {x:inputForCurveOutput(baseLut,sharpStats.p15),priority:2},
+    {x:inputForCurveOutput(baseLut,sharpStats.p50),priority:5},
+    {x:inputForCurveOutput(baseLut,sharpStats.p85),priority:2}
+  ];
+  const generated=selectWellSpacedCurveAnchors(candidates,protectedXs,.09);
+  const xs=[...new Set([...protectedXs,...generated])].sort((a,b)=>a-b);
+  const points=xs.map(x=>({x,y:mapSharp(baseLut[Math.round(x*255)])}));
+  const first=baseline&&baseline.find(p=>Math.abs(p.x)<1e-9);
+  const last=baseline&&baseline.find(p=>Math.abs(p.x-1)<1e-9);
+  points.unshift(first?{x:first.x,y:first.y}:{x:0,y:baseLut[0]});
+  points.push(last?{x:last.x,y:last.y}:{x:1,y:baseLut[255]});
+  // Keep the output non-decreasing even with dense existing manual curve points.
+  for(let i=1;i<points.length;i++)points[i].y=Math.max(points[i].y,points[i-1].y);
+  return points;
+}
+
+/**
+ * Adaptive contiguous luminance segmentation.
+ *
+ * Unlike the spatial sharp-region detector, this segments the full-frame luminance histogram.
+ * It starts with the full luminance interval, identifies stable histogram
+ * peaks, and retains only the valleys that separate materially different
+ * populations. Weak peaks, shallow valleys and low-mass tails are merged.
+ * The result is therefore 1..maxZones contiguous intervals, selected from
+ * the current image's histogram rather than a preset zone count.
+ */
+function detectAdaptiveLuminanceZones(stats,maxZones=6){
+  if(!stats||!stats.hist||stats.count<100)return [];
+  const hist=stats.hist,total=stats.count,smooth=new Float64Array(256);
+  // Binomial smoothing suppresses single-bin noise without erasing broad modes.
+  const kernel=[1,6,15,20,15,6,1],kernelSum=64;
+  for(let i=0;i<256;i++){
+    let value=0;
+    for(let k=-3;k<=3;k++)value+=kernel[k+3]*(hist[Math.max(0,Math.min(255,i+k))]||0);
+    smooth[i]=value/kernelSum;
+  }
+  const maxPeak=Math.max(...smooth);
+  if(!(maxPeak>0))return [];
+
+  // Local maxima are candidates only; valley quality and zone mass decide
+  // whether a candidate becomes a true boundary.
+  const peaks=[];
+  for(let i=2;i<254;i++){
+    if(!(smooth[i]>=smooth[i-1]&&smooth[i]>smooth[i+1]))continue;
+    if(smooth[i]<maxPeak*.035)continue;
+    const bin=i;
+    if(peaks.some(p=>Math.abs(p.bin-bin)<11)){
+      const near=peaks.find(p=>Math.abs(p.bin-bin)<11);
+      if(smooth[bin]>near.height){near.bin=bin;near.height=smooth[bin];}
+    }else peaks.push({bin,height:smooth[bin]});
+  }
+  // Treat a substantial edge pile-up as a legitimate shadow/highlight mode.
+  if(smooth[0]>=maxPeak*.035&&smooth[0]>smooth[1]*1.08)peaks.push({bin:0,height:smooth[0]});
+  if(smooth[255]>=maxPeak*.035&&smooth[255]>smooth[254]*1.08)peaks.push({bin:255,height:smooth[255]});
+  peaks.sort((a,b)=>a.bin-b.bin);
+  if(!peaks.length){
+    let best=0;for(let i=1;i<256;i++)if(smooth[i]>smooth[best])best=i;
+    peaks.push({bin:best,height:smooth[best]});
+  }
+
+  // Candidate valley score: depth relative to the weaker adjacent peak.
+  // The threshold relaxes very slightly for large, well-sampled histograms.
+  const sampleScale=Math.max(0,Math.log10(Math.max(1,total)/1000));
+  const valleyDepthThreshold=Math.max(.22,Math.min(.30,.285-sampleScale*.012));
+  const minZoneMass=Math.max(.025,Math.min(.09,48/total));
+  const splits=[];
+  for(let i=0;i<peaks.length-1;i++){
+    const a=peaks[i],b=peaks[i+1];
+    if(b.bin-a.bin<10)continue;
+    let valley=a.bin+1,minValue=Infinity;
+    for(let j=a.bin+1;j<b.bin;j++)if(smooth[j]<minValue){minValue=smooth[j];valley=j;}
+    const depth=1-minValue/Math.max(1,Math.min(a.height,b.height));
+    if(depth<valleyDepthThreshold)continue;
+    splits.push({bin:valley,depth,score:depth*Math.sqrt(Math.min(a.height,b.height))});
+  }
+
+  // Begin with the strongest separators, then discard splits that create
+  // undersized intervals. This merges tiny highlights/noise back into a
+  // neighbouring tonal zone instead of amplifying them independently.
+  splits.sort((a,b)=>b.score-a.score);
+  const selected=splits.slice(0,Math.max(0,maxZones-1));
+  const intervalMass=boundaries=>{
+    const edges=[0,...boundaries.map(x=>x.bin),256];
+    const masses=[];
+    for(let i=0;i<edges.length-1;i++){
+      let mass=0;for(let b=edges[i];b<edges[i+1];b++)mass+=hist[b];
+      masses.push(mass/total);
+    }
+    return masses;
+  };
+  while(selected.length){
+    const sorted=[...selected].sort((a,b)=>a.bin-b.bin);
+    const masses=intervalMass(sorted);
+    const smallIndex=masses.findIndex(m=>m<minZoneMass);
+    if(smallIndex<0)break;
+    // Remove the weaker of the boundaries adjacent to the undersized interval.
+    const adjacent=[];
+    if(smallIndex>0)adjacent.push(sorted[smallIndex-1]);
+    if(smallIndex<sorted.length)adjacent.push(sorted[smallIndex]);
+    if(!adjacent.length)break;
+    const weakest=adjacent.reduce((a,b)=>a.score<=b.score?a:b);
+    selected.splice(selected.indexOf(weakest),1);
+  }
+
+  const boundaries=[0,...selected.map(x=>x.bin),256].sort((a,b)=>a-b);
+  const zones=[];
+  for(let i=0;i<boundaries.length-1;i++){
+    const lo=boundaries[i],hi=boundaries[i+1]-1,regionHist=new Uint32Array(256);
+    let count=0;
+    for(let b=lo;b<=hi;b++){regionHist[b]=hist[b];count+=hist[b];}
+    if(!count)continue;
+    const pct=q=>curvePercentile(regionHist,count,q);
+    const p05=pct(.05),p15=pct(.15),p50=pct(.50),p85=pct(.85),p95=pct(.95);
+    zones.push({
+      lower:lo/255,upper:Math.min(1,hi/255),
+      center:p50, p05,p15,p50,p85,p95,
+      span:p85-p15,mass:count/total,
+      peakBin:peaks.reduce((best,p)=>p.bin>=lo&&p.bin<=hi&&(!best||p.height>best.height)?p:best,null)?.bin??p50*255
+    });
+  }
+  return zones;
+}
+
+/**
+ * Adaptive-zone grade: a conservative global tonal backbone plus local
+ * contrast shaping around each contiguous histogram population. Gaussian
+ * blending prevents visible steps at zone boundaries; monotonic enforcement
+ * keeps the resulting master curve physically ordered and editable.
+ */
+function adaptiveZoneAutoLevelsCurve(baseLut,stats,baselineCurve,zonesOverride=null){
+  const zones=Array.isArray(zonesOverride)?zonesOverride:detectAdaptiveLuminanceZones(stats,6);
+  if(!zones.length)return null;
+  const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const pivot=clampRange(stats.mode*.32+stats.p50*.68,.18,.82);
+  const occupiedSpan=Math.max(.04,stats.p90-stats.p10);
+  const globalGain=clampRange(1.045+(0.42-occupiedSpan)*.12,1.025,1.095);
+  const lowGuard=stats.p001,highGuard=stats.p999;
+  const toe=clampRange((pivot-lowGuard)*.20+.016,.016,.05);
+  const shoulder=clampRange((highGuard-pivot)*.20+.016,.016,.05);
+  const globalMap=value=>{
+    const z=clamp(value);let y=pivot+(z-pivot)*globalGain;
+    if(y<lowGuard)y=lowGuard-toe*(1-Math.exp(-(lowGuard-y)/toe));
+    if(y>highGuard)y=highGuard+shoulder*(1-Math.exp(-(y-highGuard)/shoulder));
+    return clamp(y);
+  };
+
+  const localZones=zones.map((zone,index)=>{
+    const neighbours=[];
+    if(index>0)neighbours.push(zone.center-zones[index-1].center);
+    if(index<zones.length-1)neighbours.push(zones[index+1].center-zone.center);
+    const neighbourSpan=neighbours.length?Math.min(...neighbours):.20;
+    const massFactor=clampRange(Math.sqrt(zone.mass)*1.55,.30,1);
+    const gain=1+clampRange((.19-zone.span)*.13,.006,.032)*massFactor;
+    return{
+      ...zone,gain,
+      sigma:clampRange(Math.max(zone.span*.82,neighbourSpan*.24),.045,.16),
+      strength:clampRange(.55+Math.sqrt(zone.mass)*.72,.55,1.18),
+      mappedCenter:globalMap(zone.center)
+    };
+  });
+  const mapValue=value=>{
+    const z=clamp(value),global=globalMap(z);
+    let weightedDelta=0,weightSum=0;
+    for(const zone of localZones){
+      const d=(z-zone.center)/zone.sigma;
+      const weight=Math.exp(-.5*d*d)*zone.strength;
+      const localDelta=(global-zone.mappedCenter)*(zone.gain-1);
+      weightedDelta+=weight*localDelta;weightSum+=weight;
+    }
+    // Do not normalize away attenuation in the tails where no zone is active.
+    const local=weightedDelta/Math.max(1,weightSum);
+    return clamp(global+local*.72);
+  };
+
+  const mapped=new Float64Array(256);
+  for(let i=0;i<256;i++)mapped[i]=mapValue(i/255);
+  const low=clamp(baseLut[0]),high=clamp(baseLut[255]);
+  if(high>=low){
+    mapped[0]=low;mapped[255]=high;
+    for(let i=1;i<255;i++)mapped[i]=Math.max(low,Math.min(high,Math.max(mapped[i],mapped[i-1])));
+    for(let i=254;i>0;i--)mapped[i]=Math.min(mapped[i],mapped[i+1]);
+  }
+
+  const baseline=Array.isArray(baselineCurve)?baselineCurve:curves.m;
+  const protectedXs=Array.isArray(baseline)?baseline.filter(p=>p.x>0&&p.x<1).map(p=>p.x):[];
+  const candidates=[{x:inputForCurveOutput(baseLut,pivot),priority:12}];
+  for(const zone of localZones){
+    candidates.push(
+      {x:inputForCurveOutput(baseLut,zone.p15),priority:5+zone.mass},
+      {x:inputForCurveOutput(baseLut,zone.p50),priority:9+zone.mass},
+      {x:inputForCurveOutput(baseLut,zone.p85),priority:5+zone.mass}
+    );
+  }
+  for(let i=1;i<localZones.length;i++){
+    const boundary=(localZones[i-1].upper+localZones[i].lower)*.5;
+    candidates.push({x:inputForCurveOutput(baseLut,boundary),priority:3});
+  }
+  const generated=selectWellSpacedCurveAnchors(candidates,protectedXs,.025);
+  const xs=[...new Set([...protectedXs,...generated])].sort((a,b)=>a-b);
+  const points=xs.map(x=>{
+    const baseValue=clamp(baseLut[Math.max(0,Math.min(255,Math.round(x*255)))]);
+    return{x,y:mapped[Math.max(0,Math.min(255,Math.round(baseValue*255)))]};
+  });
+  const first=baseline&&baseline.find(p=>Math.abs(p.x)<1e-9);
+  const last=baseline&&baseline.find(p=>Math.abs(p.x-1)<1e-9);
+  points.unshift(first?{x:first.x,y:first.y}:{x:0,y:baseLut[0]});
+  points.push(last?{x:last.x,y:last.y}:{x:1,y:baseLut[255]});
+  return{points,zones:localZones};
+}
+
 function subjectPriorityCurve(baseLut,globalStats,roiStats,baselineCurve){
   // Subject-only strategy: hold the ROI median as the luminance anchor and
   // expand the selected subject's occupied tonal range. Global percentiles are
@@ -4325,15 +5061,12 @@ function subjectPriorityCurve(baseLut,globalStats,roiStats,baselineCurve){
   pts.push(last?{x:last.x,y:last.y}:{x:1,y:baseLut[255]});
   return pts;
 }
-function baseCurveXs(){
-  return Array.isArray(curves.m)?curves.m.filter(p=>p.x>0&&p.x<1).map(p=>p.x):[];
-}
 /**
  * Applies Global or Subject Auto Grade from a stable pre-auto-grade baseline.
  * Subject mode requires an explicit ROI; it must never silently fall back to
  * full-frame analysis. Generated output is not reused as the next baseline.
  */
-function applyTonalAutoGrade(points=null,isSubject=false){
+function applyTonalAutoGrade(points=null,isSubject=false,requestedMode=null,sharpRegionInfoOverride=null,adaptiveZonesOverride=null){
   // Subject mode is explicit; a missing ROI must never silently fall back to global mode.
   if(isSubject&&(!Array.isArray(points)||points.length<3)){fail("Draw a subject outline before applying Subject Auto Grade.");return false;}
   if(cur<0){fail('Open a photo before using Auto Grade.');return false;}
@@ -4353,17 +5086,184 @@ function applyTonalAutoGrade(points=null,isSubject=false){
   // mode, ROI defines the contrast pivot/strength; full-frame stats only guard extremes.
   // Keep the proven Global Auto Grade calculation unchanged. Subject mode has
   // its own ROI-driven contrast strategy and cannot fall through to that path.
-  const next=isSubject
-    ?subjectPriorityCurve(baseLut,all,roi,baseline)
-    :autoLevelsCurve(baseLut,all,roi,false,baseline);
+  const gradeMode=isSubject?'subject':(requestedMode||'global');
+  let next=null,detectedZoneCount=0,sharpRegionInfo=null;
+  if(gradeMode==='sharp'||gradeMode==='adaptive'){
+    let result=null;
+    if(gradeMode==='sharp'){
+      sharpRegionInfo=sharpRegionInfoOverride||detectSharpRegionLuminanceStats(src,analysisCurve);
+      if(sharpRegionInfo)result={points:sharpRegionPriorityCurve(baseLut,all,sharpRegionInfo.stats,baseline)};
+    }else{
+      result=adaptiveZoneAutoLevelsCurve(baseLut,roi,baseline,adaptiveZonesOverride);
+      detectedZoneCount=result&&result.zones?result.zones.length:0;
+    }
+    if(!result){
+      fail(gradeMode==='sharp'
+        ?'Sharp Region Auto Grade could not identify a sufficiently large, distinct high-microcontrast subject area. Try an image with clearer detail separation.'
+        :'Adaptive Zones could not derive a reliable luminance distribution from this image.');
+      return false;
+    }
+    next=result.points;
+  }else{
+    next=isSubject
+      ?subjectPriorityCurve(baseLut,all,roi,baseline)
+      :autoLevelsCurve(baseLut,all,roi,false,baseline);
+  }
   const changed=next.some(p=>Math.abs(p.y-baseLut[Math.round(p.x*255)])>.002);
   if(!changed){fail('The image already has a balanced tonal distribution; no meaningful curve adjustment was found.');return false;}
   curves.m=next;rebuildCurves();drawCurves();
-  autoGradeBaselineCurve=baseline;autoGradeLastCurve=cloneCurve(curves.m);autoGradeImageIndex=cur;autoGradeAppliedMode=isSubject?'subject':'global';
-  render();pushHistory();return true;
+  autoGradeBaselineCurve=baseline;autoGradeLastCurve=cloneCurve(curves.m);autoGradeImageIndex=cur;autoGradeAppliedMode=gradeMode;
+  render();pushHistory();
+  if(gradeMode==='sharp'&&sharpRegionInfo)console.info('Sharp Region Auto Grade used '+sharpRegionInfo.regionCount+' connected high-microcontrast regions ('+(sharpRegionInfo.coverage*100).toFixed(1)+'% of sampled pixels) to derive the global curve; full-frame tonal limits were protected.');
+  if(gradeMode==='adaptive')console.info('Adaptive Zones Auto Grade selected '+detectedZoneCount+' contiguous luminance zones from the image histogram.');
+  return true;
 }
-$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false);setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');}});
-$('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode==='global')resetAutoGrade('global');setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
+$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false,'global');setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');$('autoGradeSharpBtn').classList.remove('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','false');$('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');}});
+function startSharpRegionPreview(){
+  if(cur<0){fail('Open a photo before using Sharp Region Auto Grade.');return;}
+  clearSharpRegionPreview();
+
+  // Analyze the original/pre-Auto-Grade tonal basis, while leaving the current
+  // image grade untouched until the one-second mask preview has completed.
+  const baseline=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+    ?cloneCurve(autoGradeBaselineCurve):cloneCurve(curves.m);
+  const generatedActive=typeof anyAutoCurveActive==='function'&&anyAutoCurveActive();
+  const analysisSource=(generatedActive&&Array.isArray(state.curveAutoData.baseCurve))
+    ?state.curveAutoData.baseCurve:baseline;
+  const analysisCurve=state.enabled.curves===false?null:buildCurveLUT(analysisSource);
+  const imageRef=images[cur];
+  const info=detectSharpRegionLuminanceStats(imageRef.data,analysisCurve);
+
+  if(!info){
+    fail('Sharp Region could not identify a sufficiently large, distinct high-microcontrast subject area. Try an image with clearer detail separation.');
+    return;
+  }
+
+  sharpRegionPending={
+    imageRef,imageIndex:cur,baselineCurve:baseline,info,timer:null,
+    analysisSourceCurve:cloneCurve(analysisSource)
+  };
+  $('autoGradeSharpBtn').classList.add('on');
+  $('autoGradeSharpBtn').setAttribute('aria-pressed','true');
+
+  // Flash the detected region for exactly one second, then apply automatically.
+  drawSharpRegionPreview();
+  sharpRegionPending.timer=setTimeout(()=>{
+    const pending=sharpRegionPending;
+    if(!pending)return;
+    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){
+      clearSharpRegionPreview();
+      return;
+    }
+    const currentBase=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+      ?autoGradeBaselineCurve:curves.m;
+    if(JSON.stringify(currentBase)!==JSON.stringify(pending.baselineCurve)){
+      clearSharpRegionPreview();
+      fail('The Master curve changed during region detection. Please run Sharp Region again.');
+      return;
+    }
+
+    const info=pending.info;
+    const ok=applyTonalAutoGrade(null,false,'sharp',info);
+    clearSharpRegionPreview();
+    if(ok){
+      expandSidebarSectionForElement($('curves'));
+      $('autoGradeSharpBtn').classList.add('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','true');
+      $('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');
+      $('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');
+      $('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');
+    }
+  },1000);
+}
+$('autoGradeSharpBtn').addEventListener('click',()=>{
+  if(subjectGradeMode){setAutoGradeMode(null);return;}
+  if(autoGradeAppliedMode==='sharp'){resetAutoGrade('sharp');return;}
+  if(sharpRegionPending){clearSharpRegionPreview();return;}
+  try{startSharpRegionPreview();}
+  catch(error){
+    console.error('Sharp Region analysis failed:',error);
+    clearSharpRegionPreview();
+    fail('Sharp Region analysis failed. The image may be too large for the available browser memory.');
+  }
+});
+function startAdaptiveZonesPreview(){
+  if(cur<0){fail('Open a photo before using Auto Zone Grading.');return;}
+  clearSharpRegionPreview();
+
+  const baseline=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+    ?cloneCurve(autoGradeBaselineCurve):cloneCurve(curves.m);
+  const generatedActive=typeof anyAutoCurveActive==='function'&&anyAutoCurveActive();
+  const analysisSource=(generatedActive&&Array.isArray(state.curveAutoData.baseCurve))
+    ?state.curveAutoData.baseCurve:baseline;
+  const analysisCurve=state.enabled.curves===false?null:buildCurveLUT(analysisSource);
+  const imageRef=images[cur];
+  const stats=tonalSamples(imageRef.data,null,analysisCurve);
+  if(!stats||stats.count<100||stats.p999-stats.p001<.012){
+    fail('Auto Zone Grading could not derive a reliable luminance distribution from this image.');
+    return;
+  }
+  const zones=detectAdaptiveLuminanceZones(stats,6);
+  if(!zones.length){
+    fail('Auto Zone Grading could not detect reliable luminance zones in this image.');
+    return;
+  }
+  const previewMask=buildAdaptiveZonePreviewMask(imageRef.data,analysisCurve,zones);
+  if(!previewMask){
+    fail('Auto Zone Grading could not build the zone preview mask.');
+    return;
+  }
+
+  sharpRegionPending={
+    kind:'zones',imageRef,imageIndex:cur,baselineCurve:baseline,
+    info:{zones,stats,previewMask},timer:null
+  };
+  ['autoGradeBtn','autoGradeSubjectBtn','autoGradeSharpBtn'].forEach(id=>{
+    $(id).classList.remove('on');$(id).setAttribute('aria-pressed','false');
+  });
+  $('autoGradeAdaptiveBtn').classList.add('on');
+  $('autoGradeAdaptiveBtn').setAttribute('aria-pressed','true');
+  drawSharpRegionPreview();
+
+  // Apply after one second with the exact zone boundaries shown in the mask.
+  sharpRegionPending.timer=setTimeout(()=>{
+    const pending=sharpRegionPending;
+    if(!pending||pending.kind!=='zones')return;
+    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){
+      clearSharpRegionPreview();return;
+    }
+    const currentBase=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+      ?autoGradeBaselineCurve:curves.m;
+    if(JSON.stringify(currentBase)!==JSON.stringify(pending.baselineCurve)){
+      clearSharpRegionPreview();
+      fail('The Master curve changed during zone detection. Please run Auto Zone Grading again.');
+      return;
+    }
+
+    const zonesToApply=pending.info.zones;
+    const ok=applyTonalAutoGrade(null,false,'adaptive',null,zonesToApply);
+    clearSharpRegionPreview();
+    if(ok){
+      expandSidebarSectionForElement($('curves'));
+      $('autoGradeAdaptiveBtn').classList.add('on');
+      $('autoGradeAdaptiveBtn').setAttribute('aria-pressed','true');
+      ['autoGradeBtn','autoGradeSubjectBtn','autoGradeSharpBtn'].forEach(id=>{
+        $(id).classList.remove('on');$(id).setAttribute('aria-pressed','false');
+      });
+    }
+  },1000);
+}
+$('autoGradeAdaptiveBtn').addEventListener('click',()=>{
+  if(subjectGradeMode){setAutoGradeMode(null);return;}
+  if(autoGradeAppliedMode==='adaptive'){resetAutoGrade('adaptive');return;}
+  if(sharpRegionPending){clearSharpRegionPreview();return;}
+  try{startAdaptiveZonesPreview();}
+  catch(error){
+    console.error('Auto Zone Grading failed:',error);
+    clearSharpRegionPreview();
+    fail('Auto Zone Grading failed. The image may be too large for the available browser memory.');
+  }
+});
+$('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode&&autoGradeAppliedMode!=='subject')resetAutoGrade(autoGradeAppliedMode);setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
 function smoothSubjectPolygon(points,steps=4){
   if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
   // Closed Catmull-Rom interpolation: smooths hand-drawn corners while
@@ -4410,9 +5310,10 @@ $('subjectGradeApply').addEventListener('click',()=>{
   },0);
 });
 $('subjectGradeCancel').addEventListener('click',()=>setAutoGradeMode(null));
-document.addEventListener('keydown',e=>{if(subjectGradeMode&&e.key==='Enter'){e.preventDefault();$('subjectGradeApply').click();}if(subjectGradeMode&&e.key==='Escape'){e.preventDefault();setAutoGradeMode(null);}});
+document.addEventListener('keydown',e=>{if(sharpRegionPending&&e.key==='Escape'){e.preventDefault();clearSharpRegionPreview();return;}if(subjectGradeMode&&e.key==='Enter'){e.preventDefault();$('subjectGradeApply').click();}if(subjectGradeMode&&e.key==='Escape'){e.preventDefault();setAutoGradeMode(null);}});
 function drawSubjectSelection(){
   if(!subjectSelectionCtx)return;
+  if(sharpRegionPending){drawSharpRegionPreview();return;}
   const c=subjectSelectionOverlay,ox=subjectSelectionCtx;
   ox.clearRect(0,0,c.width,c.height);
   if(!subjectGradeMode||subjectGradePoints.length===0){c.style.display="none";return;}
@@ -4461,6 +5362,8 @@ syncAutoCurveButtons();
 function setOptimizeEnabled(on){
   $("autoGradeBtn").disabled=!on;
   $("autoGradeSubjectBtn").disabled=!on;
+  $("autoGradeSharpBtn").disabled=!on;
+  $("autoGradeAdaptiveBtn").disabled=!on;
   Object.values(autoCurveButtons).forEach(b=>b.disabled=!on);
   $("logMode").disabled=!on;
   setIndependentCorrectionsEnabled(on);
@@ -4988,34 +5891,6 @@ async function analyzeImageColorTonesCooperative(imageData,isCurrent,onProgress=
 }
 
 const colorAnalysisCache=new WeakMap();
-function getCachedColorAnalysis(imageData){
-  if(!imageData||!imageData.data)return analyzeImageColorTones(imageData);
-  const signature=JSON.stringify({sliders:Object.fromEntries(sliders.map(k=>[k,state[k]])),enabled:state.enabled,
-    temp:state.temp,tint:state.tint,normalisation:[state.normHighlights,state.normMids,state.normShadows],logMode:state.logMode,
-    curves,hueShift:Array.from(hueShift),hueSat:Array.from(hueSat),
-    secondary:[state.secHue,state.secSat,state.secLum,state.secHueC,state.secRange,state.secSoft],
-    gains:normalisationGains,baseOn,baseName:baseLUT?.name,baseSize:baseLUT?.size,
-    lookStack:loadedLuts.map(x=>[x.slotId,x.active,x.strength]),cbBalance:state.cbBalance,cbBlending:state.cbBlending});
-  const cached=colorAnalysisCache.get(imageData);
-  if(cached&&cached.signature===signature)return cached.analysis;
-  const src=imageData.data,w=imageData.width,h=imageData.height,grid=buildAnalysisSampleGrid(w,h,300000);
-  const sw=grid.columns,sh=grid.rows,transformed=new Uint8ClampedArray(grid.count*4);
-  let opaque=false;for(let i=3;i<src.length;i+=4)if(src[i]>=128){opaque=true;break;}
-  const alphaFallback=!opaque,wheelSnapshot=cloneColorWheels();
-  try{
-    for(let n=0;n<grid.count;n++){
-      const i=grid.indices[n]*4,out=n*4,a=alphaFallback?255:src[i+3];
-      if(a<128){transformed[out+3]=a;continue;}
-      grade(src[i]/255,src[i+1]/255,src[i+2]/255,(r,g,b)=>{
-        transformed[out]=Math.round(clamp(r)*255);transformed[out+1]=Math.round(clamp(g)*255);
-        transformed[out+2]=Math.round(clamp(b)*255);transformed[out+3]=a;
-      });
-    }
-  }finally{restoreColorWheels(wheelSnapshot);}
-  const analysis=analyzeImageColorTones({data:transformed,width:sw,height:sh});
-  colorAnalysisCache.set(imageData,{signature,analysis});return analysis;
-}
-
 async function getCachedColorAnalysisCooperative(imageData,isCurrent,onProgress=()=>{}){
   if(!imageData||!imageData.data)throw new Error("Open an image before tuning colors.");
   const signature=JSON.stringify({sliders:Object.fromEntries(sliders.map(k=>[k,state[k]])),enabled:state.enabled,
@@ -5336,8 +6211,8 @@ function buildHarmonySampleIndicesByRegion(imageData,limit=384){
   const out={};
   for(const region of regions){
     const list=candidates[region];
-    // Very small tonal populations use the full pool; measureWheelHueResponse
-    // still rejects pixels outside the region mask and near-neutral pixels.
+    // Very small tonal populations use the full pool; the cooperative
+    // wheel-response measurement still rejects pixels outside the region mask and near-neutral pixels.
     const source=list.length>=32?list:pool.filter(i=>alphaFallback||data[i*4+3]>=128);
     if(source.length<=limit){out[region]=source;continue;}
     const selected=[];
@@ -5362,60 +6237,6 @@ function weightedHueGroupError(groups){
   // RMS preserves the contribution of every credible region/hue group;
   // the weighted 90th percentile prevents one badly shifted group hiding in the mean.
   return .75*rms+.25*p90;
-}
-function measurePipelineHueShift(imageData,sampleLimit=512){
-  if(!imageData||!imageData.data)return 0;
-  const data=imageData.data,indices=buildStratifiedSampleIndices(imageData,sampleLimit),alphaFallback=imageHasUsableAlpha(imageData);
-  const saved={wheels:{shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},
-    colorBalanceEnabled:state.enabled.colorBalance,hueSatEnabled:state.enabled.hueSat,
-    cbBalance:state.cbBalance,cbBlending:state.cbBlending,hueSat:Array.from(hueSat)};
-  const baseline=colorHarmonyBaseline||cloneColorWheels(),baseWheels=baseline.wheels||baseline;
-  const baselineEnabled=baseline.colorBalanceEnabled??saved.colorBalanceEnabled;
-  const groups=Array.from({length:3*24},()=>({sx:0,sy:0,weight:0}));
-  const setBaseline=()=>{
-    for(const region of ["shadows","midtones","highlights"]){
-      const v=baseWheels[region]||{x:0,y:0};
-      cbState[region]=baselineEnabled?{x:v.x,y:v.y}:{x:0,y:0};
-    }
-    state.enabled.colorBalance=baselineEnabled;
-    state.enabled.hueSat=baseline.hueSatEnabled??saved.hueSatEnabled;
-    state.cbBalance=baseline.cbBalance??saved.cbBalance;
-    state.cbBlending=baseline.cbBlending??saved.cbBlending;
-    if(Array.isArray(baseline.hueSat))for(let i=0;i<HUEN;i++)hueSat[i]=Number.isFinite(baseline.hueSat[i])?baseline.hueSat[i]:0;
-  };
-  const restoreCandidate=()=>{
-    for(const region of ["shadows","midtones","highlights"])cbState[region]={...saved.wheels[region]};
-    state.enabled.colorBalance=saved.colorBalanceEnabled;state.enabled.hueSat=saved.hueSatEnabled;
-    state.cbBalance=saved.cbBalance;state.cbBlending=saved.cbBlending;
-    for(let i=0;i<HUEN;i++)hueSat[i]=saved.hueSat[i];
-  };
-  try{
-    setBaseline();
-    const baselineSamples=[];
-    for(const i of indices){
-      const k=i*4;if(!alphaFallback&&data[k+3]<128)continue;
-      let pre=null;grade(data[k]/255,data[k+1]/255,data[k+2]/255,(r,g,b)=>{pre=[r,g,b];});
-      if(!pre)continue;
-      const masks=colorBalanceMasks(.2126*pre[0]+.7152*pre[1]+.0722*pre[2],state.cbBalance,state.cbBlending);
-      const rgb=grade(data[k]/255,data[k+1]/255,data[k+2]/255),lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);
-      if(C<=.025)continue;
-      const hue=(Math.atan2(lab.b,lab.a)*180/Math.PI+360)%360,hueBin=Math.min(23,Math.floor(hue/15));
-      baselineSamples.push({i,hue:Math.atan2(lab.b,lab.a),C,hueBin,masks});
-    }
-    restoreCandidate();
-    for(const sample of baselineSamples){
-      const k=sample.i*4,rgb=grade(data[k]/255,data[k+1]/255,data[k+2]/255),lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);
-      if(C<.018)continue;
-      const h=Math.atan2(lab.b,lab.a),delta=Math.atan2(Math.sin(h-sample.hue),Math.cos(h-sample.hue));
-      const chromaWeight=Math.min(.20,sample.C)*Math.min(.20,C);
-      const toneWeights=[sample.masks.shadows,sample.masks.midtones,sample.masks.highlights];
-      for(let region=0;region<3;region++){
-        const wt=chromaWeight*toneWeights[region];if(wt<=1e-8)continue;
-        const g=groups[region*24+sample.hueBin];g.sx+=Math.cos(delta)*wt;g.sy+=Math.sin(delta)*wt;g.weight+=wt;
-      }
-    }
-    return weightedHueGroupError(groups);
-  }finally{restoreCandidate();}
 }
 async function measurePipelineHueShiftCooperative(imageData,isCurrent,onProgress=()=>{},sampleLimit=512){
   if(!imageData||!imageData.data)return 0;
@@ -5483,30 +6304,6 @@ async function optimizeProtectHueCooperative(imageData,preservation,isCurrent,on
   rotateColorBalanceWheels(best.offset);return best;
 }
 
-function optimizeProtectHue(imageData,preservation){
-  if(preservation<=0)return;
-  const baseline=cloneColorWheels();
-  let best={offset:0,error:Math.abs(measurePipelineHueShift(imageData))};
-  const limit=28*clamp(preservation,0,1);
-  // Search the real pipeline response: wheel-vector rotation is not a linear
-  // hue operation after RGB addition, masks and gamut clipping.
-  for(let offset=-limit;offset<=limit+.001;offset+=7){
-    restoreColorWheels(baseline);
-    rotateColorBalanceWheels(offset);
-    const error=Math.abs(measurePipelineHueShift(imageData));
-    if(error<best.error)best={offset,error};
-  }
-  const coarse=best.offset;
-  for(let offset=Math.max(-limit,coarse-7);offset<=Math.min(limit,coarse+7)+.001;offset+=2){
-    restoreColorWheels(baseline);
-    rotateColorBalanceWheels(offset);
-    const error=Math.abs(measurePipelineHueShift(imageData));
-    if(error<best.error)best={offset,error};
-  }
-  restoreColorWheels(baseline);
-  rotateColorBalanceWheels(best.offset);
-}
-
 /**
  * Build a conservative, cyclic Hue-vs-Saturation correction from the image.
  * The curve normalises unusually dull/strong hue families toward the image's
@@ -5514,67 +6311,6 @@ function optimizeProtectHue(imageData,preservation){
  * Eight periodic control points and low amplitude prevent hue-boundary steps.
  */
 
-function measureWheelHueResponse(imageData,region,x,y,sampleIndices,baseline=null){
-  const saved={wheels:{shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},
-    colorBalanceEnabled:state.enabled.colorBalance,cbBalance:state.cbBalance,cbBlending:state.cbBlending,
-    hueSat:Array.from(hueSat),hueSatEnabled:state.enabled.hueSat};
-  const sourceWheels=baseline?.wheels||saved.wheels;
-  const baseEnabled=baseline?.colorBalanceEnabled??saved.colorBalanceEnabled;
-  const baseBlend=baseline?.cbBlending??saved.cbBlending;
-  const baseBalance=baseline?.cbBalance??saved.cbBalance;
-  const baseHueSat=baseline?.hueSat;
-  const baseHueSatEnabled=baseline?.hueSatEnabled??saved.hueSatEnabled;
-  const alphaFallback=imageHasUsableAlpha(imageData);
-  let sx=0,sy=0,weight=0,sumDL=0,sumDC=0,clipped=0;
-  const setBaseline=()=>{
-    for(const key of ["shadows","midtones","highlights"]){
-      const v=sourceWheels[key]||{x:0,y:0};
-      cbState[key]=baseEnabled?{x:v.x,y:v.y}:{x:0,y:0};
-    }
-    state.cbBalance=baseBalance;state.cbBlending=baseBlend;
-    state.enabled.hueSat=baseHueSatEnabled;
-    if(Array.isArray(baseHueSat))for(let i=0;i<HUEN;i++)hueSat[i]=Number.isFinite(baseHueSat[i])?baseHueSat[i]:0;
-  };
-  try{
-    setBaseline();state.enabled.colorBalance=baseEnabled;
-    const d=imageData.data;
-    for(const i of sampleIndices){
-      const k=i*4;if(!alphaFallback&&d[k+3]<128)continue;
-      let pre=null;grade(d[k]/255,d[k+1]/255,d[k+2]/255,(r,g,b)=>{pre=[r,g,b];});
-      if(!pre)continue;
-      const mask=colorBalanceMasks(.2126*pre[0]+.7152*pre[1]+.0722*pre[2],baseBalance,baseBlend)[region];
-      if(mask<.01)continue;
-      // Reference: the exact pre-existing manual state, including all other wheels.
-      setBaseline();state.enabled.colorBalance=baseEnabled;
-      const base=grade(d[k]/255,d[k+1]/255,d[k+2]/255);
-      const baseLab=rgbToOKLab(...base),baseC=Math.hypot(baseLab.a,baseLab.b);
-      if(baseC<.025)continue;
-      // Candidate: same baseline state, with only this region's candidate delta added.
-      setBaseline();state.enabled.colorBalance=true;
-      const stored=sourceWheels[region]||{x:0,y:0};
-      const activeBase=baseEnabled?stored:{x:0,y:0};
-      cbState[region]={x:activeBase.x+x,y:activeBase.y+y};
-      const rgb=grade(d[k]/255,d[k+1]/255,d[k+2]/255);
-      const lab=rgbToOKLab(...rgb),C=Math.hypot(lab.a,lab.b);
-      if(C<.018)continue;
-      const delta=Math.atan2(Math.sin(Math.atan2(lab.b,lab.a)-Math.atan2(baseLab.b,baseLab.a)),
-        Math.cos(Math.atan2(lab.b,lab.a)-Math.atan2(baseLab.b,baseLab.a)));
-      const wt=mask*Math.min(.20,baseC)*Math.min(.20,C);
-      sx+=Math.cos(delta)*wt;sy+=Math.sin(delta)*wt;weight+=wt;
-      sumDL+=(lab.L-baseLab.L)*wt;sumDC+=(C-baseC)*wt;
-      if(rgb.some((v,ch)=>(v<=.001&&base[ch]>.001)||(v>=.999&&base[ch]<.999)))clipped+=wt;
-    }
-  }finally{
-    state.enabled.colorBalance=saved.colorBalanceEnabled;state.enabled.hueSat=saved.hueSatEnabled;
-    state.cbBalance=saved.cbBalance;state.cbBlending=saved.cbBlending;
-    for(let i=0;i<HUEN;i++)hueSat[i]=saved.hueSat[i];
-    cbState.shadows=saved.wheels.shadows;cbState.midtones=saved.wheels.midtones;cbState.highlights=saved.wheels.highlights;
-  }
-  return weight>1e-8?{
-    hue:Math.atan2(sy,sx)*180/Math.PI,deltaL:sumDL/weight,deltaC:sumDC/weight,
-    clipped:clipped/weight,weight
-  }:{hue:0,deltaL:0,deltaC:0,clipped:0,weight:0};
-}
 async function measureWheelHueResponseCooperative(imageData,region,x,y,sampleIndices,baseline,isCurrent,onProgress=()=>{}){
   const saved={wheels:{shadows:{...cbState.shadows},midtones:{...cbState.midtones},highlights:{...cbState.highlights}},
     colorBalanceEnabled:state.enabled.colorBalance,cbBalance:state.cbBalance,cbBlending:state.cbBlending,
@@ -5647,36 +6383,6 @@ async function optimizeWheelVectorForRegionCooperative(imageData,region,targetDe
   return{x,y};
 }
 
-function optimizeWheelVectorForRegion(imageData,region,targetDelta,sampleIndices,intensity,baseline=colorHarmonyBaseline){
-  if(Math.abs(targetDelta)<.15||intensity<=0||!sampleIndices.length)return{x:0,y:0};
-  const probe=.02,maxRadius=.40*clamp(intensity,0,1);
-  const response=(x,y)=>measureWheelHueResponse(imageData,region,x,y,sampleIndices,baseline);
-  let x=0,y=0;
-  // Four finite-difference/Newton-like corrections account for the nonlinear
-  // RGB addition, tonal masks, skin protection and gamut limiting in grade().
-  for(let iteration=0;iteration<4;iteration++){
-    const current=response(x,y),error=targetDelta-current.hue;
-    if(Math.abs(error)<.25)break;
-    const wrapDelta=(a,b)=>((a-b+540)%360)-180;
-    const gx=wrapDelta(response(x+probe,y).hue,response(x-probe,y).hue)/(2*probe);
-    const gy=wrapDelta(response(x,y+probe).hue,response(x,y-probe).hue)/(2*probe);
-    const den=gx*gx+gy*gy;
-    if(!Number.isFinite(den)||den<1e-4)break;
-    x+=error*gx/den;y+=error*gy/den;
-    const radius=Math.hypot(x,y);
-    if(radius>maxRadius&&radius>0){x*=maxRadius/radius;y*=maxRadius/radius;}
-  }
-  // Preserve lightness/chroma and avoid clipping; back off only when the
-  // measured pipeline response exceeds conservative perceptual guardrails.
-  for(let guard=0;guard<4;guard++){
-    const m=response(x,y);
-    if(Math.abs(m.deltaL)<=.035&&Math.abs(m.deltaC)<=.060&&m.clipped<=.020)break;
-    x*=.78;y*=.78;
-  }
-  return{x,y};
-}
-
-
 function calculateAutomaticHueSatCurve(analysis,intensity){
   const stats=analysis&&analysis.hueSatStats,bins=stats&&stats.bins;
   const out=new Array(HUEN).fill(0);
@@ -5698,7 +6404,6 @@ function calculateAutomaticHueSatCurve(analysis,intensity){
   }
   return out;
 }
-
 
 /**
  * Calculates the complete automatic colour grade. Wheel targets and the
@@ -6569,7 +7274,7 @@ function exDecode(file,cb){
   };
   rd.readAsDataURL(file);
 }
-const exHex=(r,g,b)=>"#"+[r,g,b].map(v=>Math.round(clamp(v)*255).toString(16).padStart(2,"0")).join("");
+
 $("exSingle").addEventListener("click",()=>$("exSingleF").click());
 $("exSingleF").addEventListener("change",e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
@@ -6745,7 +7450,6 @@ $("exSingleF").addEventListener("change",e=>{
     fail("Look extracted \u2014 the reference's colour cast and black level are now on the curves. Review and refine; a single photo can only suggest a look.");
   });
 });
-
 
 /* ================= Lightroom preset import =================
    Reads .xmp (Camera Raw / Lightroom Classic) and .lrtemplate (legacy Lua)
@@ -7476,18 +8180,21 @@ function snapshot(){
   return {s:JSON.stringify(g),base:baseLUT,luts:loadedLuts.map(cloneLoadedLutForHistory),autoGrade};
 }
 function restoreAutoGradeHistory(entry){
+  if(typeof clearSharpRegionPreview==="function"&&sharpRegionPending)clearSharpRegionPreview();
   const saved=entry&&entry.autoGrade||{};
   autoGradeBaselineCurve=cloneCurve(saved.baseline);
   autoGradeLastCurve=cloneCurve(saved.last);
   autoGradeImageIndex=Number.isInteger(saved.imageIndex)?saved.imageIndex:-1;
-  autoGradeAppliedMode=saved.appliedMode==="global"||saved.appliedMode==="subject"?saved.appliedMode:null;
+  autoGradeAppliedMode=["global","subject","sharp","adaptive"].includes(saved.appliedMode)?saved.appliedMode:null;
   // An in-progress subject outline is transient, not an undoable grade.
   subjectGradeMode=false;subjectGradePoints=[];subjectGradeApplied=false;subjectGradeDrawing=false;subjectGradeClosed=false;
   const controls=$("subjectGradeControls");if(controls)controls.style.display="none";
   if(view)view.classList.remove("subject-select");
-  const globalOn=autoGradeAppliedMode==="global",subjectOn=autoGradeAppliedMode==="subject";
+  const globalOn=autoGradeAppliedMode==="global",subjectOn=autoGradeAppliedMode==="subject",sharpOn=autoGradeAppliedMode==="sharp",adaptiveOn=autoGradeAppliedMode==="adaptive";
   $("autoGradeBtn").classList.toggle("on",globalOn);$("autoGradeBtn").setAttribute("aria-pressed",globalOn?"true":"false");
   $("autoGradeSubjectBtn").classList.toggle("on",subjectOn);$("autoGradeSubjectBtn").setAttribute("aria-pressed",subjectOn?"true":"false");
+  $("autoGradeSharpBtn").classList.toggle("on",sharpOn);$("autoGradeSharpBtn").setAttribute("aria-pressed",sharpOn?"true":"false");
+  $("autoGradeAdaptiveBtn").classList.toggle("on",adaptiveOn);$("autoGradeAdaptiveBtn").setAttribute("aria-pressed",adaptiveOn?"true":"false");
 }
 function restoreSnap(entry){
   if(!entry||typeof entry.s!=="string")throw new Error("Undo history entry is invalid.");
@@ -7634,8 +8341,6 @@ const store=(()=>{
     async set(k,v){try{const d=await db();await new Promise((res,rej)=>{const t=d.transaction("kv","readwrite").objectStore("kv").put(v,k);t.onsuccess=res;t.onerror=()=>rej(t.error);});return true;}catch(e){try{localStorage.setItem(k,v);return true}catch(_){return false}}}
   };
 })();
-
-
 
 /* ================= my looks (saved presets) ================= */
 let looks=[];
@@ -8130,6 +8835,7 @@ $("toneReset").addEventListener("click",e=>{
 $("colReset").addEventListener("click",e=>{e.stopPropagation();resetGroup(["temp","tint","sat","vib","skin","normHighlights","normMids","normShadows"]);["colour","wb"].forEach(key=>{state.curveAuto[key]=false;if(state.curveAutoData[key])state.curveAutoData[key].controlDelta=null;});syncAutoCurveButtons();pushHistory();});
 $("splitReset").addEventListener("click",e=>{e.stopPropagation();setS("shAmt",0);setS("hiAmt",0);state.shCol=hex2rgb("#406080");$("shCol").value="#406080";state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";render();pushHistory();});
 $("resetAll").addEventListener("click",()=>{
+  if(typeof clearSharpRegionPreview==="function")clearSharpRegionPreview();
   // Reset transient Auto Grade modes and their owned curve snapshot first.
   // Otherwise a later second click can restore a stale pre-reset curve.
   if(typeof clearAutoGradeState==="function")clearAutoGradeState();
@@ -8139,6 +8845,8 @@ $("resetAll").addEventListener("click",()=>{
   if(view)view.classList.remove("subject-select");
   $("autoGradeBtn").classList.remove("on");$("autoGradeBtn").setAttribute("aria-pressed","false");
   $("autoGradeSubjectBtn").classList.remove("on");$("autoGradeSubjectBtn").setAttribute("aria-pressed","false");
+  $("autoGradeSharpBtn").classList.remove("on");$("autoGradeSharpBtn").setAttribute("aria-pressed","false");
+  $("autoGradeAdaptiveBtn").classList.remove("on");$("autoGradeAdaptiveBtn").setAttribute("aria-pressed","false");
   sliders.forEach(id=>setS(id,DEF[id]||0));
   state.shCol=hex2rgb("#406080");$("shCol").value="#406080";
   state.hiCol=hex2rgb("#e0a060");$("hiCol").value="#e0a060";
@@ -8380,18 +9088,50 @@ function removeImage(idx){
   selectImage(Math.min(cur>idx?cur-1:cur,images.length-1));
 }
 
-
 /* ================= A/B grade slots ================= */
 const slots={A:null,B:null};let activeSlot="A";
+
+// Auto Grade is editor runtime metadata, not part of buildGradeData().
+// Store it with each A/B slot so the four mode buttons always reflect the
+// selected slot rather than the slot that was active immediately beforehand.
+function captureGradeSlotSnapshot(){
+  return {
+    gradeData:buildGradeData(),
+    autoGrade:{
+      baseline:cloneCurve(autoGradeBaselineCurve),
+      last:cloneCurve(autoGradeLastCurve),
+      imageIndex:autoGradeImageIndex,
+      appliedMode:autoGradeAppliedMode
+    }
+  };
+}
+function applyGradeSlotSnapshot(snapshot){
+  if(!snapshot)return;
+  // Accept legacy raw grade payloads as well as the current wrapped snapshot.
+  const gradeData=snapshot.gradeData||snapshot;
+  applyGradeData(gradeData);
+  restoreAutoGradeHistory({autoGrade:snapshot.autoGrade||null});
+}
+function syncGradeSlotButtons(){
+  $("slotA").classList.toggle("on",activeSlot==="A");
+  $("slotB").classList.toggle("on",activeSlot==="B");
+  $("slotA").setAttribute("aria-pressed",activeSlot==="A"?"true":"false");
+  $("slotB").setAttribute("aria-pressed",activeSlot==="B"?"true":"false");
+}
 function switchSlot(which){
   if(which===activeSlot)return;
-  slots[activeSlot]=buildGradeData();
+  // A subject outline and a one-second mask flash are transient interactions;
+  // never carry either into the other grade slot.
+  if(subjectGradeMode)setAutoGradeMode(null);
+  if(sharpRegionPending)clearSharpRegionPreview();
+
+  slots[activeSlot]=captureGradeSlotSnapshot();
   activeSlot=which;
-  $("slotA").classList.toggle("on",which==="A");
-  $("slotB").classList.toggle("on",which==="B");
+  syncGradeSlotButtons();
   updateSlotCopyControl();
-  if(slots[which])applyGradeData(slots[which]);
-  else slots[which]=buildGradeData();
+
+  if(slots[which])applyGradeSlotSnapshot(slots[which]);
+  else slots[which]=captureGradeSlotSnapshot();
 }
 function updateSlotCopyControl(){
   const target=activeSlot==="A"?"B":"A";
@@ -8405,13 +9145,14 @@ $("slotA").addEventListener("click",()=>switchSlot("A"));
 $("slotB").addEventListener("click",()=>switchSlot("B"));
 $("slotCopy").addEventListener("click",()=>{
   const target=activeSlot==="A"?"B":"A";
-  slots[target]=buildGradeData();
+  slots[target]=captureGradeSlotSnapshot();
   const label=$("slotCopyLabel");
   if(label){label.textContent="Copied";setTimeout(updateSlotCopyControl,900);}
 });
+syncGradeSlotButtons();
 updateSlotCopyControl();
 
-/* ================= save photo ================= */
+/* ================= browser image downloads ================= */
 function saveBlob(name,blob){
   // Image exports always use the browser download API; never invoke tauriSave()
   // because its native save dialog would interrupt the direct-download flow.
@@ -8454,17 +9195,6 @@ function gradedFilename(imgName){
   const original=String(imgName||"photo");
   const base=original.replace(/\.[^.]+$/,"")||"photo";
   return base+photoFmt().ext;
-}
-function buildPhotoExportLut(normalisationSource){
-  // Normalisation is image-dependent, so calculate it from the corresponding loaded preview.
-  updateNormalisationGains(normalisationSource||null);
-  const N=Math.max(33,+$("lutsize").value||33),plut=new Float32Array(N*N*N*3);   // photo output never uses a coarser grid than 33
-  let i=0;
-  for(let b=0;b<N;b++)for(let g=0;g<N;g++)for(let r=0;r<N;r++){
-    const o=grade(r/(N-1),g/(N-1),b/(N-1));
-    plut[i++]=o[0];plut[i++]=o[1];plut[i++]=o[2];
-  }
-  return {N,plut};
 }
 async function buildPhotoExportLutCooperative(normalisationSource,isCurrent,onProgress=()=>{}){
   updateNormalisationGains(normalisationSource||null);
@@ -8930,7 +9660,7 @@ function buildCurrentGradeCubeData(N){
   try{
     // A reusable .cube must encode only user-defined transforms, never the
     // currently selected photograph's image-adaptive channel normalisation.
-    // Per-photo exports still calculate their own gains in buildPhotoExportLut.
+    // Per-photo exports calculate their own image-adaptive gains in the export pipeline.
     applyingLookStack=false;
     normalisationGains=[1,1,1,1,1,1,1,1,1];
     let i=0;
@@ -8943,11 +9673,6 @@ function buildCurrentGradeCubeData(N){
     applyingLookStack=previousApplyingLookStack;
     normalisationGains=previousGains;
   }
-}
-function buildCurrentGradeCubeValues(N){
-  const data=buildCurrentGradeCubeData(N),lines=[];
-  for(let i=0;i<data.length;i+=3)lines.push(data[i].toFixed(6)+" "+data[i+1].toFixed(6)+" "+data[i+2].toFixed(6));
-  return lines;
 }
 function currentGradeCubeMetadata(){
   const rows=[];
@@ -9083,15 +9808,6 @@ $("lutname").addEventListener("input",updateRebate);
 $("lutsize").addEventListener("change",()=>{updateRebate();render();});
 updateRebate();
 /* ================= export look pack ================= */
-function cubeTextFromLutData(name,N,data,comments=""){
-  const safeName=String(name||"my_grade").replace(/["\r\n]/g,"");
-  const head=`# Created with LutMaster\n${comments}TITLE "${safeName}"\nLUT_3D_SIZE ${N}\nDOMAIN_MIN 0.0 0.0 0.0\nDOMAIN_MAX 1.0 1.0 1.0\n`;
-  const lines=[];
-  for(let i=0;i<N*N*N*3;i+=3){
-    lines.push((+data[i]).toFixed(6)+" "+(+data[i+1]).toFixed(6)+" "+(+data[i+2]).toFixed(6));
-  }
-  return head+lines.join("\n")+"\n";
-}
 function missingSavedStackItems(gradeData,available){
   const used=new Set(),missing=[];
   for(const saved of (gradeData.loadedLuts||[])){
@@ -9103,28 +9819,6 @@ function missingSavedStackItems(gradeData,available){
     if(found)used.add(found);else missing.push(saved.name||"unnamed LUT");
   }
   return missing;
-}
-function buildLegacySavedGradeCube(gradeData,N){
-  const liveData=buildGradeData(),liveStack=[...loadedLuts],liveGains=[...normalisationGains],liveApplying=applyingLookStack;
-  const missing=missingSavedStackItems(gradeData,liveStack);
-  if(missing.length)throw new Error("This older saved look references loaded LUTs that are not available: "+missing.join(", ")+". Reload those LUTs and save the look again to embed them.");
-  try{
-    const selected=[],used=new Set();
-    for(const saved of (gradeData.loadedLuts||[])){
-      let found=saved.id!=null?liveStack.find(item=>item.slotId===saved.id&&!used.has(item)):null;
-      if(!found)found=liveStack.find(item=>!used.has(item)&&item.type===saved.type&&item.name===saved.name);
-      if(found){selected.push(found);used.add(found);}
-    }
-    loadedLuts.splice(0,loadedLuts.length,...selected);
-    applyGradeData(gradeData);
-    updateNormalisationGains(cur>=0?images[cur].data:null);
-    return buildCurrentGradeCubeData(N);
-  }finally{
-    loadedLuts.splice(0,loadedLuts.length,...liveStack);
-    applyGradeData(liveData);
-    normalisationGains=liveGains;
-    applyingLookStack=liveApplying;
-  }
 }
 async function buildLegacySavedGradeCubeCooperative(gradeData,N,signal,onProgress){
   const liveData=buildGradeData(),liveStack=[...loadedLuts],liveGains=[...normalisationGains],liveApplying=applyingLookStack;
@@ -9445,8 +10139,8 @@ function gradeSamples(){
   }
   return{L:Float32Array.from(L),C:Float32Array.from(C),rgb};
 }
-const pctl=(a,q)=>Float32Array.from(a).sort()[Math.min(a.length-1,Math.floor(q*a.length))];
-const fracOf=(a,fn)=>{let n=0;for(const v of a)if(fn(v))n++;return n/a.length;};
+
+
 /**
  * Estimates one automatic adjustment from image samples.
  * Each key selects an estimator (for example WB, contrast or saturation);
@@ -9776,275 +10470,7 @@ document.addEventListener("visibilitychange",()=>{
 render();
 pushHistory();
 
-
-
 </script>
-
-
-
-
-<style id="topbar-ux-refinement-styles">
-  #appHeader{display:flex;align-items:center;gap:8px;min-width:0}
-  #appHeader .spacer{flex:1 1 auto}
-  #appHeader .topbar-direct-group{display:flex;align-items:center;gap:5px;padding:0 6px;border-right:1px solid var(--line)}
-  #appHeader .topbar-icon-btn{width:38px;height:38px;min-width:38px;min-height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel2);color:var(--dim);cursor:pointer;transition:background .12s,border-color .12s,color .12s,box-shadow .12s}
-  #appHeader .topbar-icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  #appHeader .topbar-icon-btn:hover:not(:disabled),#appHeader .topbar-menu.open>.topbar-menu-trigger{color:var(--orange-hi);border-color:var(--orange);background:var(--panel3)}
-  #appHeader .topbar-icon-btn:focus-visible,#appHeader .topbar-menu-item:focus-visible{outline:none;box-shadow:0 0 0 3px var(--ring)}
-  #appHeader .topbar-icon-btn:disabled{opacity:.35;cursor:not-allowed}
-  #appHeader .topbar-icon-btn.reset-all-btn:hover:not(:disabled){color:var(--red);border-color:var(--red);background:var(--panel3)}
-  #appHeader .topbar-icon-btn[aria-pressed="true"]{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
-  #appHeader .topbar-menu{position:relative;display:flex;align-items:center}
-  #appHeader .topbar-popover{display:none;position:absolute;z-index:120;right:0;top:calc(100% + 9px);min-width:224px;max-width:min(300px,calc(100vw - 20px));padding:7px;background:var(--panel);border:1px solid var(--line-hi);border-radius:var(--r-sm);box-shadow:0 12px 32px rgba(0,0,0,.48);color:var(--text)}
-  #appHeader .topbar-menu.open .topbar-popover{display:block}
-  #appHeader .topbar-menu-heading{padding:5px 8px 8px;margin-bottom:5px;border-bottom:1px solid var(--line);color:var(--dim);font:10px var(--mono);letter-spacing:.09em;text-transform:uppercase}
-  #appHeader .topbar-menu-item{width:100%;min-height:40px;height:auto;padding:8px 9px;display:flex;align-items:center;gap:10px;border:1px solid transparent;border-radius:3px;background:transparent;color:var(--text);font:12px var(--body);letter-spacing:0;text-transform:none;text-align:left;white-space:normal;cursor:pointer}
-  #appHeader .topbar-menu-item:hover:not(:disabled){background:var(--panel3);border-color:var(--line);color:var(--text)}
-  #appHeader .topbar-menu-item svg{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  #appHeader .topbar-menu-item:disabled{opacity:.4;cursor:not-allowed}
-  #appHeader .topbar-menu-item.danger{color:#e39a83}
-  #appHeader #previewQualityBtn[aria-pressed="true"]{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
-  #appHeader .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  #stagebar .stage-copy-btn{width:auto;min-width:78px;padding:0 8px;gap:6px;font:600 10px var(--mono);white-space:nowrap}
-  #stagebar .stage-copy-btn svg{width:18px;height:18px;flex:0 0 18px}
-  @media(max-width:760px){
-    #appHeader{gap:5px;padding:9px 10px;flex-wrap:wrap}
-    #appHeader h1{font-size:18px}
-    #appHeader p{display:none}
-    #appHeader .spacer{display:block;flex:1 1 auto}
-    #appHeader .topbar-direct-group{gap:3px;padding:0 4px}
-    #appHeader .topbar-icon-btn{width:40px;height:40px;min-width:40px;min-height:40px}
-    #appHeader .topbar-popover{right:0}
-  }
-  @media(max-width:420px){#appHeader{gap:4px;padding:8px}#appHeader h1{font-size:17px}#appHeader .topbar-icon-btn{width:36px;height:36px;min-width:36px;min-height:36px}}
-
-/* Unified top toolbar: relocated image-view and grade-slot controls. */
-#appHeader .toolbar-view-group,
-#appHeader .toolbar-grade-group{display:flex;align-items:center;gap:5px;padding:0 7px;border-right:1px solid var(--line);flex:0 0 auto}
-#appHeader .toolbar-view-group .topbar-icon-btn,
-#appHeader .toolbar-grade-group .topbar-icon-btn{width:38px;height:38px;min-width:38px;min-height:38px}
-#appHeader .toolbar-grade-group .stage-menu-slotrow{display:flex;align-items:center;gap:3px}
-#appHeader .toolbar-grade-group .stage-menu-slotrow button{width:32px;height:32px;min-width:32px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel2);color:var(--dim);font:600 12px var(--mono);cursor:pointer}
-#appHeader .toolbar-grade-group .stage-menu-slotrow button.on{color:var(--orange-hi);border-color:var(--orange);background:var(--orange-dim)}
-#appHeader .toolbar-grade-group .stage-copy-btn{width:auto;min-width:62px;padding:0 7px;gap:4px}
-#appHeader .toolbar-grade-group .stage-copy-btn svg{width:17px;height:17px}
-#appHeader .toolbar-grade-group #slotCopyLabel{font:10px var(--mono);white-space:nowrap}
-@media(max-width:760px){
- #appHeader .toolbar-view-group,#appHeader .toolbar-grade-group{gap:3px;padding:0 4px}
- #appHeader .toolbar-view-group .topbar-icon-btn,#appHeader .toolbar-grade-group .topbar-icon-btn{width:34px;height:34px;min-width:34px;min-height:34px}
- #appHeader .toolbar-grade-group .stage-menu-slotrow button{width:29px;height:29px;min-width:29px}
- #appHeader .toolbar-grade-group .stage-copy-btn{min-width:54px;padding:0 4px}
-}
-
-/* Match the vertical separators between toolbar control groups. */
-
-
-/* Consistent topbar group rhythm and separators. */
-#appHeader .topbar-direct-group,
-#appHeader .topbar-menu{
-  box-sizing:border-box;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  min-height:48px;
-  padding:0 12px;
-  margin:0;
-  border-right:1px solid var(--line);
-  flex:0 0 auto;
-}
-#appHeader .topbar-menu{position:relative}
-#appHeader .topbar-direct-group:last-of-type,
-#appHeader .topbar-export-group{margin-right:0}
-#appHeader .topbar-direct-group .topbar-icon-btn,
-#appHeader .topbar-menu > .topbar-menu-trigger{
-  width:40px;height:40px;min-width:40px;min-height:40px;
-  margin:0;
-}
-#appHeader .toolbar-grade-group .stage-menu-slotrow{gap:6px}
-#appHeader .toolbar-grade-group .stage-copy-btn{margin-left:2px}
-@media(max-width:760px){
-  #appHeader .topbar-direct-group,
-  #appHeader .topbar-menu{gap:5px;padding:0 7px;min-height:42px}
-  #appHeader .topbar-direct-group .topbar-icon-btn,
-  #appHeader .topbar-menu > .topbar-menu-trigger{
-    width:36px;height:36px;min-width:36px;min-height:36px;
-  }
-}
-
-/* Right-side action cluster: Project, Workspace and Export. */
-#appHeader .topbar-menu[data-topbar-menu]:has(#saveProj){
-  margin-left:0;
-}
-#appHeader .topbar-menu[data-topbar-menu]:has(#newimg),
-#appHeader .topbar-export-group{
-  margin-left:0;
-}
-#appHeader .topbar-menu[data-topbar-menu]:has(#saveProj),
-#appHeader .topbar-menu[data-topbar-menu]:has(#newimg),
-#appHeader .topbar-export-group{
-  border-right:1px solid var(--line);
-}
-#appHeader .topbar-export-group{border-right:0}
-
-/* Unified right-side action cluster: Project + Workspace + Export. */
-#appHeader .topbar-action-cluster{
-  display:flex;
-  align-items:center;
-  gap:0;
-  min-height:48px;
-  padding:0 8px;
-  margin:0;
-  border-left:0;
-  flex:0 0 auto;
-}
-#appHeader .topbar-action-cluster > .topbar-menu{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:0;
-  min-height:40px;
-  padding:0 8px;
-  margin:0;
-  border:0;
-  flex:0 0 auto;
-}
-#appHeader .topbar-action-cluster .topbar-menu-trigger{
-  width:40px;height:40px;min-width:40px;min-height:40px;
-}
-@media(max-width:760px){
-  #appHeader .topbar-action-cluster{min-height:42px;padding:0 4px}
-  #appHeader .topbar-action-cluster > .topbar-menu{padding:0 5px;min-height:36px}
-  #appHeader .topbar-action-cluster .topbar-menu-trigger{width:36px;height:36px;min-width:36px;min-height:36px}
-}
-
-/* One consistent control height across the complete top toolbar. */
-#appHeader .topbar-icon-btn,
-#appHeader .topbar-menu-trigger,
-#appHeader .toolbar-grade-group .stage-menu-slotrow button{
-  box-sizing:border-box;
-  height:40px !important;
-  min-height:40px !important;
-  max-height:40px !important;
-  align-self:center;
-}
-#appHeader .topbar-icon-btn,
-#appHeader .topbar-menu-trigger{
-  width:40px;
-  min-width:40px;
-}
-#appHeader .toolbar-grade-group .stage-menu-slotrow button{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-}
-@media(max-width:760px){
-  #appHeader .topbar-icon-btn,
-  #appHeader .topbar-menu-trigger,
-  #appHeader .toolbar-grade-group .stage-menu-slotrow button{
-    height:36px !important;
-    min-height:36px !important;
-    max-height:36px !important;
-  }
-  #appHeader .topbar-icon-btn,
-  #appHeader .topbar-menu-trigger{
-    width:36px;
-    min-width:36px;
-  }
-  #appHeader .toolbar-grade-group .stage-menu-slotrow button{
-    width:36px;
-    min-width:36px;
-  }
-}
-
-/* Compact the trailing edge of the toolbar. */
-#appHeader{padding-right:12px !important}
-#appHeader .topbar-action-cluster{padding-right:0}
-
-/* Project / Workspace / Export form one uninterrupted action cluster. */
-#appHeader .topbar-action-cluster > .topbar-menu,
-#appHeader .topbar-action-cluster > .topbar-menu:not(:last-child),
-#appHeader .topbar-action-cluster > .topbar-menu:last-child{
-  border:0 !important;
-  box-shadow:none !important;
-}
-#appHeader .topbar-action-cluster > .topbar-menu::before,
-#appHeader .topbar-action-cluster > .topbar-menu::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* Toolbar spacing refinement: consistent rhythm within and between groups. */
-#appHeader{
-  column-gap:0;
-}
-#appHeader > .topbar-direct-group{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding-left:10px;
-  padding-right:10px;
-  margin:0;
-  box-sizing:border-box;
-}
-#appHeader > .topbar-direct-group .topbar-icon-btn{
-  margin:0;
-  flex:0 0 auto;
-}
-#appHeader > .toolbar-view-group,
-#appHeader > .toolbar-grade-group{
-  padding-left:10px;
-  padding-right:10px;
-}
-#appHeader .toolbar-grade-group .stage-menu-slotrow{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  margin:0;
-}
-#appHeader .toolbar-grade-group .stage-copy-btn{
-  margin:0 0 0 2px;
-}
-#appHeader > .topbar-action-cluster{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:10px;
-  padding-left:12px;
-  padding-right:0;
-  margin:0;
-  box-sizing:border-box;
-}
-#appHeader .topbar-action-cluster > .topbar-menu{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:0;
-  margin:0;
-}
-#appHeader .topbar-action-cluster .topbar-menu-trigger{
-  margin:0;
-}
-@media(max-width:760px){
-  #appHeader > .topbar-direct-group{
-    gap:5px;
-    padding-left:6px;
-    padding-right:6px;
-  }
-  #appHeader > .toolbar-view-group,
-  #appHeader > .toolbar-grade-group{
-    padding-left:6px;
-    padding-right:6px;
-  }
-  #appHeader .toolbar-grade-group .stage-menu-slotrow{gap:4px}
-  #appHeader .toolbar-grade-group .stage-copy-btn{margin-left:1px}
-  #appHeader > .topbar-action-cluster{
-    gap:6px;
-    padding-left:8px;
-    padding-right:0;
-  }
-}
-</style>
-
 <script id="topbar-ux-refinement-behavior">
 (()=>{
   const menus=[...document.querySelectorAll('#appHeader [data-topbar-menu]')];
@@ -10060,6 +10486,5 @@ pushHistory();
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){const active=menus.find(menu=>menu.classList.contains('open'));if(active){close();active.querySelector('.topbar-menu-trigger')?.focus();}}});
 })();
 </script>
-
 </body>
 </html>
