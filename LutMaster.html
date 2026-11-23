@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>LutMaster</title>
-<!-- LutMaster v252 — Zones tooltip aligned with Subject. -->
+<!-- LutMaster v253 — split comparison clipping repaired in Std and Full. -->
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&amp;family=Archivo:wght@400;500&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <style>
@@ -2636,6 +2636,30 @@ function previewNeedsHires(){
   // the original. Standard mode keeps its previous adaptive-preview behaviour.
   return previewQuality.full||(!showOriginal&&previewZoom.scale>=1.35);
 }
+function updateWipeTileClip(tile){
+  if(!tile||!tile.dataset.tileMode)return;
+  if(!$("wipeOn").checked){
+    tile.style.clipPath="none";
+    return;
+  }
+  const left=Number(tile.dataset.tileLeft||0);
+  const width=Number(tile.dataset.tileWidth||0);
+  if(!(width>0)){
+    tile.style.clipPath="none";
+    return;
+  }
+  // wipeX is in full-image coordinates. Convert the global cut position to
+  // this tile's local pixel coordinates instead of applying a percentage to
+  // every tile independently (which creates repeated split lines per tile).
+  const split=wipeX*view.offsetWidth;
+  const localCut=Math.max(0,Math.min(width,split-left));
+  if(tile.dataset.tileMode==="original"){
+    const hiddenRight=Math.max(0,width-localCut);
+    tile.style.clipPath=`inset(0 ${hiddenRight}px 0 0)`;
+  }else{
+    tile.style.clipPath=`inset(0 0 0 ${localCut}px)`;
+  }
+}
 function scheduleHiresTiles(){
   if(!hiresLayer||cur<0){clearBackgroundProgress("hires");return;}
   clearTimeout(hiresRenderTimer);
@@ -2651,8 +2675,8 @@ function scheduleHiresTiles(){
 }
 async function renderVisibleHiresTiles(token){
   const im=images[cur];
-  const wipeTiles=previewQuality.full&&$("wipeOn").checked;
-  const originalTiles=showOriginal&&!$("wipeOn").checked;
+  const wipeTiles=$("wipeOn").checked;
+  const originalTiles=showOriginal&&!wipeTiles;
   const tileModes=wipeTiles?["original","graded"]:[originalTiles?"original":"graded"];
   if(!im?.hiresSource||(!tileModes.includes("original")&&!currentPreviewLut)||token!==hiresRenderToken)return;
   const source=im.hiresSource,ow=im.originalWidth,oh=im.originalHeight;
@@ -2695,6 +2719,7 @@ async function renderVisibleHiresTiles(token){
       let item=hiresTileCache.get(key);
       if(item){
         item.used=performance.now();
+        updateWipeTileClip(item.canvas);
         if(!item.canvas.isConnected)hiresLayer.appendChild(item.canvas);
         continue;
       }
@@ -2714,15 +2739,18 @@ async function renderVisibleHiresTiles(token){
         // Original tiles bypass the LUT. In wipe mode each source mode is
         // clipped independently so the native-source half is not hidden.
         tc.putImageData(displayTile,0,0);
-        tile.style.left=(t.sx/ow*baseW)+"px";
-        tile.style.top=(t.sy/oh*baseH)+"px";
-        tile.style.width=(t.sw/ow*baseW)+"px";
-        tile.style.height=(t.sh/oh*baseH)+"px";
-        tile.style.clipPath=wipeTiles
-          ?(tileMode==="original"?"inset(0 calc(100% - var(--wipe-position)) 0 0)":"inset(0 0 0 var(--wipe-position))")
-          :"none";
+        const tileLeft=t.sx/ow*baseW,tileTop=t.sy/oh*baseH;
+        const tileWidth=t.sw/ow*baseW,tileHeight=t.sh/oh*baseH;
+        tile.style.left=tileLeft+"px";
+        tile.style.top=tileTop+"px";
+        tile.style.width=tileWidth+"px";
+        tile.style.height=tileHeight+"px";
+        tile.dataset.tileLeft=String(tileLeft);
+        tile.dataset.tileTop=String(tileTop);
+        tile.dataset.tileWidth=String(tileWidth);
         tile.dataset.tileMode=tileMode;
         tile.dataset.tileKey=key;
+        updateWipeTileClip(tile);
         hiresLayer.appendChild(tile);cacheHiresTile(key,tile);
       }catch(err){
         console.warn("High-resolution preview tile skipped:",err);
@@ -3487,7 +3515,7 @@ function setOriginalPreview(active){
   const hasClipOverlay=!!clipOverlay&&showClipOverlay;
   const showOriginalHires=previewQuality.full&&next&&!wipe&&!!im.hiresSource;
   hiresLayer.style.display=next&&!wipe&&!hasClipOverlay&&!showOriginalHires?"none":"block";
-  hiresLayer.style.clipPath=wipe?`inset(0 0 0 ${wipeX*100}%)`:"none";
+  hiresLayer.style.clipPath="none";
   positionWipe();
   scheduleHiresTiles();
 }
@@ -3780,9 +3808,12 @@ function drawRamp(){
   }
 }
 function positionWipe(){
-  // High-resolution wipe tiles are clipped independently by source mode:
-  // original tiles reveal the left side, graded tiles reveal the right side.
+  // The parent overlay must remain un-clipped: original and graded tile
+  // canvases each expose only the side belonging to their source mode.
+  hiresLayer.style.clipPath="none";
   hiresLayer.style.setProperty("--wipe-position",(wipeX*100)+"%");
+  for(const tile of hiresLayer.querySelectorAll("canvas[data-tile-mode]"))
+    updateWipeTileClip(tile);
   const wl=$("wipeline"),r=view.getBoundingClientRect(),wr=$("viewwrap").getBoundingClientRect();
   wl.style.display=$("wipeOn").checked?"block":"none";
   wl.style.left=(r.left-wr.left+wipeX*r.width)+"px";
@@ -7102,7 +7133,8 @@ view.addEventListener("pointerdown",e=>{
   }
   if($("wipeOn").checked){
     wipeDragging=true;view.setPointerCapture(e.pointerId);
-    const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
+    const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);
+    positionWipe();render();
   }else{setOriginalPreview(true);}
 });
 view.addEventListener("pointermove",e=>{
@@ -7131,7 +7163,8 @@ view.addEventListener("pointermove",e=>{
     return;
   }
   if(!wipeDragging)return;
-  const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);render();
+  const point=previewPoint(e);wipeX=clamp(point.x/view.offsetWidth);
+  positionWipe();render();
 });
 function finishSubjectStroke(e){
   if(!subjectGradeMode||!subjectGradeDrawing)return;
