@@ -5,7 +5,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>LutMaster</title>
-<!-- LutMaster v279 — Focus-plane detection v5; preserves v278 fullscreen re-entry -->
+<!-- LutMaster v297 rollback — guard redundant Auto Exposure after Auto Grade -->
 <style>
   /* 1. Theme tokens and global layout primitives */
   :root{
@@ -1366,10 +1366,10 @@
 <div aria-label="Automatic tonal grading" class="auto-correction-block">
 <div class="auto-correction-heading">Auto Grade</div>
 <div class="auto-correction-group auto-grade-tools">
-<button aria-pressed="false" class="btn" disabled="" id="autoGradeBtn" title="Optimize tone and contrast across the entire image." type="button">Global</button>
-<button aria-pressed="false" class="btn" disabled="" id="autoGradeSubjectBtn" title="Select the subject manually; grade it while preserving scene brightness." type="button">Manual</button>
-<button aria-pressed="false" class="btn" disabled="" id="autoGradeSharpBtn" title="Detect the main subject’s focus plane, then optimize tone and contrast." type="button">Subject</button>
-<button aria-pressed="false" class="btn" disabled="" id="autoGradeAdaptiveBtn" title="Detect zones, then optimize tone and contrast." type="button">Zones</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeBtn" title="Analyse the full image and set editable Exposure, Contrast, Highlights, Shadows, Blacks and Gamma controls." type="button">Global</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeSubjectBtn" title="Select a region of interest; derive editable tone controls from it and apply them globally." type="button">Manual</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeSharpBtn" title="Detect the main subject’s focus plane, optimize its tonal range, and set editable Exposure and Blacks controls." type="button">Subject</button>
+<button aria-pressed="false" class="btn" disabled="" id="autoGradeAdaptiveBtn" title="Detect tonal zones, optimize their tonal range, and set editable Exposure and Blacks controls." type="button">Zones</button>
 </div>
 <div id="subjectGradeControls" style="display:none;gap:6px;align-items:center;margin:0 0 8px">
 <span class="tiny" id="subjectGradeHint">Draw a closed outline around the subject. Double-click to finish.</span>
@@ -1645,7 +1645,7 @@
 <li><strong>Before / after:</strong> Hold <kbd>Space</kbd> to see the original photo; release it to return to your edit. Press <kbd>S</kbd> for a movable split line between original and edited.</li>
 <li><strong>Warnings and histogram:</strong> <kbd>C</kbd> marks areas pushed to pure black or white. <kbd>H</kbd> shows a graph of how much dark, bright and coloured information the photo contains.</li>
 <li><strong>Preview quality:</strong> <strong>Std</strong> is faster while editing. <strong>Full</strong> uses the original image resolution where possible; it needs more memory and processing.</li>
-<li><strong>Fullscreen:</strong> The ⛶ button expands LutMaster to fill the screen. The app layout remains expanded when a file picker temporarily exits browser fullscreen.</li>
+<li><strong>Fullscreen:</strong> The ⛶ button expands LutMaster to fill the screen. The button always reflects the browser’s actual fullscreen state. Some mobile browsers require a new tap to re-enter fullscreen after a file picker.</li>
 </ul>
 <div class="help-note">Your photos are processed in the browser. They are not uploaded by LutMaster.</div>
 </section>
@@ -1669,10 +1669,10 @@
 <h4>Automatic corrections</h4>
 <p>These buttons analyse the selected photo and suggest settings. They are starting points: check the result and adjust it yourself.</p>
 <ul>
-<li><strong>Global:</strong> Automatically adjusts the overall tone. Click it again to remove that automatic result.</li>
-<li><strong>Auto Grade – Subject:</strong> Briefly previews the detected focus plane as an amber overlay for one second, then automatically applies a Master gradation curve based on its luminance distribution while protecting full-frame shadows/highlights. Detection combines multiscale edge acutance with spatially connected focus regions; it is not semantic object recognition. Click again to remove the result.</li>
-<li><strong>Zones:</strong> Segments the luminance histogram into one to six contiguous tonal zones. The zone count is selected from peak separation, valley depth and the pixel share of each region; weak or insignificant peaks are merged. A restrained global contrast adjustment is combined with smooth local contrast. Local correction strength is mildly scaled by each zone's relative pixel area; detection and boundaries remain unchanged. Click again to remove the result.</li>
-<li><strong>Manual:</strong> Draw a closed line around the subject, double-click or press <kbd>Enter</kbd> to finish, then press <strong>Apply</strong>. LutMaster increases contrast on the subject while trying to keep the rest of the scene's brightness. <strong>Cancel</strong> discards the selection.</li>
+<li><strong>Global:</strong> Analyses the full image and writes Exposure, Contrast, Highlights, Shadows, Blacks and Gamma directly into the corresponding editable Tone sliders. Click Global again to restore the values from before the automatic adjustment; manually editing an output slider commits the current values instead.</li>
+<li><strong>Auto Grade – Subject:</strong> Briefly previews the detected focus plane as an amber overlay for one second, then applies a Master curve based on its luminance distribution. Editable Exposure and Blacks are calculated from the detected focus-plane samples; the full frame is used only if the focus mask contains too few samples. Full-frame shadows/highlights remain protected. Detection combines multiscale edge acutance with spatially connected focus regions; it is not semantic object recognition. Click again to remove the curve and restore unedited Exposure/Blacks values.</li>
+<li><strong>Zones:</strong> Segments the luminance histogram into one to six contiguous tonal zones. The zone count is selected from peak separation, valley depth and the pixel share of each region; weak or insignificant peaks are merged. A stronger global tonal adjustment is combined with local contrast separation for each detected zone. Editable Exposure and Blacks are calculated from full-frame samples after the proposed curve has been applied. Smooth transitions and monotonic output are preserved. Click again to remove the curve and restore unedited Exposure/Blacks values.</li>
+<li><strong>Manual:</strong> Draw a polygon around the target region, double-click or press <kbd>Enter</kbd> to finish, then press <strong>Apply</strong>. Exposure, Contrast, Highlights, Shadows, Blacks and Gamma are calculated from samples inside the polygon, but the resulting controls affect the full image. The polygon defines the analysis region; it is not a local mask. <strong>Cancel</strong> discards the selection.</li>
 <li><strong>Exposure:</strong> Finds a starting overall brightness. <strong>Recover</strong> tries to bring back bright and dark detail.</li>
 <li><strong>Shadow detail / Highlight roll-off:</strong> Opens up dark detail / softens very bright tones.</li>
 <li><strong>Colour / White bal.:</strong> Estimates colour strength / removes an overall colour cast.</li>
@@ -1751,7 +1751,7 @@
 <script>
 "use strict";
 /*
- * LUTMASTER — APPLICATION MAP
+ * LUTMASTER 281 — APPLICATION MAP
  * -------------------------------------------------------------------------
  * 1. Core state and colour science       state, curve maths, colour helpers
  * 2. Image pipeline and preview          grade(), LUT generation, render()
@@ -1820,8 +1820,10 @@ let fullscreenReentryListenersInstalled=false;
 function isNativeFullscreen(){
   return !!(document.fullscreenElement||document.webkitFullscreenElement);
 }
+// UI state must mirror the browser's real fullscreen state. The app-level
+// CSS session is intentionally tracked separately as a layout fallback.
 function isFullscreen(){
-  return fullscreenSessionActive||isNativeFullscreen();
+  return isNativeFullscreen();
 }
 function setFullscreenSession(active){
   fullscreenSessionActive=!!active;
@@ -1830,7 +1832,9 @@ function setFullscreenSession(active){
   syncFullscreenButton();
 }
 function syncFullscreenButton(){
-  const active=isFullscreen();
+  // Never show an active/pressed fullscreen button when Android/browser chrome
+  // has revoked native fullscreen, even if the app layout fallback remains.
+  const active=isNativeFullscreen();
   const label=fullscreenBtn.querySelector("span");
   if(label) label.textContent=active?"Exit fullscreen":"Enter fullscreen";
   fullscreenBtn.setAttribute("aria-label",active?"Exit fullscreen":"Enter fullscreen");
@@ -2495,7 +2499,9 @@ function syncIndependentCorrectionButtons(){
 const independentCorrectionButtons={
   highlight:$("autoHighlight"),shadow:$("autoShadow"),skin:$("autoSkin"),lumaSat:$("autoLumaSat")
 };
+let suppressGlobalAutoGradeManualCommit=false;
 function setControlValue(id,value){
+  if(!suppressGlobalAutoGradeManualCommit)markGlobalAutoGradeAsManual(id);
   const el=$(id);
   const v=Math.max(+el.min,Math.min(+el.max,value));
   state[id]=v;el.value=v;
@@ -2836,7 +2842,7 @@ const previewQuality={full:false};
 let currentPreviewLut=null,currentPreviewLutSize=0,previewGradeRevision=0;
 const hiresTileCache=new Map();
 const HIRES_TILE_SIZE=1024;
-const HIRES_CACHE_LIMIT=Math.round(Math.min(192*1024*1024,Math.max(32*1024*1024,getRuntimeMemoryBudgetBytes()*.06)));
+const HIRES_CACHE_LIMIT=128*1024*1024; // bounded cache policy, not an import/export RAM budget
 let hiresRenderTimer=null,hiresRenderToken=0;
 const images=[];
 let cur=-1,showOriginal=false,wipeX=0.5,wipeDragging=false;
@@ -3201,55 +3207,23 @@ function fail(msg){
   clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",6000);
 }
 
-// 100 MP is the product ceiling, not a promise that every device can export it.
-// Preview pixels stay small; native-source display and export use bounded tiles.
+// Source dimensions/file size remain bounded. No estimated RAM budget is used;
+// actual browser canvas, decoder and encoder allocation failures are reported.
 const MAX_SOURCE_PIXELS=100_000_000;
 const MAX_SOURCE_DIMENSION=20_000;
 const MAX_SOURCE_FILE_BYTES=250*MiB;
 const SOURCE_BYTES_PER_PIXEL_ESTIMATE=5; // decoded RGBA plus decoder/bitmap overhead
-const EXPORT_EXTRA_BYTES_PER_PIXEL_ESTIMATE=8; // output canvas + browser encoder working set
-function isLikelyMobileRuntime(){
-  const ua=navigator.userAgent||"";
-  return !!(navigator.userAgentData?.mobile||/Android|iPhone|iPad|iPod/i.test(ua)||
-    (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1));
-}
-function getAppMemoryBudgetBytes(deviceMemoryGiB=navigator.deviceMemory,mobile=isLikelyMobileRuntime()){
-  // navigator.deviceMemory is a coarse estimate of total RAM, not free RAM.
-  // Reserve most memory for the browser, OS, decoded sources and other tabs.
-  const reported=Number(deviceMemoryGiB);
-  const fallbackTotalGiB=mobile?2:4;
-  const totalGiB=Number.isFinite(reported)&&reported>0?reported:fallbackTotalGiB;
-  const allocationFraction=mobile?0.20:0.30;
-  const minimum=mobile?256*MiB:384*MiB;
-  const conservative=Math.max(minimum,totalGiB*allocationFraction*GiB);
-  return Math.min(2*GiB,conservative);
-}
-function getRuntimeMemoryBudgetBytes(){return getAppMemoryBudgetBytes();}
 function estimateDecodedImageBytes(width,height){return Math.ceil(width*height*SOURCE_BYTES_PER_PIXEL_ESTIMATE);}
 function getLoadedSourceMemoryBytes(records=images){
   return records.reduce((sum,im)=>sum+(im.memoryEstimateBytes||estimateDecodedImageBytes(im.originalWidth||im.data?.width||1,im.originalHeight||im.data?.height||1)),0);
 }
-function validateImageMemoryBudget(width,height,currentBytes=getLoadedSourceMemoryBytes(),budgetBytes=getRuntimeMemoryBudgetBytes(),label="Image"){
-  const estimate=estimateDecodedImageBytes(width,height),required=currentBytes+estimate;
-  if(!Number.isFinite(required)||required>budgetBytes){
-    const requiredMiB=Math.ceil(required/MiB),budgetMiB=Math.floor(budgetBytes/MiB);
-    throw new Error(label+" would exceed LutMaster's estimated memory budget ("+requiredMiB+" MiB required, "+budgetMiB+" MiB available). Remove images or use smaller source files.");
-  }
-  return {estimatedBytes:estimate,totalEstimatedBytes:required,budgetBytes};
+// Retained only as an estimate for bookkeeping/cache heuristics. It never
+// rejects an image, project or export based on an estimated RAM allowance.
+function estimateImageMemoryUse(width,height,currentBytes=getLoadedSourceMemoryBytes()){
+  const estimate=estimateDecodedImageBytes(width,height);
+  return {estimatedBytes:estimate,totalEstimatedBytes:currentBytes+estimate};
 }
-function estimatePhotoExportWorkingSetBytes(width,height,loadedSourceBytes=getLoadedSourceMemoryBytes()){
-  return loadedSourceBytes+width*height*EXPORT_EXTRA_BYTES_PER_PIXEL_ESTIMATE+64*MiB;
-}
-function validatePhotoExportMemoryBudget(width,height,loadedSourceBytes=getLoadedSourceMemoryBytes(),budgetBytes=getRuntimeMemoryBudgetBytes(),label="Photo export"){
-  const estimatedBytes=estimatePhotoExportWorkingSetBytes(width,height,loadedSourceBytes);
-  if(!Number.isFinite(estimatedBytes)||estimatedBytes>budgetBytes){
-    throw new Error(label+" is estimated to require "+Math.ceil(estimatedBytes/MiB)+" MiB, exceeding the current "+Math.floor(budgetBytes/MiB)+" MiB working-set budget. Remove other images or export a smaller source.");
-  }
-  return {estimatedBytes,budgetBytes};
-}
-function getPhotoExportTileSize(budgetBytes=getRuntimeMemoryBudgetBytes()){
-  return budgetBytes>=1024*MiB?1024:512;
-}
+function getPhotoExportTileSize(){return 1024;}
 async function isAnimatedImageBlob(blob){
   if(!blob||typeof blob.slice!=="function")return false;
   const head=new Uint8Array(await blob.slice(0,65536).arrayBuffer());
@@ -3323,7 +3297,7 @@ async function createImageFingerprint(source){
 function createImageRecord(idata,name,srcURL,hiresSource=null,currentBytes=getLoadedSourceMemoryBytes(),fingerprint=null){
   const sourceDimensions=validateImageDimensions(hiresSource?(hiresSource.naturalWidth||hiresSource.width||idata.width):idata.width,
     hiresSource?(hiresSource.naturalHeight||hiresSource.height||idata.height):idata.height,"Source image");
-  const memoryEstimate=validateImageMemoryBudget(sourceDimensions.width,sourceDimensions.height,currentBytes,getRuntimeMemoryBudgetBytes(),"Image "+(name||"source"));
+  const memoryEstimate=estimateImageMemoryUse(sourceDimensions.width,sourceDimensions.height,currentBytes);
   validateImageDimensions(idata.width,idata.height,"Preview image");
   const thumb=document.createElement("canvas"),tw=150,thh=Math.max(1,Math.round(idata.height*tw/idata.width));
   thumb.width=tw;thumb.height=thh;thumb.title=name;
@@ -3488,7 +3462,7 @@ function loadFiles(list){
         imageLoadCurrentFraction=.78;
         updateImageLoadProgress("Preparing preview: "+file.name,imageLoadCurrentFraction);
         const sourceDimensions=validateImageDimensions(img.naturalWidth||img.width,img.naturalHeight||img.height,"Image "+file.name);
-        validateImageMemoryBudget(sourceDimensions.width,sourceDimensions.height,getLoadedSourceMemoryBytes(),getRuntimeMemoryBudgetBytes(),"Image "+file.name);
+        estimateImageMemoryUse(sourceDimensions.width,sourceDimensions.height,getLoadedSourceMemoryBytes());
         const maxW=1100,sc=Math.min(1,img.width>0?maxW/img.width:1);
         const w=Math.max(1,Math.round(img.width*sc)),h=Math.max(1,Math.round(img.height*sc));
         const sc2=document.createElement("canvas");sc2.width=w;sc2.height=h;
@@ -4847,9 +4821,17 @@ function markAutoCurveAsManual(){
 /* ================= one-shot Auto Grade tools ================= */
 let subjectGradeMode=false,subjectGradePoints=[],subjectGradeApplied=false,subjectGradeDrawing=false,subjectGradeClosed=false;
 let autoGradeBaselineCurve=null,autoGradeLastCurve=null,autoGradeImageIndex=-1,autoGradeAppliedMode=null;
+// Global Auto Grade writes directly to visible Tone controls. Keep only the
+// pre-run values needed for its one-click reset; the applied grade itself
+// remains ordinary editable slider state.
+let autoGradeControlBaseline=null;
+const GLOBAL_AUTO_CONTROL_IDS=["exposure","contrast","highlights","shadows","blacks","gamma"];
+// Both Global and Manual use the same six editable Tone controls. The analysis
+// population differs: full frame for Global, polygon ROI for Manual.
+const MANUAL_ROI_AUTO_CONTROL_IDS=[...GLOBAL_AUTO_CONTROL_IDS];
 let sharpRegionPending=null;
 function cloneCurve(c){return Array.isArray(c)?c.map(p=>({x:+p.x,y:+p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})})):null;}
-function clearAutoGradeState(){autoGradeBaselineCurve=null;autoGradeLastCurve=null;autoGradeImageIndex=-1;autoGradeAppliedMode=null;}
+function clearAutoGradeState(){autoGradeBaselineCurve=null;autoGradeLastCurve=null;autoGradeImageIndex=-1;autoGradeAppliedMode=null;autoGradeControlBaseline=null;}
 function drawSharpRegionPreview(){
   if(!subjectSelectionCtx)return;
   const c=subjectSelectionOverlay,ox=subjectSelectionCtx,pending=sharpRegionPending;
@@ -4907,18 +4889,72 @@ function clearSharpRegionPreview(){
     $("autoGradeSharpBtn").setAttribute("aria-pressed","false");
   }
 }
+function setAutoGradeButtonsActive(mode=null){
+  const map={global:$('autoGradeBtn'),manual:$('autoGradeSubjectBtn'),sharp:$('autoGradeSharpBtn'),adaptive:$('autoGradeAdaptiveBtn')};
+  for(const [key,button] of Object.entries(map)){
+    const active=key===mode;
+    button.classList.toggle('on',active);
+    button.setAttribute('aria-pressed',active?'true':'false');
+  }
+  // Auto Grade already calculates and commits Exposure. Prevent a second,
+  // independent Auto Exposure lift while any Auto Grade result is active.
+  if(typeof syncAutoExposureAvailability==='function')syncAutoExposureAvailability();
+}
+function restoreAutoGradeControlValues(){
+  if(!autoGradeControlBaseline)return false;
+  suppressGlobalAutoGradeManualCommit=true;
+  try{
+    for(const [id,value] of Object.entries(autoGradeControlBaseline)){
+      if(Number.isFinite(value)&&id in state)setControlValue(id,value);
+    }
+  }finally{suppressGlobalAutoGradeManualCommit=false;}
+  autoGradeControlBaseline=null;
+  return true;
+}
+function restoreGlobalAutoGradeControls(){
+  if(!restoreAutoGradeControlValues())return false;
+  if(['global','manual','subject','sharp','adaptive'].includes(autoGradeAppliedMode)){
+    autoGradeAppliedMode=null;autoGradeImageIndex=-1;
+  }
+  setAutoGradeButtonsActive(null);
+  render();
+  return true;
+}
+function markGlobalAutoGradeAsManual(id){
+  if(!autoGradeControlBaseline||!(id in autoGradeControlBaseline))return;
+  // Subject and Zones own two visible Tone controls in addition to their
+  // Master curve. Editing either control commits that pair, but must not
+  // discard ownership of the independently editable curve.
+  if(['sharp','adaptive'].includes(autoGradeAppliedMode)){
+    autoGradeControlBaseline=null;
+    return;
+  }
+  if(!['global','manual','subject'].includes(autoGradeAppliedMode))return;
+  // Once a user edits an Auto Grade output control, keep the resulting
+  // values as the new manual baseline. A later click must not erase that edit.
+  autoGradeControlBaseline=null;
+  autoGradeAppliedMode=null;autoGradeImageIndex=-1;
+  setAutoGradeButtonsActive(null);
+}
 function resetAutoGrade(mode){
-  if(!autoGradeBaselineCurve||autoGradeAppliedMode!==mode)return false;
-  // The Master RGB curve is shared by the project, not owned by the image
-  // currently displayed. Always restore the captured pre-Auto-Grade curve,
-  // even when the user has switched to another image since applying it.
-  curves.m=cloneCurve(autoGradeBaselineCurve);
-  clearAutoGradeState();
-  $('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');
-  $('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');
-  $('autoGradeSharpBtn').classList.remove('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','false');
-  $('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');
-  rebuildCurves();drawCurves();render();pushHistory();return true;
+  if(autoGradeAppliedMode!==mode)return false;
+  if(mode==='global'||mode==='manual'||mode==='subject'){
+    if(!restoreGlobalAutoGradeControls())return false;
+  }else{
+    if(!autoGradeBaselineCurve)return false;
+    // Curve-based Subject/Zones modes also own Exposure and Blacks. Restore
+    // those controls independently before clearing the combined Auto Grade.
+    if(autoGradeControlBaseline)restoreAutoGradeControlValues();
+    // The Master RGB curve is shared by the project, not owned by the image
+    // currently displayed. Always restore the captured pre-Auto-Grade curve,
+    // even when the user has switched to another image since applying it.
+    curves.m=cloneCurve(autoGradeBaselineCurve);
+    clearAutoGradeState();
+    rebuildCurves();drawCurves();
+    setAutoGradeButtonsActive(null);
+    render();
+  }
+  pushHistory();return true;
 }
 function setAutoGradeMode(mode){
   if(mode!=='sharp'&&sharpRegionPending)clearSharpRegionPreview();
@@ -4935,10 +4971,49 @@ function setAutoGradeMode(mode){
   view.classList.toggle('subject-select',subjectGradeMode);
   subjectGradePoints=[];subjectGradeApplied=false;subjectGradeClosed=false;subjectGradeDrawing=false;render();
 }
+function withAutoGradeBaseline(callback){
+  // Analyse every curve-based mode against the pre-Auto-Grade state. Temporary
+  // state changes are restored even when analysis throws or returns no result.
+  const savedCurve=cloneCurve(curves.m);
+  const savedControls={};
+  for(const id of GLOBAL_AUTO_CONTROL_IDS)savedControls[id]=state[id];
+  const controlMode=['global','manual','subject','sharp','adaptive'].includes(autoGradeAppliedMode);
+  const controlBaseline=controlMode&&autoGradeControlBaseline?{...autoGradeControlBaseline}:null;
+  const curveBaseline=(autoGradeBaselineCurve&&['sharp','adaptive'].includes(autoGradeAppliedMode))
+    ?cloneCurve(autoGradeBaselineCurve):savedCurve;
+  try{
+    curves.m=cloneCurve(curveBaseline);
+    if(controlBaseline){
+      for(const [id,value] of Object.entries(controlBaseline))if(id in state&&Number.isFinite(value))state[id]=value;
+    }
+    rebuildCurves();
+    return callback({baselineCurve:cloneCurve(curves.m),controlBaseline});
+  }finally{
+    curves.m=savedCurve;
+    for(const id of GLOBAL_AUTO_CONTROL_IDS)state[id]=savedControls[id];
+    rebuildCurves();
+  }
+}
+function buildCompositeLumaCurveLUT(){
+  // Approximate the complete RGB Master+channel curve with a neutral-axis
+  // luminance LUT. This keeps generated handles in the true curve-input domain.
+  const out=new Float32Array(256),enabled=state.enabled.curves!==false;
+  for(let i=0;i<256;i++){
+    let r=i/255,g=r,b=r;
+    if(enabled){
+      const m=lutM[i];
+      r=lutR[Math.max(0,Math.min(255,Math.round(m*255)))];
+      g=lutG[Math.max(0,Math.min(255,Math.round(m*255)))];
+      b=lutB[Math.max(0,Math.min(255,Math.round(m*255)))];
+    }
+    out[i]=clamp(.2126*r+.7152*g+.0722*b);
+  }
+  return out;
+}
 function tonalSamples(src,points=null,baseLut=null){
+  if(!src||!src.data||!src.width||!src.height)return null;
   const d=src.data,w=src.width,h=src.height,hist=new Uint32Array(256),total=w*h;
-  let count=0;
-  // Selection vertices and sampled pixels share normalized source-image coordinates.
+  let count=0,sampled=0;
   const inside=(nx,ny)=>{
     if(!points||points.length<3)return true;
     let hit=false;
@@ -4951,59 +5026,85 @@ function tonalSamples(src,points=null,baseLut=null){
     }
     return hit;
   };
-  const stride=Math.max(1,Math.floor(Math.sqrt(total/1200000)));
-  for(let y=0;y<h;y+=stride)for(let x=0;x<w;x+=stride){
-    const nx=(x+.5)/w,ny=(y+.5)/h;
-    if(points&&!inside(nx,ny))continue;
-    const i=(y*w+x)*4;
-    let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
-    if(state.logMode)[r,g,b]=applyV709(r,g,b);
-    // Apply the existing user curve before measuring the distribution.
-    if(baseLut){r=baseLut[Math.round(clamp(r)*255)];g=baseLut[Math.round(clamp(g)*255)];b=baseLut[Math.round(clamp(b)*255)];}
-    const l=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
-    hist[l]++;count++;
-  }
+  // Fixed budget keeps analysis bounded on high-resolution phone images while
+  // a deterministic within-cell offset avoids regular-grid texture aliasing.
+  const stride=Math.max(1,Math.ceil(Math.sqrt(total/60000)));
+  const curveEnabled=state.enabled.curves!==false;
+  state.enabled.curves=false;
+  try{
+    for(let gy=0;gy<h;gy+=stride){
+      const ty=Math.floor(gy/stride);
+      for(let gx=0;gx<w;gx+=stride){
+        const tx=Math.floor(gx/stride);
+        const ox=Math.min(stride-1,Math.floor((((tx*17+ty*29+11)%31)/31)*stride));
+        const oy=Math.min(stride-1,Math.floor((((tx*23+ty*13+7)%29)/29)*stride));
+        const x=Math.min(w-1,gx+ox),y=Math.min(h-1,gy+oy);
+        sampled++;
+        if(points&&!inside((x+.5)/w,(y+.5)/h))continue;
+        const i=(y*w+x)*4;
+        if(i+3>=d.length||d[i+3]<128)continue;
+        let [r,g,b]=grade(d[i]/255,d[i+1]/255,d[i+2]/255);
+        if(curveEnabled){
+          const ri=Math.max(0,Math.min(255,Math.round(r*255)));
+          const gi=Math.max(0,Math.min(255,Math.round(g*255)));
+          const bi=Math.max(0,Math.min(255,Math.round(b*255)));
+          r=lutR[Math.max(0,Math.min(255,Math.round(lutM[ri]*255)))];
+          g=lutG[Math.max(0,Math.min(255,Math.round(lutM[gi]*255)))];
+          b=lutB[Math.max(0,Math.min(255,Math.round(lutM[bi]*255)))];
+        }
+        const l=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
+        hist[l]++;count++;
+      }
+    }
+  }finally{state.enabled.curves=curveEnabled;}
   if(!count)return null;
   const pct=q=>curvePercentile(hist,count,q);
-  let mode=0;for(let i=1;i<256;i++)if(hist[i]>hist[mode])mode=i;
-  // A lightly smoothed mode avoids overreacting to a one-bin histogram spike.
   let smoothMode=0,smoothPeak=-1;
-  for(let i=1;i<255;i++){const v=hist[i-1]+2*hist[i]+hist[i+1];if(v>smoothPeak){smoothPeak=v;smoothMode=i;}}
-  return {count,hist,mode:smoothMode/255,p001:pct(.001),p01:pct(.01),p05:pct(.05),p10:pct(.10),p15:pct(.15),p25:pct(.25),p50:pct(.50),p75:pct(.75),p85:pct(.85),p90:pct(.90),p95:pct(.95),p99:pct(.99),p999:pct(.999),coverage:count/total};
+  for(let i=1;i<255;i++){
+    const v=hist[i-1]+2*hist[i]+hist[i+1];
+    if(v>smoothPeak){smoothPeak=v;smoothMode=i;}
+  }
+  return {count,hist,mode:smoothMode/255,p001:pct(.001),p01:pct(.01),p05:pct(.05),
+    p10:pct(.10),p15:pct(.15),p25:pct(.25),p50:pct(.50),p75:pct(.75),
+    p85:pct(.85),p90:pct(.90),p95:pct(.95),p99:pct(.99),p999:pct(.999),
+    coverage:sampled?count/sampled:0,totalPixels:total};
 }
-/**
- * Converts adaptive histogram zones into a spatial preview mask.
- * Each sampled pixel is classified by the same luminance boundaries used by
- * Auto Zone Grading; colors indicate tonal zone membership, not objects.
- */
-function buildAdaptiveZonePreviewMask(src,baseLut,zones,maxDimension=640){
+
+function buildAdaptiveZonePreviewMask(src,baseLut,zones,maxDimension=320){
   if(!src||!src.data||!src.width||!src.height||!Array.isArray(zones)||!zones.length)return null;
   const w=src.width,h=src.height;
   const stride=Math.max(1,Math.ceil(Math.max(w,h)/maxDimension));
   const cols=Math.ceil(w/stride),rows=Math.ceil(h/stride);
   const cells=new Uint8Array(cols*rows),data=src.data;
   const upperBins=zones.map(zone=>Math.round(zone.upper*255));
-  for(let gy=0;gy<rows;gy++){
-    const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
-    for(let gx=0;gx<cols;gx++){
-      const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
-      const i=(sy*w+sx)*4,mi=gy*cols+gx;
-      if(data[i+3]<16){cells[mi]=255;continue;}
-      let r=data[i]/255,g=data[i+1]/255,b=data[i+2]/255;
-      if(state.logMode)[r,g,b]=applyV709(r,g,b);
-      if(baseLut){
-        r=baseLut[Math.round(clamp(r)*255)];
-        g=baseLut[Math.round(clamp(g)*255)];
-        b=baseLut[Math.round(clamp(b)*255)];
+  const curveEnabled=state.enabled.curves!==false;
+  state.enabled.curves=false;
+  try{
+    for(let gy=0;gy<rows;gy++){
+      const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
+      for(let gx=0;gx<cols;gx++){
+        const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
+        const i=(sy*w+sx)*4,mi=gy*cols+gx;
+        if(i+3>=data.length||data[i+3]<128){cells[mi]=255;continue;}
+        let [r,g,b]=grade(data[i]/255,data[i+1]/255,data[i+2]/255);
+        if(curveEnabled){
+          const ri=Math.max(0,Math.min(255,Math.round(r*255)));
+          const gi=Math.max(0,Math.min(255,Math.round(g*255)));
+          const bi=Math.max(0,Math.min(255,Math.round(b*255)));
+          r=lutR[Math.max(0,Math.min(255,Math.round(lutM[ri]*255)))];
+          g=lutG[Math.max(0,Math.min(255,Math.round(lutM[gi]*255)))];
+          b=lutB[Math.max(0,Math.min(255,Math.round(lutM[bi]*255)))];
+        }
+        const bin=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
+        let zoneIndex=upperBins.findIndex(upper=>bin<=upper);
+        if(zoneIndex<0)zoneIndex=zones.length-1;
+        cells[mi]=zoneIndex;
       }
-      const bin=Math.round(clamp(.2126*r+.7152*g+.0722*b)*255);
-      let zoneIndex=upperBins.findIndex(upper=>bin<=upper);
-      if(zoneIndex<0)zoneIndex=zones.length-1;
-      cells[mi]=zoneIndex;
     }
-  }
+  }finally{state.enabled.curves=curveEnabled;}
   return {cols,rows,cells,zoneCount:zones.length};
 }
+
 function selectWellSpacedCurveAnchors(candidates, protectedXs=[], minGap=.09){
   // Keep automatically generated handles comfortably separated. Existing
   // user handles are protected: if an auto handle would land too close, the
@@ -5078,31 +5179,30 @@ function autoLevelsCurve(baseLut,globalStats,roiStats,isSubject,baselineCurve){
  * This is a sharpness/detail proxy, not semantic subject recognition.
  * Connected high-scoring cells form the region mask used for tonal analysis.
  */
-function detectSharpRegionLuminanceStats(src,baseLut){
+function detectSharpRegionLuminanceStats(src){
   if(!src||!src.data||!src.width||!src.height)return null;
   const data=src.data,w=src.width,h=src.height;
   // Detection resolution is independent of export size. Keeping the long side
   // near 1100 px preserves small subjects while bounding CPU and memory use.
-  const stride=Math.max(1,Math.ceil(Math.max(w,h)/1100));
+  const stride=Math.max(1,Math.ceil(Math.max(w,h)/900));
   const gw=Math.ceil(w/stride),gh=Math.ceil(h/stride),pixelCount=gw*gh;
   if(gw<16||gh<16)return null;
 
   const gray=new Float32Array(pixelCount);
-  const toneGray=new Float32Array(pixelCount);
   const chromaRG=new Float32Array(pixelCount);
   const chromaBY=new Float32Array(pixelCount);
   const valid=new Uint8Array(pixelCount);
   let validSamples=0;
 
-  // Detail detection uses the source's displayed transfer basis, but excludes
-  // the editable Master curve. The curve is applied separately to the tonal
-  // histogram so a contrast edit cannot make a blurry region appear sharper.
+  // Focus/detail scoring deliberately uses source microstructure so existing
+  // tone curves cannot manufacture sharpness. The selected region's tonal
+  // histogram is evaluated separately through grade() with the stable baseline.
   for(let gy=0;gy<gh;gy++){
     const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
     for(let gx=0;gx<gw;gx++){
       const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
       const si=(sy*w+sx)*4,gi=gy*gw+gx;
-      if(data[si+3]<16)continue;
+      if(si+3>=data.length||data[si+3]<128)continue;
       let r=data[si]/255,g=data[si+1]/255,b=data[si+2]/255;
       if(state.logMode)[r,g,b]=applyV709(r,g,b);
       r=clamp(r);g=clamp(g);b=clamp(b);
@@ -5110,12 +5210,8 @@ function detectSharpRegionLuminanceStats(src,baseLut){
       gray[gi]=y;
       chromaRG[gi]=r-g;
       chromaBY[gi]=b-(r+g)*.5;
-      if(baseLut){
-        const rr=baseLut[Math.round(r*255)];
-        const gg=baseLut[Math.round(g*255)];
-        const bb=baseLut[Math.round(b*255)];
-        toneGray[gi]=clamp(.2126*rr+.7152*gg+.0722*bb);
-      }else toneGray[gi]=y;
+      // Tonal target is evaluated later through grade() for selected pixels;
+      // focus/detail scoring itself remains based on source microstructure.
       valid[gi]=1;validSamples++;
     }
   }
@@ -5354,21 +5450,39 @@ function detectSharpRegionLuminanceStats(src,baseLut){
   // this reduces contamination from defocused background inside coarse tiles.
   const hist=new Float64Array(256);
   let weightedCount=0,selectedPixelCount=0;
-  for(let gy=2;gy<gh-2;gy++){
-    const row=gy*gw,ty=Math.min(rows-1,Math.floor(gy/tileH));
-    for(let gx=2;gx<gw-2;gx++){
-      const tx=Math.min(cols-1,Math.floor(gx/tileW));
-      const ti=ty*cols+tx;
-      if(!selectedMask[ti])continue;
-      const gi=row+gx;
-      if(!valid[gi])continue;
-      const tileMean=sumPixelDetail[ti]/Math.max(1,detailCount[ti]);
-      const relativeDetail=pixelDetail[gi]/Math.max(.0005,tileMean);
-      const weight=clamp(.84+.36*relativeDetail,.78,1.35);
-      hist[Math.round(clamp(toneGray[gi])*255)]+=weight;
-      weightedCount+=weight;selectedPixelCount++;
+  const curveEnabled=state.enabled.curves!==false;
+  state.enabled.curves=false;
+  try{
+    for(let gy=2;gy<gh-2;gy++){
+      const row=gy*gw,ty=Math.min(rows-1,Math.floor(gy/tileH));
+      const sy=Math.min(h-1,gy*stride+Math.floor(stride*.5));
+      for(let gx=2;gx<gw-2;gx++){
+        const tx=Math.min(cols-1,Math.floor(gx/tileW));
+        const ti=ty*cols+tx;
+        if(!selectedMask[ti])continue;
+        const gi=row+gx;
+        if(!valid[gi])continue;
+        const sx=Math.min(w-1,gx*stride+Math.floor(stride*.5));
+        const si=(sy*w+sx)*4;
+        if(si+3>=data.length||data[si+3]<128)continue;
+        let [r,g,b]=grade(data[si]/255,data[si+1]/255,data[si+2]/255);
+        if(curveEnabled){
+          const ri=Math.max(0,Math.min(255,Math.round(r*255)));
+          const gi2=Math.max(0,Math.min(255,Math.round(g*255)));
+          const bi=Math.max(0,Math.min(255,Math.round(b*255)));
+          r=lutR[Math.max(0,Math.min(255,Math.round(lutM[ri]*255)))];
+          g=lutG[Math.max(0,Math.min(255,Math.round(lutM[gi2]*255)))];
+          b=lutB[Math.max(0,Math.min(255,Math.round(lutM[bi]*255)))];
+        }
+        const tileMean=sumPixelDetail[ti]/Math.max(1,detailCount[ti]);
+        const relativeDetail=pixelDetail[gi]/Math.max(.0005,tileMean);
+        const weight=clamp(.84+.36*relativeDetail,.78,1.35);
+        const toneLuma=clamp(.2126*r+.7152*g+.0722*b);
+        hist[Math.round(toneLuma*255)]+=weight;
+        weightedCount+=weight;selectedPixelCount++;
+      }
     }
-  }
+  }finally{state.enabled.curves=curveEnabled;}
   const coverage=selectedPixelCount/validSamples;
   if(selectedPixelCount<Math.max(300,validSamples*(lowSeparation?.006:.01))||weightedCount<300)return null;
 
@@ -5453,73 +5567,60 @@ function sharpRegionPriorityCurve(baseLut,globalStats,sharpStats,baselineCurve){
 function detectAdaptiveLuminanceZones(stats,maxZones=6){
   if(!stats||!stats.hist||stats.count<100)return [];
   const hist=stats.hist,total=stats.count,smooth=new Float64Array(256);
-  // Binomial smoothing suppresses single-bin noise without erasing broad modes.
-  const kernel=[1,6,15,20,15,6,1],kernelSum=64;
+  // Five-tap Gaussian-like smoothing suppresses bin noise without merging
+  // nearby tonal populations into one broad mode.
+  const kernel=[1,4,6,4,1],kernelSum=16;
   for(let i=0;i<256;i++){
     let value=0;
-    for(let k=-3;k<=3;k++)value+=kernel[k+3]*(hist[Math.max(0,Math.min(255,i+k))]||0);
+    for(let k=-2;k<=2;k++)value+=kernel[k+2]*(hist[Math.max(0,Math.min(255,i+k))]||0);
     smooth[i]=value/kernelSum;
   }
-  const maxPeak=Math.max(...smooth);
+  let maxPeak=0;for(let i=0;i<256;i++)if(smooth[i]>maxPeak)maxPeak=smooth[i];
   if(!(maxPeak>0))return [];
 
-  // Local maxima are candidates only; valley quality and zone mass decide
-  // whether a candidate becomes a true boundary.
   const peaks=[];
   for(let i=2;i<254;i++){
     if(!(smooth[i]>=smooth[i-1]&&smooth[i]>smooth[i+1]))continue;
-    if(smooth[i]<maxPeak*.035)continue;
-    const bin=i;
-    if(peaks.some(p=>Math.abs(p.bin-bin)<11)){
-      const near=peaks.find(p=>Math.abs(p.bin-bin)<11);
-      if(smooth[bin]>near.height){near.bin=bin;near.height=smooth[bin];}
-    }else peaks.push({bin,height:smooth[bin]});
+    if(smooth[i]<maxPeak*.025)continue;
+    const near=peaks.find(p=>Math.abs(p.bin-i)<9);
+    if(near){if(smooth[i]>near.height){near.bin=i;near.height=smooth[i];}}
+    else peaks.push({bin:i,height:smooth[i]});
   }
-  // Treat a substantial edge pile-up as a legitimate shadow/highlight mode.
-  if(smooth[0]>=maxPeak*.035&&smooth[0]>smooth[1]*1.08)peaks.push({bin:0,height:smooth[0]});
-  if(smooth[255]>=maxPeak*.035&&smooth[255]>smooth[254]*1.08)peaks.push({bin:255,height:smooth[255]});
+  // Edge pile-ups are valid modes only when there is a clear edge discontinuity.
+  if(smooth[0]>=maxPeak*.025&&smooth[0]>smooth[1]*1.06)peaks.push({bin:0,height:smooth[0]});
+  if(smooth[255]>=maxPeak*.025&&smooth[255]>smooth[254]*1.06)peaks.push({bin:255,height:smooth[255]});
   peaks.sort((a,b)=>a.bin-b.bin);
-  if(!peaks.length){
-    let best=0;for(let i=1;i<256;i++)if(smooth[i]>smooth[best])best=i;
-    peaks.push({bin:best,height:smooth[best]});
-  }
+  if(!peaks.length){let best=0;for(let i=1;i<256;i++)if(smooth[i]>smooth[best])best=i;peaks.push({bin:best,height:smooth[best]});}
 
-  // Candidate valley score: depth relative to the weaker adjacent peak.
-  // The threshold relaxes very slightly for large, well-sampled histograms.
   const sampleScale=Math.max(0,Math.log10(Math.max(1,total)/1000));
-  const valleyDepthThreshold=Math.max(.22,Math.min(.30,.285-sampleScale*.012));
-  const minZoneMass=Math.max(.025,Math.min(.09,48/total));
+  const valleyDepthThreshold=Math.max(.18,Math.min(.27,.245-sampleScale*.010));
+  const minZoneMass=Math.max(.02,Math.min(.075,36/total));
   const splits=[];
   for(let i=0;i<peaks.length-1;i++){
     const a=peaks[i],b=peaks[i+1];
-    if(b.bin-a.bin<10)continue;
+    if(b.bin-a.bin<12)continue;
     let valley=a.bin+1,minValue=Infinity;
     for(let j=a.bin+1;j<b.bin;j++)if(smooth[j]<minValue){minValue=smooth[j];valley=j;}
-    const depth=1-minValue/Math.max(1,Math.min(a.height,b.height));
-    if(depth<valleyDepthThreshold)continue;
-    splits.push({bin:valley,depth,score:depth*Math.sqrt(Math.min(a.height,b.height))});
+    const weakerPeak=Math.max(1,Math.min(a.height,b.height));
+    const depth=1-minValue/weakerPeak;
+    const prominence=Math.min(a.height,b.height)/maxPeak;
+    if(depth<valleyDepthThreshold||prominence<.025)continue;
+    splits.push({bin:valley,depth,prominence,score:depth*Math.sqrt(weakerPeak)*Math.sqrt(prominence)});
   }
-
-  // Begin with the strongest separators, then discard splits that create
-  // undersized intervals. This merges tiny highlights/noise back into a
-  // neighbouring tonal zone instead of amplifying them independently.
   splits.sort((a,b)=>b.score-a.score);
   const selected=splits.slice(0,Math.max(0,maxZones-1));
   const intervalMass=boundaries=>{
-    const edges=[0,...boundaries.map(x=>x.bin),256];
-    const masses=[];
+    const edges=[0,...boundaries.map(x=>x.bin),256],masses=[];
     for(let i=0;i<edges.length-1;i++){
-      let mass=0;for(let b=edges[i];b<edges[i+1];b++)mass+=hist[b];
+      let mass=0;for(let b=edges[i];b<edges[i+1];b++)mass+=hist[b]||0;
       masses.push(mass/total);
     }
     return masses;
   };
   while(selected.length){
-    const sorted=[...selected].sort((a,b)=>a.bin-b.bin);
-    const masses=intervalMass(sorted);
+    const sorted=[...selected].sort((a,b)=>a.bin-b.bin),masses=intervalMass(sorted);
     const smallIndex=masses.findIndex(m=>m<minZoneMass);
     if(smallIndex<0)break;
-    // Remove the weaker of the boundaries adjacent to the undersized interval.
     const adjacent=[];
     if(smallIndex>0)adjacent.push(sorted[smallIndex-1]);
     if(smallIndex<sorted.length)adjacent.push(sorted[smallIndex]);
@@ -5528,126 +5629,156 @@ function detectAdaptiveLuminanceZones(stats,maxZones=6){
     selected.splice(selected.indexOf(weakest),1);
   }
 
-  const boundaries=[0,...selected.map(x=>x.bin),256].sort((a,b)=>a-b);
-  let zones=[];
-  const buildZone=(lo,hi,subjectFallback=false)=>{
-    const regionHist=new Uint32Array(256);
-    let count=0,peakBin=lo,peakHeight=-1;
-    for(let b=lo;b<=hi;b++){
-      const value=hist[b]||0;
-      regionHist[b]=value;count+=value;
+  const buildZone=(lo,hiExclusive,meta={})=>{
+    const regionHist=new Uint32Array(256);let count=0,peakBin=lo,peakHeight=-1;
+    for(let b=lo;b<hiExclusive;b++){
+      const value=hist[b]||0;regionHist[b]=value;count+=value;
       if(value>peakHeight){peakHeight=value;peakBin=b;}
     }
     if(!count)return null;
     const pct=q=>curvePercentile(regionHist,count,q);
     const p05=pct(.05),p15=pct(.15),p50=pct(.50),p85=pct(.85),p95=pct(.95);
-    return{
-      lower:lo/255,upper:Math.min(1,hi/255),
-      center:p50,p05,p15,p50,p85,p95,
-      span:p85-p15,mass:count/total,peakBin,
-      ...(subjectFallback?{subjectFallback:true}:{})
-    };
+    return {lower:lo/255,upper:Math.min(1,(hiExclusive-1)/255),center:p50,
+      p05,p15,p50,p85,p95,span:p85-p15,mass:count/total,peakBin,...meta};
   };
+  const sortedSelected=[...selected].sort((a,b)=>a.bin-b.bin);
+  const boundaries=[0,...sortedSelected.map(x=>x.bin),256];
+  let zones=[];
   for(let i=0;i<boundaries.length-1;i++){
-    const zone=buildZone(boundaries[i],boundaries[i+1]-1,false);
+    const adjacent=[];
+    if(i>0)adjacent.push(sortedSelected[i-1]);
+    if(i<sortedSelected.length)adjacent.push(sortedSelected[i]);
+    const weakestDepth=adjacent.length?Math.min(...adjacent.map(x=>x.depth)):0;
+    const weakestProminence=adjacent.length?Math.min(...adjacent.map(x=>x.prominence)):0;
+    const confidence=adjacent.length
+      ?Math.max(.22,Math.min(1,((weakestDepth-valleyDepthThreshold)/.42+.42)*Math.min(1,weakestProminence/.35)))
+      :.35;
+    const zone=buildZone(boundaries[i],boundaries[i+1],{kind:'histogram',confidence});
     if(zone)zones.push(zone);
   }
 
-  // Hybrid fallback: a single broad histogram mode is not the same as a
-  // single useful tonal zone. Subject mode already uses robust percentile
-  // anchors (p15/p50/p85) to prioritize a tonal population. Apply that same
-  // percentile principle to the FULL-FRAME histogram here, without using the
-  // spatial Subject mask. The median becomes a deterministic shadow/highlight
-  // boundary, preserving the defining purpose of Zones: global optimization.
-  // Existing peak/valley segmentation remains authoritative whenever it finds
-  // two or more meaningful populations.
+  // Preserve the intended minimum of two tonal bands, but label the fallback
+  // honestly and keep its later correction deliberately weak. A unimodal
+  // histogram is not misrepresented as two detected peaks.
   if(zones.length<2){
-    const splitQuantiles=[.50,.45,.55,.40,.60,.35,.65];
-    let bestSplit=null,bestBalance=-1;
-    for(const q of splitQuantiles){
-      const bin=Math.max(1,Math.min(254,Math.round(curvePercentile(hist,total,q)*255)));
-      let left=0,right=0;
-      for(let b=0;b<=bin;b++)left+=hist[b]||0;
-      right=total-left;
-      if(left<=0||right<=0)continue;
-      const balance=Math.min(left,right)/total;
-      // Prefer an even split; ordered quantiles provide a stable tie-break
-      // toward the Subject-style median anchor.
-      if(balance>bestBalance+1e-9){bestBalance=balance;bestSplit=bin;}
+    let weighted=0;for(let b=0;b<256;b++)weighted+=b*(hist[b]||0);
+    const mean=weighted/total;
+    let bestBin=128,bestVariance=-1,leftCount=0,leftSum=0;
+    const q20=Math.round(curvePercentile(hist,total,.20)*255);
+    const q80=Math.round(curvePercentile(hist,total,.80)*255);
+    for(let b=0;b<256;b++){
+      leftCount+=hist[b]||0;leftSum+=b*(hist[b]||0);
+      if(b<q20||b>q80)continue;
+      const rightCount=total-leftCount;
+      if(!leftCount||!rightCount)continue;
+      const rightSum=weighted-leftSum;
+      const between=(leftCount/total)*(rightCount/total)*Math.pow(leftSum/leftCount-rightSum/rightCount,2);
+      if(between>bestVariance){bestVariance=between;bestBin=b;}
     }
-    if(bestSplit!==null){
-      const lowZone=buildZone(0,bestSplit,true);
-      const highZone=buildZone(bestSplit+1,255,true);
-      if(lowZone&&highZone)zones=[lowZone,highZone];
-    }
+    let lowMass=0;for(let b=0;b<=bestBin;b++)lowMass+=hist[b]||0;
+    if(lowMass/total<.15||lowMass/total>.85)bestBin=Math.round(curvePercentile(hist,total,.50)*255);
+    const lowZone=buildZone(0,bestBin+1,{kind:'fallback-band',fallback:true,confidence:.18});
+    const highZone=buildZone(bestBin+1,256,{kind:'fallback-band',fallback:true,confidence:.18});
+    if(lowZone&&highZone)zones=[lowZone,highZone];
   }
   return zones;
 }
 
 /**
- * Adaptive-zone grade: a conservative global tonal backbone plus local
- * contrast shaping around each contiguous histogram population. Gaussian
- * blending prevents visible steps at zone boundaries; monotonic enforcement
- * keeps the resulting master curve physically ordered and editable.
+ * Reduce an adaptive-zone curve to the smallest practical set of anchors.
+ * The dense target is retained as a 256-sample reference; candidate anchors
+ * are removed greedily while the rendered spline stays within a strict error
+ * envelope. Existing user-authored baseline anchors and both endpoints are
+ * mandatory, so simplification cannot erase the user's curve structure.
+ */
+function simplifyAdaptiveZoneCurvePoints(points,baseLut,mapped,baselineCurve){
+  if(!Array.isArray(points)||points.length<=3)return points;
+  const mandatory=new Set([0,1]);
+  for(const point of (Array.isArray(baselineCurve)?baselineCurve:[])){
+    if(point.x>0&&point.x<1)mandatory.add(point.x);
+  }
+  const target=new Float64Array(256);
+  for(let i=0;i<256;i++){
+    const baseValue=clamp(baseLut[i]);
+    target[i]=mapped[Math.max(0,Math.min(255,Math.round(baseValue*255)))];
+  }
+  const tolerance=.006; // maximum absolute luminance error: 0.60% of range; stronger anchor reduction for Zones
+  let result=points.slice().sort((a,b)=>a.x-b.x);
+  const maxError=candidate=>{
+    let error=0;
+    for(let i=0;i<256;i++){
+      const actual=curveValueAndSlopeAt(candidate,i/255).y;
+      const delta=Math.abs(actual-target[i]);
+      if(delta>error)error=delta;
+      if(error>tolerance)return error;
+    }
+    return error;
+  };
+  // First enforce a practical point budget. User-authored baseline anchors
+  // are never removed; generated anchors are ranked by the smallest increase
+  // in worst-case error until at most ten total points remain (or only the
+  // mandatory baseline points remain). Then continue only while within the
+  // luminance-error tolerance.
+  const targetPointCount=Math.max(mandatory.size,10);
+  while(result.length>Math.max(2,mandatory.size)){
+    let bestIndex=-1,bestError=Infinity;
+    for(let i=1;i<result.length-1;i++){
+      if(mandatory.has(result[i].x))continue;
+      const trial=result.slice(0,i).concat(result.slice(i+1));
+      const error=maxError(trial);
+      if(error<bestError){bestError=error;bestIndex=i;}
+    }
+    if(bestIndex<0)break;
+    const enforcingPointBudget=result.length>targetPointCount;
+    if(!enforcingPointBudget&&bestError>tolerance)break;
+    result.splice(bestIndex,1);
+  }
+  return result;
+}
+
+/**
+ * Adaptive-zone grade: assertive global tonal shaping plus stronger local
+ * contrast separation around each contiguous histogram population.
+ * Gaussian blending preserves smooth transitions; monotonic enforcement keeps
+ * the resulting master curve ordered and editable.
  */
 function adaptiveZoneAutoLevelsCurve(baseLut,stats,baselineCurve,zonesOverride=null){
   const zones=Array.isArray(zonesOverride)?zonesOverride:detectAdaptiveLuminanceZones(stats,6);
   if(!zones.length)return null;
   const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
-  const hasSubjectQuantileFallback=zones.some(zone=>zone.subjectFallback===true);
-  // For the fallback's two global tonal populations, use Subject's median as
-  // the stronger anchor. This is intentionally based on full-frame stats,
-  // unlike Subject Auto Grade's user-drawn ROI.
-  const pivot=hasSubjectQuantileFallback
-    ?clampRange(stats.mode*.18+stats.p50*.82,.18,.82)
-    :clampRange(stats.mode*.32+stats.p50*.68,.18,.82);
+  const hasFallback=zones.some(zone=>zone.fallback===true);
+  const pivot=clampRange(stats.mode*.28+stats.p50*.72,.16,.84);
   const occupiedSpan=Math.max(.04,stats.p90-stats.p10);
+  // Keep the global tonal backbone restrained; stronger contrast is applied
+  // locally around detected luminance populations instead of across the frame.
   const globalGain=clampRange(1.045+(0.42-occupiedSpan)*.12,1.025,1.095);
-  const subjectInspiredGain=clampRange(1.24+(0.34-(stats.p85-stats.p15))*.62,1.16,1.43);
   const lowGuard=stats.p001,highGuard=stats.p999;
-  const toe=clampRange((pivot-lowGuard)*.20+.016,.016,.05);
-  const shoulder=clampRange((highGuard-pivot)*.20+.016,.016,.05);
+  const toe=clampRange((pivot-lowGuard)*.20+.018,.018,.052);
+  const shoulder=clampRange((highGuard-pivot)*.20+.018,.018,.052);
   const globalMap=value=>{
     const z=clamp(value);let y=pivot+(z-pivot)*globalGain;
     if(y<lowGuard)y=lowGuard-toe*(1-Math.exp(-(lowGuard-y)/toe));
     if(y>highGuard)y=highGuard+shoulder*(1-Math.exp(-(y-highGuard)/shoulder));
     return clamp(y);
   };
-
-  // Pixel mass is measured from the full-frame luminance histogram. Use the
-  // equal-share mass as the neutral reference, so area weighting does not
-  // change the established correction when all detected zones are equal-sized.
   const totalZoneMass=zones.reduce((sum,zone)=>sum+Math.max(0,zone.mass||0),0);
   const meanZoneMass=totalZoneMass/Math.max(1,zones.length);
-  const nominalMassFactor=clampRange(Math.sqrt(1/Math.max(1,zones.length))*1.55,.30,1);
-  const nominalBlendStrength=clampRange(.55+Math.sqrt(1/Math.max(1,zones.length))*.72,.55,1.18);
-  const areaExponent=.30,areaWeightMin=.78,areaWeightMax=1.22;
-
   const localZones=zones.map((zone,index)=>{
     const neighbours=[];
     if(index>0)neighbours.push(zone.center-zones[index-1].center);
     if(index<zones.length-1)neighbours.push(zones[index+1].center-zone.center);
     const neighbourSpan=neighbours.length?Math.min(...neighbours):.20;
-
-    // The previous local gain (roughly 1.006–1.03) was too weak to produce
-    // a visible zone-specific grade. Use a perceptible but bounded expansion:
-    // narrow tonal populations receive more local contrast than broad ones.
-    const histogramGain=clampRange(1.16+(.18-zone.span)*.55,1.12,1.28);
-    // A median-split fallback combines the original per-zone histogram gain
-    // with Subject's percentile-span gain. This only affects the two fallback
-    // zones; normal multi-peak Zones retains its established tuning.
-    const gain=zone.subjectFallback
-      ?clampRange(histogramGain*.58+subjectInspiredGain*.42,1.12,1.34)
-      :histogramGain;
+    const confidence=clampRange(zone.confidence??(zone.fallback?.18:1),.12,1);
+    const targetGain=zone.fallback
+      ?clampRange(1.12+(.24-zone.span)*.22,1.08,1.18)
+      :clampRange(1.42+(.22-zone.span)*1.00,1.30,1.85);
+    const gain=1+(targetGain-1)*confidence;
     const relativeArea=meanZoneMass>0?Math.max(0,zone.mass||0)/meanZoneMass:1;
-    const areaWeight=clampRange(Math.pow(relativeArea,areaExponent),areaWeightMin,areaWeightMax);
-
-    return{
-      ...zone,gain,areaWeight,relativeArea,
-      sigma:clampRange(Math.max(zone.span*.90,neighbourSpan*.28),.05,.18),
-      strength:clampRange(nominalBlendStrength*.95,.55,1.12),
-      mappedCenter:globalMap(zone.center)
-    };
+    const areaWeight=clampRange(Math.pow(relativeArea,.16),.90,1.10);
+    return {...zone,gain,areaWeight,relativeArea,
+      sigma:clampRange(Math.max(zone.span*1.00,neighbourSpan*.36),.055,.20),
+      strength:zone.fallback?.70:clampRange(1.00+confidence*.12,1.00,1.12),
+      mappedCenter:globalMap(zone.center)};
   });
   const mapValue=value=>{
     const z=clamp(value),global=globalMap(z);
@@ -5655,20 +5786,15 @@ function adaptiveZoneAutoLevelsCurve(baseLut,stats,baselineCurve,zonesOverride=n
     for(const zone of localZones){
       const d=(z-zone.center)/zone.sigma;
       const shapeWeight=Math.exp(-.5*d*d)*zone.strength;
-      const localDelta=(global-zone.mappedCenter)*(zone.gain-1);
-
-      // Area weighting scales only the local zone correction. The Gaussian
-      // shape and its normalization remain independent of zone area.
+      // Local contrast is centered on each zone and independent of global gain.
+      // This preserves strong zone separation without imposing a global S-curve.
+      const localDelta=(z-zone.center)*(zone.gain-1);
       weightedDelta+=shapeWeight*zone.areaWeight*localDelta;
       weightSum+=shapeWeight;
     }
-    // Do not normalize away attenuation in the tails where no zone is active.
     const local=weightedDelta/Math.max(1,weightSum);
-    // Stronger local zone contrast; the global backbone and endpoint guards
-    // remain unchanged.
-    return clamp(global+local*.88);
+    return clamp(global+local*1.25);
   };
-
   const mapped=new Float64Array(256);
   for(let i=0;i<256;i++)mapped[i]=mapValue(i/255);
   const low=clamp(baseLut[0]),high=clamp(baseLut[255]);
@@ -5677,22 +5803,22 @@ function adaptiveZoneAutoLevelsCurve(baseLut,stats,baselineCurve,zonesOverride=n
     for(let i=1;i<255;i++)mapped[i]=Math.max(low,Math.min(high,Math.max(mapped[i],mapped[i-1])));
     for(let i=254;i>0;i--)mapped[i]=Math.min(mapped[i],mapped[i+1]);
   }
-
   const baseline=Array.isArray(baselineCurve)?baselineCurve:curves.m;
   const protectedXs=Array.isArray(baseline)?baseline.filter(p=>p.x>0&&p.x<1).map(p=>p.x):[];
-  const candidates=[{x:inputForCurveOutput(baseLut,pivot),priority:12}];
+  const candidates=[{x:inputForCurveOutput(baseLut,pivot),priority:14}];
   for(const zone of localZones){
+    const massPriority=Math.sqrt(Math.max(0,zone.mass||0));
     candidates.push(
-      {x:inputForCurveOutput(baseLut,zone.p15),priority:5+zone.mass},
-      {x:inputForCurveOutput(baseLut,zone.p50),priority:9+zone.mass},
-      {x:inputForCurveOutput(baseLut,zone.p85),priority:5+zone.mass}
+      {x:inputForCurveOutput(baseLut,zone.p15),priority:4+massPriority},
+      {x:inputForCurveOutput(baseLut,zone.p50),priority:8+massPriority},
+      {x:inputForCurveOutput(baseLut,zone.p85),priority:4+massPriority}
     );
   }
   for(let i=1;i<localZones.length;i++){
     const boundary=(localZones[i-1].upper+localZones[i].lower)*.5;
     candidates.push({x:inputForCurveOutput(baseLut,boundary),priority:3});
   }
-  const generated=selectWellSpacedCurveAnchors(candidates,protectedXs,.025);
+  const generated=selectWellSpacedCurveAnchors(candidates,protectedXs,.04);
   const xs=[...new Set([...protectedXs,...generated])].sort((a,b)=>a-b);
   const points=xs.map(x=>{
     const baseValue=clamp(baseLut[Math.max(0,Math.min(255,Math.round(x*255)))]);
@@ -5702,7 +5828,9 @@ function adaptiveZoneAutoLevelsCurve(baseLut,stats,baselineCurve,zonesOverride=n
   const last=baseline&&baseline.find(p=>Math.abs(p.x-1)<1e-9);
   points.unshift(first?{x:first.x,y:first.y}:{x:0,y:baseLut[0]});
   points.push(last?{x:last.x,y:last.y}:{x:1,y:baseLut[255]});
-  return{points,zones:localZones};
+  const simplifiedPoints=simplifyAdaptiveZoneCurvePoints(points,baseLut,mapped,baseline);
+  return{points:simplifiedPoints,zones:localZones,usedFallback:hasFallback,
+    originalPointCount:points.length,simplifiedPointCount:simplifiedPoints.length};
 }
 
 function subjectPriorityCurve(baseLut,globalStats,roiStats,baselineCurve){
@@ -5744,116 +5872,454 @@ function subjectPriorityCurve(baseLut,globalStats,roiStats,baselineCurve){
   return pts;
 }
 /**
- * Applies Global or Subject Auto Grade from a stable pre-auto-grade baseline.
+ * Measures the current grade using the canonical per-pixel pipeline. Candidate
+ * control values are temporarily substituted only in state, then restored;
+ * sidebar values are never changed until the winning result is committed.
+ */
+function globalToneSampleStats(sourceSamples,controls,controlIds=GLOBAL_AUTO_CONTROL_IDS){
+  if(!Array.isArray(sourceSamples)||sourceSamples.length<100)return null;
+  const ids=controlIds;
+  const previous={};
+  for(const id of ids){previous[id]=state[id];state[id]=controls[id];}
+  const values=new Array(sourceSamples.length);
+  let nearWhite=0,nearBlack=0;
+  try{
+    for(let i=0;i<sourceSamples.length;i++){
+      const rgb=sourceSamples[i],out=grade(rgb[0],rgb[1],rgb[2]);
+      const y=clamp(.2126*out[0]+.7152*out[1]+.0722*out[2]);
+      values[i]=y;
+      if(y>=.985)nearWhite++;
+      if(y<=.015)nearBlack++;
+    }
+  }finally{
+    for(const id of ids)state[id]=previous[id];
+  }
+  values.sort((a,b)=>a-b);
+  const q=p=>values[Math.min(values.length-1,Math.max(0,Math.floor(p*(values.length-1))))];
+  return{
+    count:values.length,p01:q(.01),p05:q(.05),p10:q(.10),p25:q(.25),
+    p50:q(.50),p75:q(.75),p90:q(.90),p95:q(.95),p99:q(.99),p995:q(.995),
+    nearWhite:nearWhite/values.length,nearBlack:nearBlack/values.length
+  };
+}
+function calculateGlobalAutoGrade(rgbSamples,baseline){
+  const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  let next={...baseline};
+  const initialStats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!initialStats)return null;
+  const lowKey=initialStats.p50<.30&&initialStats.p90<.72;
+  const highKey=initialStats.p50>.58&&initialStats.p10>.27;
+
+  // Preserve high-/low-key intent. Only pull extreme medians back toward a
+  // broad scene-appropriate band; do not force every image to middle grey.
+  const targetMedian=lowKey
+    ?clampRange(initialStats.p50,.24,.34)
+    :highKey
+      ?clampRange(initialStats.p50,.58,.70)
+      :clampRange(initialStats.p50,.42,.52);
+  const rawEv=Math.log2(targetMedian/Math.max(initialStats.p50,.02));
+  const keyStrength=lowKey?.52:(highKey?.62:.72);
+  let exposureEv=clampRange(rawEv*keyStrength,-.55,.55);
+  if(exposureEv>0){
+    const headroom=initialStats.p99>.001?Math.log2(.985/initialStats.p99):.55;
+    exposureEv=Math.min(exposureEv,Math.max(0,headroom));
+  }
+  next.exposure=clampRange(Math.round(baseline.exposure+exposureEv*100),-100,100);
+  let stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+
+  // Add contrast only when the robust mid-population range is demonstrably
+  // compressed. A naturally wide scene is not evidence of excessive contrast:
+  // do not reduce contrast merely because p90-p10 exceeds a generic target.
+  const span=stats.p90-stats.p10;
+  const minimumUsefulSpan=lowKey?.44:(highKey?.58:.52);
+  const contrastDelta=span<minimumUsefulSpan
+    ?clampRange((minimumUsefulSpan-span)*140,0,20)
+    :0;
+  next.contrast=clampRange(Math.round(baseline.contrast+contrastDelta),-100,100);
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+
+  // Restrained highlight/shadow recovery is based on broad percentile
+  // populations, not isolated specular or black pixels.
+  const highlightSeverity=
+    clampRange((stats.p95-.78)/.19,0,1)*.55+
+    clampRange((stats.p99-.92)/.065,0,1)*.30+
+    clampRange((stats.nearWhite-.003)/.06,0,1)*.15;
+  const shadowSeverity=
+    clampRange((.26-stats.p10)/.24,0,1)*.55+
+    clampRange((.14-stats.p05)/.13,0,1)*.30+
+    clampRange((stats.nearBlack-.003)/.10,0,1)*.15;
+  const highlightRecoverability=clampRange(1-stats.nearWhite/.12,.15,1);
+  const shadowRecoverability=clampRange(1-stats.nearBlack/.18,.15,1);
+  const highlightScale=highKey?.78:1;
+  const shadowScale=lowKey?.48:1;
+  next.highlights=clampRange(Math.round(baseline.highlights-
+    34*highlightSeverity*highlightRecoverability*highlightScale),-100,100);
+  next.shadows=clampRange(Math.round(baseline.shadows+
+    30*shadowSeverity*shadowRecoverability*shadowScale),-100,100);
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+
+  // Gamma performs only a small residual midtone correction after exposure,
+  // preserving the endpoints and avoiding an exposure-like second jump.
+  let gammaDelta=0;
+  if(stats.p50>.08&&stats.p50<.92&&targetMedian>.08&&targetMedian<.92){
+    const ratio=Math.log(targetMedian)/Math.log(stats.p50);
+    if(Number.isFinite(ratio)&&ratio>0){
+      const sampleConfidence=clampRange(Math.sqrt(rgbSamples.length/500),.55,1);
+      gammaDelta=clampRange(-120*Math.log2(ratio)*.20*sampleConfidence,-8,8);
+      next.gamma=clampRange(Math.round(baseline.gamma+gammaDelta),-100,100);
+    }
+  }
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+
+  // Lift only clearly crushed black populations. Never deepen blacks based on
+  // a dark scene; clipping and the lower-tail population must both support it.
+  const crushedTail=clampRange((.025-stats.p05)/.025,0,1);
+  const crushedPopulation=clampRange((stats.nearBlack-.06)/.20,0,1);
+  const blackLift=Math.round(12*crushedTail*crushedPopulation*
+    clampRange(Math.sqrt(rgbSamples.length/500),.55,1));
+  if(blackLift>0)next.blacks=clampRange(Math.round(baseline.blacks+blackLift),-100,100);
+
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+  const changed=GLOBAL_AUTO_CONTROL_IDS.some(id=>next[id]!==baseline[id]);
+  return changed?{values:next,stats:{...stats,lowKey,highKey,targetMedian,
+    exposureEv,contrastDelta,gammaDelta:next.gamma-baseline.gamma,blackLift}}:null;
+}
+
+/**
+ * Collects raw source RGB samples for the shared Tone estimator. Subject mode
+ * can restrict sampling to the validated focus-plane mask; all other modes use
+ * either their explicit polygon ROI or the full frame. Sampling is deterministic
+ * and bounded so high-resolution images cannot create unbounded work or memory.
+ */
+function collectAutoGradeSourceSamples(src,points=null,focusInfo=null,maxSamples=60000){
+  if(!src||!src.data||!src.width||!src.height)return null;
+  const data=src.data,w=src.width,h=src.height,total=w*h;
+  const mask=focusInfo?.previewMask||null;
+  const useMask=!!(mask&&Number.isInteger(mask.cols)&&mask.cols>0&&
+    Number.isInteger(mask.rows)&&mask.rows>0&&Number.isInteger(mask.gridWidth)&&mask.gridWidth>0&&
+    Number.isInteger(mask.gridHeight)&&mask.gridHeight>0&&Number.isInteger(mask.tileWidth)&&mask.tileWidth>0&&
+    Number.isInteger(mask.tileHeight)&&mask.tileHeight>0&&mask.cells&&mask.cells.length>=mask.cols*mask.rows);
+  if(focusInfo&&!useMask)return null;
+  const inside=(nx,ny)=>{
+    if(!Array.isArray(points)||points.length<3)return true;
+    let hit=false;
+    for(let i=0,j=points.length-1;i<points.length;j=i++){
+      const a=points[i],b=points[j];
+      if((a.y>ny)!==(b.y>ny)){
+        const crossX=(b.x-a.x)*(ny-a.y)/(b.y-a.y)+a.x;
+        if(nx<crossX)hit=!hit;
+      }
+    }
+    return hit;
+  };
+  const stride=Math.max(1,Math.ceil(Math.sqrt(total/Math.max(1000,maxSamples))));
+  const samples=[];
+  for(let gy=0;gy<h;gy+=stride){
+    const ty=Math.floor(gy/stride);
+    for(let gx=0;gx<w;gx+=stride){
+      const tx=Math.floor(gx/stride);
+      const ox=Math.min(stride-1,Math.floor((((tx*17+ty*29+11)%31)/31)*stride));
+      const oy=Math.min(stride-1,Math.floor((((tx*23+ty*13+7)%29)/29)*stride));
+      const x=Math.min(w-1,gx+ox),y=Math.min(h-1,gy+oy);
+      if(points&&!inside((x+.5)/w,(y+.5)/h))continue;
+      if(useMask){
+        const gridX=Math.min(mask.gridWidth-1,Math.floor((x+.5)*mask.gridWidth/w));
+        const gridY=Math.min(mask.gridHeight-1,Math.floor((y+.5)*mask.gridHeight/h));
+        const tileX=Math.min(mask.cols-1,Math.floor(gridX/mask.tileWidth));
+        const tileY=Math.min(mask.rows-1,Math.floor(gridY/mask.tileHeight));
+        if(!mask.cells[tileY*mask.cols+tileX])continue;
+      }
+      const i=(y*w+x)*4;
+      if(i+2>=data.length||(i+3<data.length&&data[i+3]<128))continue;
+      samples.push([data[i]/255,data[i+1]/255,data[i+2]/255]);
+    }
+  }
+  return samples.length>=100?{samples,count:samples.length,usedFocusMask:useMask}:null;
+}
+
+/**
+ * Exposure/Blacks-only variant of the established Global estimator. It keeps
+ * the same percentile targets, highlight headroom guard, clipping tests and
+ * sample-confidence scaling, but does not simulate changes to Contrast,
+ * Highlights, Shadows or Gamma that Subject/Zones do not commit.
+ */
+function calculateExposureBlacksAutoGrade(rgbSamples,baseline){
+  const clampRange=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  if(!Array.isArray(rgbSamples)||rgbSamples.length<100)return null;
+  const next={...baseline};
+  let stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+  const lowKey=stats.p50<.30&&stats.p90<.72;
+  const highKey=stats.p50>.58&&stats.p10>.27;
+  const targetMedian=lowKey
+    ?clampRange(stats.p50,.24,.34)
+    :highKey
+      ?clampRange(stats.p50,.58,.70)
+      :clampRange(stats.p50,.42,.52);
+  const rawEv=Math.log2(targetMedian/Math.max(stats.p50,.02));
+  const keyStrength=lowKey?.52:(highKey?.62:.72);
+  let exposureEv=clampRange(rawEv*keyStrength,-.55,.55);
+  if(exposureEv>0){
+    const headroom=stats.p99>.001?Math.log2(.985/stats.p99):.55;
+    exposureEv=Math.min(exposureEv,Math.max(0,headroom));
+  }
+  next.exposure=clampRange(Math.round((Number(baseline.exposure)||0)+exposureEv*100),-100,100);
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+
+  const crushedTail=clampRange((.025-stats.p05)/.025,0,1);
+  const crushedPopulation=clampRange((stats.nearBlack-.06)/.20,0,1);
+  const blackLift=Math.round(12*crushedTail*crushedPopulation*
+    clampRange(Math.sqrt(rgbSamples.length/500),.55,1));
+  if(blackLift>0)next.blacks=clampRange(Math.round((Number(baseline.blacks)||0)+blackLift),-100,100);
+  stats=globalToneSampleStats(rgbSamples,next,GLOBAL_AUTO_CONTROL_IDS);
+  if(!stats)return null;
+  return {
+    values:{exposure:next.exposure,blacks:next.blacks},
+    stats:{...stats,lowKey,highKey,targetMedian,exposureEv,blackLift,
+      sourceSampleCount:rgbSamples.length}
+  };
+}
+
+/**
+ * Manual ROI refinement. The first four controls reuse the calibrated global
+ * estimator, while Gamma and Blacks are estimated from the selected ROI only.
+ * Every candidate is evaluated through grade() so the result reflects the
+ * actual processing order rather than a simplified luminance approximation.
+ */
+function calculateManualRoiAutoGrade(rgbSamples,baseline){
+  // The estimator is sample-population agnostic: ROI samples make this a
+  // subject-weighted grade, while Global passes full-frame samples.
+  return calculateGlobalAutoGrade(rgbSamples,baseline);
+}
+function applyGlobalAutoGrade(){
+  if(cur<0||!images[cur]){fail('Open a photo before using Global Auto Grade.');return false;}
+  if(sharpRegionPending)clearSharpRegionPreview();
+  if(state.enabled.tone===false){fail('Enable the Tone section in the sidebar before using Global Auto Grade.');return false;}
+  // Retain the currently visible state so an unsuccessful new analysis never
+  // destroys a previously applied Subject/Zones correction.
+  const previous={
+    curve:cloneCurve(curves.m),baseline:cloneCurve(autoGradeBaselineCurve),
+    last:cloneCurve(autoGradeLastCurve),controlBaseline:autoGradeControlBaseline?{...autoGradeControlBaseline}:null,
+    imageIndex:autoGradeImageIndex,appliedMode:autoGradeAppliedMode
+  };
+  const restorePrevious=()=>{
+    curves.m=cloneCurve(previous.curve);
+    autoGradeBaselineCurve=cloneCurve(previous.baseline);
+    autoGradeLastCurve=cloneCurve(previous.last);
+    autoGradeControlBaseline=previous.controlBaseline?{...previous.controlBaseline}:null;
+    autoGradeImageIndex=previous.imageIndex;autoGradeAppliedMode=previous.appliedMode;
+    rebuildCurves();drawCurves();setAutoGradeButtonsActive(autoGradeAppliedMode);render();
+  };
+  try{
+    // Replace a previous Auto Grade mode instead of stacking its output.
+    if(autoGradeAppliedMode==='global')return resetAutoGrade('global');
+    if(autoGradeBaselineCurve){curves.m=cloneCurve(autoGradeBaselineCurve);rebuildCurves();drawCurves();}
+    if(autoGradeControlBaseline)restoreGlobalAutoGradeControls();
+    clearAutoGradeState();
+    updateNormalisationGains(images[cur].data);
+    rebuildCurves();
+    rebuildAutoCurve();
+    const samples=gradeSamples();
+    const baseline={};
+    for(const id of GLOBAL_AUTO_CONTROL_IDS)baseline[id]=Number(state[id])||0;
+    const result=calculateGlobalAutoGrade(samples.sourceRGB,baseline);
+    if(!result){
+      restorePrevious();
+      fail('The image is already tonally balanced or does not contain enough usable samples.');
+      return false;
+    }
+
+    // These are ordinary Tone control values, not a hidden curve or overlay.
+    // Existing automatic slider helpers relinquish ownership before the new
+    // editable values are written, preventing stale deltas from being applied.
+    suppressGlobalAutoGradeManualCommit=true;
+    try{
+      for(const id of GLOBAL_AUTO_CONTROL_IDS){
+        if(id==='highlights')markCorrectionAsManual('highlight');
+        if(id==='shadows')markCorrectionAsManual('shadow');
+        markAutoControlAsManual(id);
+        setControlValue(id,result.values[id]);
+      }
+    }finally{suppressGlobalAutoGradeManualCommit=false;}
+    autoGradeControlBaseline=baseline;
+    autoGradeBaselineCurve=null;autoGradeLastCurve=null;
+    autoGradeImageIndex=cur;autoGradeAppliedMode='global';
+    setAutoGradeButtonsActive('global');
+    expandSidebarSectionForElement($('exposure'));
+    render();pushHistory();
+    console.info('Global Auto Grade applied editable Tone controls:',{
+      exposure:result.values.exposure,contrast:result.values.contrast,
+      highlights:result.values.highlights,shadows:result.values.shadows,
+      blacks:result.values.blacks,gamma:result.values.gamma,
+      analysis:result.stats
+    });
+    return true;
+  }catch(error){
+    restorePrevious();
+    console.error('Global Auto Grade failed:',error);
+    fail('Global Auto Grade failed: '+(error?.message||String(error)));
+    return false;
+  }
+}
+
+/**
+ * Applies Subject / Zones Auto Grade from a stable pre-auto-grade baseline.
  * Subject mode requires an explicit ROI; it must never silently fall back to
  * full-frame analysis. Generated output is not reused as the next baseline.
  */
 function applyTonalAutoGrade(points=null,isSubject=false,requestedMode=null,sharpRegionInfoOverride=null,adaptiveZonesOverride=null){
-  // Subject mode is explicit; a missing ROI must never silently fall back to global mode.
   if(isSubject&&(!Array.isArray(points)||points.length<3)){fail("Draw a subject outline before applying Subject Auto Grade.");return false;}
-  if(cur<0){fail('Open a photo before using Auto Grade.');return false;}
-  // Every run starts from the exact pre-Auto-Grade curve; never grade a prior result.
-  if(autoGradeBaselineCurve){curves.m=cloneCurve(autoGradeBaselineCurve);clearAutoGradeState();rebuildCurves();}
-  const baseline=cloneCurve(curves.m),src=images[cur].data;
-  // Curve OFF: analyse pre-curve pixels. Curve ON: include only the stable
-  // manual baseline, never a generated Auto Grade result.
-  const analysisCurve=getAutoCurveAnalysisLut();
-  const roi=tonalSamples(src,isSubject?points:null,analysisCurve);
-  const all=isSubject?tonalSamples(src,null,analysisCurve):roi;
-  const baseLut=buildCurveLUT(baseline);
-  if(!roi||roi.count<100||!all){fail('The selected area is too small or contains no usable image pixels.');return false;}
-  if(isSubject&&roi.coverage<.001){fail('The selection contains too few image pixels. Please draw a larger outline.');return false;}
-  if(roi.p999-roi.p001<.012){fail('The tonal range is too narrow for a reliable automatic adjustment.');return false;}
-  // Subject and global modes use different histogram populations. For subject
-  // mode, ROI defines the contrast pivot/strength; full-frame stats only guard extremes.
-  // Keep the proven Global Auto Grade calculation unchanged. Subject mode has
-  // its own ROI-driven contrast strategy and cannot fall through to that path.
-  const gradeMode=isSubject?'subject':(requestedMode||'global');
-  let next=null,detectedZoneCount=0,sharpRegionInfo=null;
-  if(gradeMode==='sharp'||gradeMode==='adaptive'){
-    let result=null;
-    if(gradeMode==='sharp'){
-      sharpRegionInfo=sharpRegionInfoOverride||detectSharpRegionLuminanceStats(src,analysisCurve);
-      if(sharpRegionInfo)result={points:sharpRegionPriorityCurve(baseLut,all,sharpRegionInfo.stats,baseline)};
-    }else{
-      result=adaptiveZoneAutoLevelsCurve(baseLut,roi,baseline,adaptiveZonesOverride);
-      detectedZoneCount=result&&result.zones?result.zones.length:0;
-    }
-    if(!result){
-      fail(gradeMode==='sharp'
-        ?'Subject detection could not identify a sufficiently distinct focus plane. Try an image with clearer focus separation.'
-        :'Adaptive Zones could not derive a reliable luminance distribution from this image.');
-      return false;
-    }
-    next=result.points;
-  }else{
-    next=isSubject
-      ?subjectPriorityCurve(baseLut,all,roi,baseline)
-      :autoLevelsCurve(baseLut,all,roi,false,baseline);
+  if(cur<0||!images[cur]){fail('Open a photo before using Auto Grade.');return false;}
+  if(state.enabled.tone===false){fail('Enable the Tone section in the sidebar before using Auto Grade.');return false;}
+  let failureMessage='',bundle=null;
+  try{
+    bundle=withAutoGradeBaseline(({baselineCurve})=>{
+      const baseline=cloneCurve(baselineCurve),src=images[cur].data;
+      const gradeMode=isSubject?'subject':(requestedMode||'global');
+      const roi=tonalSamples(src,isSubject?points:null);
+      const all=isSubject?tonalSamples(src,null):roi;
+      const baseLut=buildCompositeLumaCurveLUT();
+      if(!roi||roi.count<100||!all){failureMessage='The selected area is too small or contains no usable image pixels.';return null;}
+      if(isSubject&&roi.coverage<.001){failureMessage='The selection contains too few image pixels. Please draw a larger outline.';return null;}
+      if(roi.p999-roi.p001<.012){failureMessage='The tonal range is too narrow for a reliable automatic adjustment.';return null;}
+
+      let next=null,detectedZoneCount=0,sharpRegionInfo=sharpRegionInfoOverride,zoneResult=null;
+      if(gradeMode==='sharp'||gradeMode==='adaptive'){
+        let result=null;
+        if(gradeMode==='sharp'){
+          sharpRegionInfo=sharpRegionInfo||detectSharpRegionLuminanceStats(src);
+          if(sharpRegionInfo)result={points:sharpRegionPriorityCurve(baseLut,all,sharpRegionInfo.stats,baseline)};
+        }else{
+          zoneResult=adaptiveZoneAutoLevelsCurve(baseLut,roi,baseline,adaptiveZonesOverride);
+          result=zoneResult;
+          detectedZoneCount=result&&result.zones?result.zones.length:0;
+        }
+        if(!result){
+          failureMessage=gradeMode==='sharp'
+            ?'Subject detection could not identify a sufficiently distinct focus plane. Try an image with clearer focus separation.'
+            :'Adaptive Zones could not derive a reliable luminance distribution from this image.';
+          return null;
+        }
+        next=result.points;
+      }else{
+        next=isSubject
+          ?subjectPriorityCurve(baseLut,all,roi,baseline)
+          :autoLevelsCurve(baseLut,all,roi,false,baseline);
+      }
+      const changed=next.some(p=>Math.abs(p.y-baseLut[Math.max(0,Math.min(255,Math.round(p.x*255)))])>.002);
+      if(!changed){failureMessage='The image already has a balanced tonal distribution; no meaningful curve adjustment was found.';return null;}
+
+      // Global and Zones use full-frame exposure statistics. Subject uses the
+      // same validated focus-plane mask that drives its curve; if that mask is
+      // too sparse to provide 100 samples, safely fall back to the full frame.
+      let toneSource=collectAutoGradeSourceSamples(src,isSubject?points:null,
+        gradeMode==='sharp'?sharpRegionInfo:null,60000);
+      let toneSourceScope=gradeMode==='sharp'?'focus-plane':(isSubject?'manual-roi':'full-frame');
+      if(!toneSource&&gradeMode==='sharp'){
+        toneSource=collectAutoGradeSourceSamples(src,null,null,60000);
+        toneSourceScope='full-frame-fallback';
+      }
+      if(!toneSource){
+        failureMessage='Not enough valid pixels were available to calculate Exposure and Blacks safely.';
+        return null;
+      }
+      const toneBaseline={};
+      for(const id of GLOBAL_AUTO_CONTROL_IDS)toneBaseline[id]=Number(state[id])||0;
+
+      // Evaluate Exposure/Blacks against the prospective curve, not against
+      // the pre-curve image. This avoids stacking an independent global lift
+      // on top of the curve correction. The temporary curve is always rolled
+      // back, including when the estimator throws.
+      const beforeAnalysisCurve=cloneCurve(curves.m);
+      let toneResult=null;
+      curves.m=cloneCurve(next);rebuildCurves();
+      try{
+        toneResult=calculateExposureBlacksAutoGrade(toneSource.samples,toneBaseline);
+      }finally{
+        curves.m=beforeAnalysisCurve;rebuildCurves();
+      }
+      if(!toneResult){
+        failureMessage='Exposure/Blacks analysis did not produce enough reliable image statistics.';
+        return null;
+      }
+      return {baseline,next,gradeMode,sharpRegionInfo,detectedZoneCount,zoneResult,
+        toneBaseline:{exposure:toneBaseline.exposure,blacks:toneBaseline.blacks},
+        toneValues:toneResult.values,toneStats:toneResult.stats,toneSourceScope,
+        toneSampleCount:toneSource.count};
+    });
+  }catch(error){
+    console.error('Auto Grade analysis failed:',error);
+    failureMessage='Auto Grade analysis failed. The previous correction was preserved.';
+    return false;
   }
-  const changed=next.some(p=>Math.abs(p.y-baseLut[Math.round(p.x*255)])>.002);
-  if(!changed){fail('The image already has a balanced tonal distribution; no meaningful curve adjustment was found.');return false;}
-  curves.m=next;rebuildCurves();drawCurves();
-  autoGradeBaselineCurve=baseline;autoGradeLastCurve=cloneCurve(curves.m);autoGradeImageIndex=cur;autoGradeAppliedMode=gradeMode;
+  if(!bundle){fail(failureMessage||'Auto Grade could not derive a safe correction. The previous correction was preserved.');return false;}
+
+  // If the previous mode owned editable Tone controls, restore their genuine
+  // pre-Auto-Grade values only now that the replacement correction is ready.
+  if(autoGradeControlBaseline)restoreGlobalAutoGradeControls();
+  curves.m=bundle.next;rebuildCurves();drawCurves();
+  suppressGlobalAutoGradeManualCommit=true;
+  try{
+    for(const id of ['exposure','blacks']){
+      markAutoControlAsManual(id);
+      setControlValue(id,bundle.toneValues[id]);
+    }
+  }finally{suppressGlobalAutoGradeManualCommit=false;}
+  autoGradeControlBaseline={...bundle.toneBaseline};
+  autoGradeBaselineCurve=bundle.baseline;autoGradeLastCurve=cloneCurve(curves.m);
+  autoGradeImageIndex=cur;autoGradeAppliedMode=bundle.gradeMode;
+  setAutoGradeButtonsActive(bundle.gradeMode);
+  expandSidebarSectionForElement($('exposure'));
   render();pushHistory();
-  if(gradeMode==='sharp'&&sharpRegionInfo)console.info('Subject Auto Grade used '+sharpRegionInfo.regionCount+' connected focus-plane regions ('+(sharpRegionInfo.coverage*100).toFixed(1)+'% of sampled pixels; confidence '+(sharpRegionInfo.confidence*100).toFixed(0)+'%) to derive the global curve; full-frame tonal limits were protected.');
-  if(gradeMode==='adaptive')console.info('Adaptive Zones Auto Grade selected '+detectedZoneCount+' contiguous full-frame luminance zones'+(Array.isArray(adaptiveZonesOverride)&&adaptiveZonesOverride.some(zone=>zone.subjectFallback)?' using the Subject-inspired global quantile fallback':' using adaptive histogram peaks and valleys')+'.');
+  if(bundle.gradeMode==='sharp'&&bundle.sharpRegionInfo)console.info('Subject Auto Grade used '+bundle.sharpRegionInfo.regionCount+' connected focus-plane regions ('+(bundle.sharpRegionInfo.coverage*100).toFixed(1)+'% of sampled pixels; confidence '+(bundle.sharpRegionInfo.confidence*100).toFixed(0)+'%) to derive the global curve; Exposure/Blacks source: '+bundle.toneSourceScope+' ('+bundle.toneSampleCount+' samples).');
+  if(bundle.gradeMode==='adaptive')console.info('Adaptive Zones Auto Grade selected '+bundle.detectedZoneCount+' tonal bands'+(bundle.zoneResult?.usedFallback?' (one broad population: conservative quantile fallback)':' (validated histogram peaks and valleys)')+'; Exposure/Blacks source: '+bundle.toneSourceScope+' ('+bundle.toneSampleCount+' samples).');
+  console.info('Auto Grade set editable Exposure and Blacks controls:',{
+    mode:bundle.gradeMode,exposure:bundle.toneValues.exposure,blacks:bundle.toneValues.blacks,
+    baseline:bundle.toneBaseline,analysis:bundle.toneStats
+  });
   return true;
 }
-$('autoGradeBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}setAutoGradeMode('global');const ok=applyTonalAutoGrade(null,false,'global');setAutoGradeMode(null);if(ok){expandSidebarSectionForElement($('curves'));$('autoGradeBtn').classList.add('on');$('autoGradeBtn').setAttribute('aria-pressed','true');$('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');$('autoGradeSharpBtn').classList.remove('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','false');$('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');}});
+
+$('autoGradeBtn').addEventListener('click',()=>{
+  if(subjectGradeMode){setAutoGradeMode(null);return;}
+  if(autoGradeAppliedMode==='global'){resetAutoGrade('global');return;}
+  applyGlobalAutoGrade();
+});
 function startSharpRegionPreview(){
   if(cur<0){fail('Open a photo before using Subject Auto Grade.');return;}
+  if(state.enabled.tone===false){fail('Enable the Tone section in the sidebar before using Auto Grade.');return;}
   clearSharpRegionPreview();
-
-  // Analyze the original/pre-Auto-Grade tonal basis, while leaving the current
-  // image grade untouched until the one-second mask preview has completed.
-  const baseline=(autoGradeBaselineCurve&&autoGradeAppliedMode)
-    ?cloneCurve(autoGradeBaselineCurve):cloneCurve(curves.m);
-  const generatedActive=typeof anyAutoCurveActive==='function'&&anyAutoCurveActive();
-  const analysisSource=(generatedActive&&Array.isArray(state.curveAutoData.baseCurve))
-    ?state.curveAutoData.baseCurve:baseline;
-  const analysisCurve=state.enabled.curves===false?null:buildCurveLUT(analysisSource);
-  const imageRef=images[cur];
-  const info=detectSharpRegionLuminanceStats(imageRef.data,analysisCurve);
-
-  if(!info){
-    fail('Subject detection could not identify a sufficiently distinct focus plane. Try an image with clearer focus separation.');
-    return;
-  }
-
-  sharpRegionPending={
-    imageRef,imageIndex:cur,baselineCurve:baseline,info,timer:null,
-    analysisSourceCurve:cloneCurve(analysisSource)
-  };
+  const imageRef=images[cur];let baselineCurve=null,info=null;
+  withAutoGradeBaseline(context=>{
+    baselineCurve=context.baselineCurve;
+    info=detectSharpRegionLuminanceStats(imageRef.data);
+  });
+  if(!info){fail('Subject detection could not identify a sufficiently distinct focus plane. Try an image with clearer focus separation.');return;}
+  sharpRegionPending={imageRef,imageIndex:cur,baselineCurve:cloneCurve(baselineCurve),info,timer:null};
   $('autoGradeSharpBtn').classList.add('on');
   $('autoGradeSharpBtn').setAttribute('aria-pressed','true');
-
-  // Flash the detected region for exactly one second, then apply automatically.
   drawSharpRegionPreview();
   sharpRegionPending.timer=setTimeout(()=>{
     const pending=sharpRegionPending;
     if(!pending)return;
-    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){
-      clearSharpRegionPreview();
-      return;
-    }
-    const currentBase=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){clearSharpRegionPreview();return;}
+    const currentBase=(autoGradeBaselineCurve&&['sharp','adaptive'].includes(autoGradeAppliedMode))
       ?autoGradeBaselineCurve:curves.m;
     if(JSON.stringify(currentBase)!==JSON.stringify(pending.baselineCurve)){
-      clearSharpRegionPreview();
-      fail('The Master curve changed during focus-plane detection. Please run Subject again.');
-      return;
+      clearSharpRegionPreview();fail('The Master curve changed during focus-plane detection. Please run Subject again.');return;
     }
-
-    const info=pending.info;
-    const ok=applyTonalAutoGrade(null,false,'sharp',info);
+    const ok=applyTonalAutoGrade(null,false,'sharp',pending.info);
     clearSharpRegionPreview();
     if(ok){
       expandSidebarSectionForElement($('curves'));
-      $('autoGradeSharpBtn').classList.add('on');$('autoGradeSharpBtn').setAttribute('aria-pressed','true');
-      $('autoGradeBtn').classList.remove('on');$('autoGradeBtn').setAttribute('aria-pressed','false');
-      $('autoGradeSubjectBtn').classList.remove('on');$('autoGradeSubjectBtn').setAttribute('aria-pressed','false');
-      $('autoGradeAdaptiveBtn').classList.remove('on');$('autoGradeAdaptiveBtn').setAttribute('aria-pressed','false');
+      expandSidebarSectionForElement($('exposure'));
+      setAutoGradeButtonsActive('sharp');
     }
   },1000);
 }
@@ -5870,68 +6336,42 @@ $('autoGradeSharpBtn').addEventListener('click',()=>{
 });
 function startAdaptiveZonesPreview(){
   if(cur<0){fail('Open a photo before using Auto Zone Grading.');return;}
+  if(state.enabled.tone===false){fail('Enable the Tone section in the sidebar before using Auto Grade.');return;}
   clearSharpRegionPreview();
-
-  const baseline=(autoGradeBaselineCurve&&autoGradeAppliedMode)
-    ?cloneCurve(autoGradeBaselineCurve):cloneCurve(curves.m);
-  const generatedActive=typeof anyAutoCurveActive==='function'&&anyAutoCurveActive();
-  const analysisSource=(generatedActive&&Array.isArray(state.curveAutoData.baseCurve))
-    ?state.curveAutoData.baseCurve:baseline;
-  const analysisCurve=state.enabled.curves===false?null:buildCurveLUT(analysisSource);
-  const imageRef=images[cur];
-  const stats=tonalSamples(imageRef.data,null,analysisCurve);
-  if(!stats||stats.count<100||stats.p999-stats.p001<.012){
-    fail('Auto Zone Grading could not derive a reliable luminance distribution from this image.');
+  const imageRef=images[cur];let baselineCurve=null,analysis=null;
+  withAutoGradeBaseline(context=>{
+    baselineCurve=context.baselineCurve;
+    const stats=tonalSamples(imageRef.data);
+    if(!stats||stats.count<100||stats.p999-stats.p001<.012)return;
+    const zones=detectAdaptiveLuminanceZones(stats,6);
+    if(zones.length<2)return;
+    const previewMask=buildAdaptiveZonePreviewMask(imageRef.data,null,zones);
+    if(!previewMask)return;
+    analysis={zones,stats,previewMask};
+  });
+  if(!analysis){
+    fail('Auto Zone Grading could not derive at least two reliable tonal bands from this image.');
     return;
   }
-  const zones=detectAdaptiveLuminanceZones(stats,6);
-  if(!zones.length){
-    fail('Auto Zone Grading could not detect reliable luminance zones in this image.');
-    return;
-  }
-  const previewMask=buildAdaptiveZonePreviewMask(imageRef.data,analysisCurve,zones);
-  if(!previewMask){
-    fail('Auto Zone Grading could not build the zone preview mask.');
-    return;
-  }
-
-  sharpRegionPending={
-    kind:'zones',imageRef,imageIndex:cur,baselineCurve:baseline,
-    info:{zones,stats,previewMask},timer:null
-  };
+  sharpRegionPending={kind:'zones',imageRef,imageIndex:cur,baselineCurve:cloneCurve(baselineCurve),info:analysis,timer:null};
   ['autoGradeBtn','autoGradeSubjectBtn','autoGradeSharpBtn'].forEach(id=>{
     $(id).classList.remove('on');$(id).setAttribute('aria-pressed','false');
   });
   $('autoGradeAdaptiveBtn').classList.add('on');
   $('autoGradeAdaptiveBtn').setAttribute('aria-pressed','true');
   drawSharpRegionPreview();
-
-  // Apply after one second with the exact zone boundaries shown in the mask.
   sharpRegionPending.timer=setTimeout(()=>{
     const pending=sharpRegionPending;
     if(!pending||pending.kind!=='zones')return;
-    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){
-      clearSharpRegionPreview();return;
-    }
-    const currentBase=(autoGradeBaselineCurve&&autoGradeAppliedMode)
+    if(cur!==pending.imageIndex||images[cur]!==pending.imageRef){clearSharpRegionPreview();return;}
+    const currentBase=(autoGradeBaselineCurve&&['sharp','adaptive'].includes(autoGradeAppliedMode))
       ?autoGradeBaselineCurve:curves.m;
     if(JSON.stringify(currentBase)!==JSON.stringify(pending.baselineCurve)){
-      clearSharpRegionPreview();
-      fail('The Master curve changed during zone detection. Please run Auto Zone Grading again.');
-      return;
+      clearSharpRegionPreview();fail('The Master curve changed during zone detection. Please run Auto Zone Grading again.');return;
     }
-
-    const zonesToApply=pending.info.zones;
-    const ok=applyTonalAutoGrade(null,false,'adaptive',null,zonesToApply);
+    const ok=applyTonalAutoGrade(null,false,'adaptive',null,pending.info.zones);
     clearSharpRegionPreview();
-    if(ok){
-      expandSidebarSectionForElement($('curves'));
-      $('autoGradeAdaptiveBtn').classList.add('on');
-      $('autoGradeAdaptiveBtn').setAttribute('aria-pressed','true');
-      ['autoGradeBtn','autoGradeSubjectBtn','autoGradeSharpBtn'].forEach(id=>{
-        $(id).classList.remove('on');$(id).setAttribute('aria-pressed','false');
-      });
-    }
+    if(ok){expandSidebarSectionForElement($('curves'));expandSidebarSectionForElement($('exposure'));setAutoGradeButtonsActive('adaptive');}
   },1000);
 }
 $('autoGradeAdaptiveBtn').addEventListener('click',()=>{
@@ -5945,14 +6385,46 @@ $('autoGradeAdaptiveBtn').addEventListener('click',()=>{
     fail('Auto Zone Grading failed. The image may be too large for the available browser memory.');
   }
 });
-$('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='subject'){resetAutoGrade('subject');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Switching from global to subject mode must remove the global result before selection/calculation begins. */if(autoGradeAppliedMode&&autoGradeAppliedMode!=='subject')resetAutoGrade(autoGradeAppliedMode);setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; subject contrast is increased while overall scene brightness is preserved. Double-click or press Enter to finish.';});
+$('autoGradeSubjectBtn').addEventListener('click',()=>{if(subjectGradeMode){setAutoGradeMode(null);return;}if(autoGradeAppliedMode==='manual'){resetAutoGrade('manual');return;}if(cur<0){fail('Open a photo before selecting a subject.');return;}/* Replace an existing Auto Grade before starting a new Manual ROI selection. */if(autoGradeAppliedMode)resetAutoGrade(autoGradeAppliedMode);setAutoGradeMode('subject');$('subjectGradeHint').textContent='Draw around the subject; Exposure, Contrast, Highlights, Shadows, Blacks and Gamma are calculated from this region and applied to the full image. Double-click or press Enter to finish.';});
+function smoothSubjectStrokePoints(points,closed=false){
+  const source=Array.isArray(points)?points:[],n=source.length;
+  if(n<5)return source.map(p=>({x:p.x,y:p.y}));
+  // A light 3-point low-pass filter removes hand jitter before spline
+  // interpolation. Open strokes keep their start point and slightly damp
+  // the moving endpoint; closed contours use wrapped neighbours.
+  return source.map((p,i)=>{
+    if(!closed&&i===0)return{x:p.x,y:p.y};
+    const prev=closed?source[(i-1+n)%n]:(source[i-1]||p);
+    const next=closed?source[(i+1)%n]:(source[i+1]||p);
+    if(!closed&&i===n-1)return{x:clamp((prev.x+3*p.x)/4),y:clamp((prev.y+3*p.y)/4)};
+    return{x:clamp((prev.x+2*p.x+next.x)/4),y:clamp((prev.y+2*p.y+next.y)/4)};
+  });
+}
+function smoothOpenSubjectPolygon(points,steps=3){
+  const filtered=smoothSubjectStrokePoints(points,false);
+  if(filtered.length<3)return filtered;
+  // Open Catmull-Rom interpolation updates on every pointer event, so the
+  // visible contour is smoothed continuously rather than only on completion.
+  const out=[],n=filtered.length;
+  out.push({x:filtered[0].x,y:filtered[0].y});
+  for(let i=0;i<n-1;i++){
+    const p0=filtered[Math.max(0,i-1)],p1=filtered[i],p2=filtered[i+1],p3=filtered[Math.min(n-1,i+2)];
+    for(let j=1;j<=steps;j++){
+      const t=j/steps,t2=t*t,t3=t2*t;
+      const interp=k=>.5*((2*p1[k])+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3);
+      out.push({x:clamp(interp('x')),y:clamp(interp('y'))});
+    }
+  }
+  return out;
+}
 function smoothSubjectPolygon(points,steps=4){
   if(!Array.isArray(points)||points.length<3)return (points||[]).map(p=>({x:p.x,y:p.y,...(Number.isFinite(p.tangent)?{tangent:p.tangent}:{}),...(Number.isFinite(p.tangentIn)?{tangentIn:p.tangentIn}:{}),...(Number.isFinite(p.tangentOut)?{tangentOut:p.tangentOut}:{})}));
-  // Closed Catmull-Rom interpolation: smooths hand-drawn corners while
-  // retaining the user's outline. Clamp samples to normalized image bounds.
-  const out=[],n=points.length;
+  // Apply the same jitter filter used by the live preview, then close the
+  // contour with wrapped Catmull-Rom interpolation for ROI analysis.
+  const filtered=smoothSubjectStrokePoints(points,true);
+  const out=[],n=filtered.length;
   for(let i=0;i<n;i++){
-    const p0=points[(i-1+n)%n],p1=points[i],p2=points[(i+1)%n],p3=points[(i+2)%n];
+    const p0=filtered[(i-1+n)%n],p1=filtered[i],p2=filtered[(i+1)%n],p3=filtered[(i+2)%n];
     for(let j=0;j<steps;j++){
       const t=j/steps,t2=t*t,t3=t2*t;
       const interp=k=>.5*((2*p1[k])+(-p0[k]+p2[k])*t+(2*p0[k]-5*p1[k]+4*p2[k]-p3[k])*t2+(-p0[k]+3*p1[k]-3*p2[k]+p3[k])*t3);
@@ -5961,6 +6433,36 @@ function smoothSubjectPolygon(points,steps=4){
   }
   return out;
 }
+function applyManualSubjectAutoGrade(points){
+  if(cur<0||!images[cur]){fail('Open a photo before using Manual Auto Grade.');return false;}
+  if(state.enabled.tone===false){fail('Enable the Tone section in the sidebar before using Manual Auto Grade.');return false;}
+  const previousMode=autoGradeAppliedMode;
+  if(previousMode==='manual'||previousMode==='subject')return resetAutoGrade(previousMode);
+  if(autoGradeControlBaseline)restoreGlobalAutoGradeControls();
+  if(autoGradeBaselineCurve){curves.m=cloneCurve(autoGradeBaselineCurve);clearAutoGradeState();rebuildCurves();drawCurves();}
+  updateNormalisationGains(images[cur].data);rebuildCurves();rebuildAutoCurve();
+  const samples=gradeSamples(points),baseline={};
+  for(const id of MANUAL_ROI_AUTO_CONTROL_IDS)baseline[id]=Number(state[id])||0;
+  if(!samples||samples.sourceRGB.length<100){fail('The selected subject is too small for reliable tonal analysis. Draw a larger outline.');return false;}
+  const result=calculateManualRoiAutoGrade(samples.sourceRGB,baseline);
+  if(!result){fail('The selected subject does not provide enough tonal information for a safe correction.');return false;}
+  suppressGlobalAutoGradeManualCommit=true;
+  try{
+    for(const id of MANUAL_ROI_AUTO_CONTROL_IDS){
+      if(id==='highlights')markCorrectionAsManual('highlight');
+      if(id==='shadows')markCorrectionAsManual('shadow');
+      markAutoControlAsManual(id);setControlValue(id,result.values[id]);
+    }
+  }finally{suppressGlobalAutoGradeManualCommit=false;}
+  autoGradeControlBaseline=baseline;autoGradeBaselineCurve=null;autoGradeLastCurve=null;
+  autoGradeImageIndex=cur;autoGradeAppliedMode='manual';
+  setAutoGradeButtonsActive('manual');
+  expandSidebarSectionForElement($('exposure'));
+  render();pushHistory();
+  console.info('Manual Auto Grade applied editable Tone controls from selected ROI:',{coverage:samples.sourceRGB.length,values:result.values,analysis:result.stats});
+  return true;
+}
+
 $('subjectGradeApply').addEventListener('click',()=>{
   if(!subjectGradeMode||subjectGradePoints.length<3){fail('Draw a closed outline with at least three points first.');return;}
   const applyButton=$('subjectGradeApply');if(applyButton.disabled)return;
@@ -5973,10 +6475,10 @@ $('subjectGradeApply').addEventListener('click',()=>{
   setTimeout(()=>{
     try{
       setBackgroundProgress('subjectGrade','Analysing selected subject',12);
-      const ok=applyTonalAutoGrade(pts,true);
+      const ok=applyManualSubjectAutoGrade(pts);
       if(ok){
         setBackgroundProgress('subjectGrade','Applying subject correction',92);
-        expandSidebarSectionForElement($('curves'));
+        expandSidebarSectionForElement($('exposure'));
       }
       // Exit drawing/selection mode first. setAutoGradeMode(null) clears all
       // pressed states, so the applied mode must be restored afterwards.
@@ -6010,7 +6512,7 @@ function drawSubjectSelection(){
   ox.clearRect(0,0,c.width,c.height);
   if(!subjectGradeMode||subjectGradePoints.length===0){c.style.display="none";return;}
   c.style.width=view.style.width;c.style.height=view.style.height;c.style.display="block";
-  const pathPts=subjectGradeClosed?smoothSubjectPolygon(subjectGradePoints):subjectGradePoints;
+  const pathPts=subjectGradeClosed?smoothSubjectPolygon(subjectGradePoints):smoothOpenSubjectPolygon(subjectGradePoints);
   ox.save();ox.strokeStyle="#ff9d36";ox.fillStyle="rgba(255,157,54,.12)";
   ox.lineWidth=Math.max(1,Math.min(c.width,c.height)/900);ox.lineJoin="round";ox.lineCap="round";
   ox.setLineDash(subjectGradeClosed?[]:[6,4]);ox.beginPath();
@@ -6018,13 +6520,33 @@ function drawSubjectSelection(){
   if(subjectGradeClosed&&pathPts.length>=3){ox.closePath();ox.fill();}ox.stroke();ox.restore();
 }
 const autoCurveButtons={dynamic:$("optDynamic"),contrast:$("optContrast"),film:$("optFilm"),shadowLift:$("optShadowLift"),midLift:$("optMidLift"),curveShoulder:$("optCurveShoulder"),exposure:$("autoExp"),recover:$("autoRec"),colour:$("autoCol"),wb:$("autoWBbtn")};
+let autoOptimizationButtonsEnabled=false;
+const autoExposureDefaultTitle=autoCurveButtons.exposure.title||'Exposure so the median tone sits at a natural mid-grey';
+function syncAutoExposureAvailability(){
+  const button=autoCurveButtons.exposure;
+  const gradeOwnsExposure=!!autoGradeAppliedMode;
+  // Preserve the normal image-availability gate and additionally block a
+  // redundant Auto Exposure pass while any Auto Grade owns Exposure.
+  button.disabled=!autoOptimizationButtonsEnabled||gradeOwnsExposure;
+  button.title=gradeOwnsExposure
+    ?'Exposure is already corrected by the active Auto Grade. Reset Auto Grade before using Auto Exposure.'
+    :autoExposureDefaultTitle;
+}
 function syncAutoCurveButtons(){
   Object.entries(autoCurveButtons).forEach(([key,button])=>{
     button.classList.toggle("on",state.curveAuto[key]===true);
     button.setAttribute("aria-pressed",state.curveAuto[key]===true?"true":"false");
   });
+  syncAutoExposureAvailability();
 }
 Object.entries(autoCurveButtons).forEach(([key,button])=>button.addEventListener("click",()=>{
+  // Each Auto Grade mode already calculates and commits Exposure. A second
+  // Auto Exposure pass can add a redundant positive EV offset.
+  if(key==="exposure"&&autoGradeAppliedMode){
+    syncAutoExposureAvailability();
+    fail('Auto Grade has already corrected Exposure. Reset Auto Grade before using Auto Exposure.');
+    return;
+  }
   const next=!state.curveAuto[key];
   if(next){
     if(["film","shadowLift","midLift","curveShoulder"].includes(key))state.curveAutoData[key]={};
@@ -6052,11 +6574,13 @@ Object.entries(autoCurveButtons).forEach(([key,button])=>button.addEventListener
 }));
 syncAutoCurveButtons();
 function setOptimizeEnabled(on){
+  autoOptimizationButtonsEnabled=!!on;
   $("autoGradeBtn").disabled=!on;
   $("autoGradeSubjectBtn").disabled=!on;
   $("autoGradeSharpBtn").disabled=!on;
   $("autoGradeAdaptiveBtn").disabled=!on;
   Object.values(autoCurveButtons).forEach(b=>b.disabled=!on);
+  syncAutoExposureAvailability();
   $("logMode").disabled=!on;
   setIndependentCorrectionsEnabled(on);
   syncAutoCurveButtons();
@@ -7513,6 +8037,7 @@ sliders.forEach(id=>{
     }
     if(id==="highlights")markCorrectionAsManual("highlight");
     if(id==="shadows")markCorrectionAsManual("shadow");
+    markGlobalAutoGradeAsManual(id);
     markAutoControlAsManual(id);
     state[id]=+el.value;
     if(num)num.value=el.value;
@@ -7531,6 +8056,7 @@ sliders.forEach(id=>{
     }
     if(id==="highlights")markCorrectionAsManual("highlight");
     if(id==="shadows")markCorrectionAsManual("shadow");
+    markGlobalAutoGradeAsManual(id);
     markAutoControlAsManual(id);
     const v=DEF[id]||0;
     el.value=v;state[id]=v;
@@ -7546,6 +8072,7 @@ sliders.forEach(id=>{
       }
       if(id==="highlights")markCorrectionAsManual("highlight");
       if(id==="shadows")markCorrectionAsManual("shadow");
+      markGlobalAutoGradeAsManual(id);
       markAutoControlAsManual(id);
       let v=parseFloat(num.value);
       if(isNaN(v))v=state[id];
@@ -8873,7 +9400,7 @@ function snapshot(){
   delete g.baseLUT;
   g.baseOn=baseOn;
   g.baseRef=baseLUT?baseLUT.name+"|"+baseLUT.size:null;
-  const autoGrade={baseline:cloneCurve(autoGradeBaselineCurve),last:cloneCurve(autoGradeLastCurve),imageIndex:autoGradeImageIndex,appliedMode:autoGradeAppliedMode};
+  const autoGrade={baseline:cloneCurve(autoGradeBaselineCurve),last:cloneCurve(autoGradeLastCurve),controlBaseline:autoGradeControlBaseline?{...autoGradeControlBaseline}:null,imageIndex:autoGradeImageIndex,appliedMode:autoGradeAppliedMode};
   return {s:JSON.stringify(g),base:baseLUT,luts:loadedLuts.map(cloneLoadedLutForHistory),autoGrade};
 }
 function restoreAutoGradeHistory(entry){
@@ -8881,17 +9408,20 @@ function restoreAutoGradeHistory(entry){
   const saved=entry&&entry.autoGrade||{};
   autoGradeBaselineCurve=cloneCurve(saved.baseline);
   autoGradeLastCurve=cloneCurve(saved.last);
+  autoGradeControlBaseline=saved.controlBaseline&&typeof saved.controlBaseline==='object'?{...saved.controlBaseline}:null;
   autoGradeImageIndex=Number.isInteger(saved.imageIndex)?saved.imageIndex:-1;
-  autoGradeAppliedMode=["global","subject","sharp","adaptive"].includes(saved.appliedMode)?saved.appliedMode:null;
+  const restoredMode=saved.appliedMode==="subject"?"manual":saved.appliedMode;
+  autoGradeAppliedMode=["global","manual","sharp","adaptive"].includes(restoredMode)?restoredMode:null;
   // An in-progress subject outline is transient, not an undoable grade.
   subjectGradeMode=false;subjectGradePoints=[];subjectGradeApplied=false;subjectGradeDrawing=false;subjectGradeClosed=false;
   const controls=$("subjectGradeControls");if(controls)controls.style.display="none";
   if(view)view.classList.remove("subject-select");
-  const globalOn=autoGradeAppliedMode==="global",subjectOn=autoGradeAppliedMode==="subject",sharpOn=autoGradeAppliedMode==="sharp",adaptiveOn=autoGradeAppliedMode==="adaptive";
+  const globalOn=autoGradeAppliedMode==="global",manualOn=autoGradeAppliedMode==="manual",sharpOn=autoGradeAppliedMode==="sharp",adaptiveOn=autoGradeAppliedMode==="adaptive";
   $("autoGradeBtn").classList.toggle("on",globalOn);$("autoGradeBtn").setAttribute("aria-pressed",globalOn?"true":"false");
-  $("autoGradeSubjectBtn").classList.toggle("on",subjectOn);$("autoGradeSubjectBtn").setAttribute("aria-pressed",subjectOn?"true":"false");
+  $("autoGradeSubjectBtn").classList.toggle("on",manualOn);$("autoGradeSubjectBtn").setAttribute("aria-pressed",manualOn?"true":"false");
   $("autoGradeSharpBtn").classList.toggle("on",sharpOn);$("autoGradeSharpBtn").setAttribute("aria-pressed",sharpOn?"true":"false");
   $("autoGradeAdaptiveBtn").classList.toggle("on",adaptiveOn);$("autoGradeAdaptiveBtn").setAttribute("aria-pressed",adaptiveOn?"true":"false");
+  if(typeof syncAutoExposureAvailability==='function')syncAutoExposureAvailability();
 }
 function restoreSnap(entry){
   if(!entry||typeof entry.s!=="string")throw new Error("Undo history entry is invalid.");
@@ -8902,6 +9432,7 @@ function restoreSnap(entry){
   const beforeAutoGrade={
     baseline:cloneCurve(autoGradeBaselineCurve),
     last:cloneCurve(autoGradeLastCurve),
+    controlBaseline:autoGradeControlBaseline?{...autoGradeControlBaseline}:null,
     imageIndex:autoGradeImageIndex,
     appliedMode:autoGradeAppliedMode
   };
@@ -8925,7 +9456,7 @@ function restoreSnap(entry){
   }catch(err){
     try{
       restoreGradeRuntimeState(before);
-      restoreAutoGradeHistory(beforeAutoGrade);
+      restoreAutoGradeHistory({autoGrade:beforeAutoGrade});
       syncLoadedLutSection();
     }catch(rollbackError){
       console.error("Undo rollback failed:",rollbackError);
@@ -9673,6 +10204,10 @@ function setS(id,v){const el=$(id);if(!el)return;v=Math.max(+el.min,Math.min(+el
 function resetGroup(ids,render2=true){ids.forEach(id=>setS(id,DEF[id]||0));if(render2)render();}
 $("toneReset").addEventListener("click",e=>{
   e.stopPropagation();
+  if(autoGradeAppliedMode==='global'){
+    autoGradeControlBaseline=null;autoGradeAppliedMode=null;autoGradeImageIndex=-1;
+    setAutoGradeButtonsActive(null);
+  }
   resetGroup(["exposure","contrast","highlights","shadows","blacks","gamma","fade"]);
   ["highlight","shadow"].forEach(key=>{
     state.autoCorrections[key]=false;
@@ -9821,10 +10356,6 @@ async function createProjectThumbnail(projectImages,maxSide=320,quality=0.62){
 }
 async function serialiseProjectImages(){
   const result=[];
-  const budget=getRuntimeMemoryBudgetBytes();
-  const reserve=getLoadedSourceMemoryBytes()+64*MiB;
-  const encodedBudget=Math.max(0,budget-reserve);
-  let encodedEstimate=0;
   for(const im of images){
     let blob=null;
     if(im.srcURL){const response=await fetch(im.srcURL);if(!response.ok)throw new Error("Could not read source image: "+im.name);blob=await response.blob();}
@@ -9832,10 +10363,8 @@ async function serialiseProjectImages(){
       blob=await new Promise(resolve=>im.hiresSource.toBlob(resolve,"image/png"));
     }
     if(!blob)throw new Error("Original image data is unavailable for "+im.name+". Reload that image before saving the project.");
-    // Base64 strings, JSON text and the download Blob coexist temporarily.
-    // Reserve an 8x source-size allowance for the concurrent representations.
-    encodedEstimate+=blob.size*8;
-    if(encodedEstimate>encodedBudget)throw new Error("Project is too large to serialize safely within the current memory budget. Save fewer or smaller images.");
+    // Let the browser's actual Blob/data-URL allocation determine whether
+    // serialization is possible; do not reject using a guessed RAM budget.
     result.push({name:im.name,type:blob.type||"image/jpeg",data:await blobToDataURL(blob)});
   }
   return result;
@@ -9879,7 +10408,7 @@ $("loadProj").addEventListener("click",()=>$("projfile").click());async function
         if(projectFingerprints.has(fingerprint)){URL.revokeObjectURL(url);continue;}
         projectFingerprints.add(fingerprint);
         const dims=validateImageDimensions(img.naturalWidth||img.width,img.naturalHeight||img.height,"Project image "+item.name);
-        const memory=validateImageMemoryBudget(dims.width,dims.height,stagedMemoryBytes,getRuntimeMemoryBudgetBytes(),"Project image "+item.name);
+        const memory=estimateImageMemoryUse(dims.width,dims.height,stagedMemoryBytes);
         stagedMemoryBytes=memory.totalEstimatedBytes;
         const maxW=1100,scale=Math.min(1,maxW/img.width),w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
         const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
@@ -9934,10 +10463,6 @@ $("projfile").addEventListener("change",e=>{
   const name=(file.name||"").toLowerCase();
   const accepted=name.endsWith(".lutmaster");
   if(!accepted){fail("Unsupported file. Only .lutmaster project files exported by LutMaster are supported.");e.target.value="";return;}
-  const projectReadBudget=Math.max(0,Math.floor((getRuntimeMemoryBudgetBytes()-getLoadedSourceMemoryBytes()-64*MiB)/5));
-  if(file.size>projectReadBudget){
-    fail("Project file is too large for the available memory budget. Remove current images or use a smaller project.");e.target.value="";return;
-  }
   const reader=new FileReader();
   reader.onerror=()=>{fail("Couldn't read the selected project file.");e.target.value="";};
   reader.onload=async()=>{
@@ -10158,7 +10683,6 @@ async function encodeGradedPhoto(source,imgName,normalisationSource,signal,onPro
   const width=source.naturalWidth||source.videoWidth||source.width,height=source.naturalHeight||source.videoHeight||source.height;
   validateImageDimensions(width,height,"Export source "+(imgName||"photo"));
   assertExportActive(signal);
-  validatePhotoExportMemoryBudget(width,height,getLoadedSourceMemoryBytes(),getRuntimeMemoryBudgetBytes(),"Export of "+(imgName||"photo"));
   const N=Math.max(33,+$("lutsize").value||33);
   let cv=null,tile=null,outCtx=null,tileCtx=null;
   const tileSize=getPhotoExportTileSize(),tileW=Math.min(tileSize,width),tileH=Math.min(tileSize,height);
@@ -11029,12 +11553,14 @@ function srgbToLinear(v){
  * Shared by automatic adjustment estimators to avoid repeatedly scanning
  * full-resolution pixels for each individual control.
  */
-function gradeSamples(){
+function gradeSamples(points=null){
   const image=images[cur],d=image.data.data,L=[],C=[],rgb=[];
   // Spatially stratified sampling avoids the fixed every-eighth-pixel pattern,
   // which can alias with repeating textures, screens or fine architectural detail.
   const width=image.data.width||image.width||Math.floor(Math.sqrt(d.length/4));
   const height=image.data.height||image.height||Math.ceil((d.length/4)/width);
+  const sourceRGB=[];
+  const inside=(nx,ny)=>{if(!Array.isArray(points)||points.length<3)return true;let hit=false;for(let i=0,j=points.length-1;i<points.length;j=i++){const a=points[i],b=points[j];if((a.y>ny)!==(b.y>ny)){const crossX=(b.x-a.x)*(ny-a.y)/(b.y-a.y)+a.x;if(nx<crossX)hit=!hit;}}return hit;};
   const step=Math.max(1,Math.ceil(Math.sqrt((width*height)/30000)));
   for(let gy=0;gy<height;gy+=step){
     for(let gx=0;gx<width;gx+=step){
@@ -11042,7 +11568,9 @@ function gradeSamples(){
       const ox=Math.min(step-1,Math.floor((((tx*17+ty*29+11)%31)/31)*step));
       const oy=Math.min(step-1,Math.floor((((tx*23+ty*13+7)%29)/29)*step));
       const x=Math.min(width-1,gx+ox),y=Math.min(height-1,gy+oy);
+      if(points&&!inside((x+.5)/width,(y+.5)/height))continue;
       const i=(y*width+x)*4;if(i+2>=d.length)continue;
+      if(i+3<d.length&&d[i+3]>=128)sourceRGB.push([d[i]/255,d[i+1]/255,d[i+2]/255]);
       let r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
       if(state.logMode)[r,g,b]=applyV709(r,g,b);
       if(baseLUT&&baseOn)[r,g,b]=sampleBase(r,g,b);
@@ -11056,7 +11584,7 @@ function gradeSamples(){
       rgb.push([r,g,b]);
     }
   }
-  return{L:Float32Array.from(L),C:Float32Array.from(C),rgb};
+  return{L:Float32Array.from(L),C:Float32Array.from(C),rgb,sourceRGB};
 }
 
 
